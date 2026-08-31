@@ -1,0 +1,6 @@
+name: ona-context
+version: 0.1.0
+description: Hermes JIT Context OS & Borg Context Broker (L0 SQLite WAL + L1 Project Cache + Invariants I1-I10)
+author: Wojciech Wiesner (wojciech@theones.io)
+enabled: true
+entrypoint: hooks.py

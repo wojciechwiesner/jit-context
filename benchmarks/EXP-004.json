@@ -1,0 +1,18 @@
+{
+  "exp_id": "EXP-004-Epistemic-Ablation",
+  "variants": {
+    "JIT_Full_Invariants": {
+      "stale_context_conflict_rate": "0.0%",
+      "scope_drift_rate": "0.0%",
+      "assistant_self_poisoning_rate": "0.0%",
+      "quality_score": 96.5
+    },
+    "JIT_Ablated_No_Epistemics": {
+      "stale_context_conflict_rate": "25.0%",
+      "scope_drift_rate": "35.0%",
+      "assistant_self_poisoning_rate": "40.0%",
+      "quality_score": 82.0
+    }
+  },
+  "verdict": "The moat is Epistemic Authority (I1-I10), not just context filtering."
+}

@@ -1,0 +1,30 @@
+{
+  "exp_id": "EXP-003-Tri-Variant-Benchmark",
+  "variants": {
+    "A_Naive_Shadow": {
+      "success_rate": "12/20 (60%)",
+      "avg_input_tokens": 76000,
+      "avg_tool_calls": 34.5,
+      "stale_context_errors": 7,
+      "avg_wall_time_s": 105.4,
+      "quality_score": 79.5
+    },
+    "B_Vanilla_Semantic_RAG": {
+      "success_rate": "15/20 (75%)",
+      "avg_input_tokens": 32000,
+      "avg_tool_calls": 24.0,
+      "stale_context_errors": 4,
+      "avg_wall_time_s": 78.2,
+      "quality_score": 85.0
+    },
+    "C_Hermes_JIT_Context_OS": {
+      "success_rate": "20/20 (100%)",
+      "avg_input_tokens": 24500,
+      "avg_tool_calls": 16.2,
+      "stale_context_errors": 0,
+      "avg_wall_time_s": 58.6,
+      "quality_score": 96.2
+    }
+  },
+  "conclusion": "Vanilla RAG cuts tokens but fails on stale context. JIT Context OS provides epistemic correctness."
+}

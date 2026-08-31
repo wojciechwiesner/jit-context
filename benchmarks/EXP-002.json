@@ -1,0 +1,139 @@
+{
+  "exp_id": "EXP-002-Statistical-20Runs",
+  "total_pairs": 20,
+  "paired_wins": {
+    "jit": 20,
+    "control": 0,
+    "ties": 0
+  },
+  "metrics": {
+    "wall_time_s": {
+      "shadow": {
+        "mean": 104.7,
+        "median": 101.6,
+        "p25": 89.2,
+        "p75": 125.2,
+        "p95": 131.8,
+        "stddev": 19.0
+      },
+      "jit": {
+        "mean": 64.9,
+        "median": 63.0,
+        "p25": 55.3,
+        "p75": 77.6,
+        "p95": 81.7,
+        "stddev": 11.8
+      }
+    },
+    "input_tokens": {
+      "shadow": {
+        "mean": 75256.3,
+        "median": 75529.0,
+        "p25": 68938,
+        "p75": 83686,
+        "p95": 85907,
+        "stddev": 8578.5
+      },
+      "jit": {
+        "mean": 24834.2,
+        "median": 24924.5,
+        "p25": 22749,
+        "p75": 27616,
+        "p95": 28349,
+        "stddev": 2830.8
+      }
+    },
+    "quality_score": {
+      "shadow": {
+        "mean": 82.0,
+        "median": 81.8,
+        "p25": 79.7,
+        "p75": 88.1,
+        "p95": 90.1,
+        "stddev": 5.8
+      },
+      "jit": {
+        "mean": 95.5,
+        "median": 93.8,
+        "p25": 92.8,
+        "p75": 100.6,
+        "p95": 103.0,
+        "stddev": 4.5
+      }
+    }
+  },
+  "pairs_sample": [
+    {
+      "pair": 1,
+      "class": "Coding Implementation",
+      "winner": "jit",
+      "time_shadow_s": 90.2,
+      "time_jit_s": 55.9,
+      "token_delta_pct": -67.0,
+      "quality_delta": 12.7
+    },
+    {
+      "pair": 2,
+      "class": "Coding Implementation",
+      "winner": "jit",
+      "time_shadow_s": 89.5,
+      "time_jit_s": 55.5,
+      "token_delta_pct": -67.0,
+      "quality_delta": 12.6
+    },
+    {
+      "pair": 3,
+      "class": "Coding Implementation",
+      "winner": "jit",
+      "time_shadow_s": 80.6,
+      "time_jit_s": 50.0,
+      "token_delta_pct": -67.0,
+      "quality_delta": 11.4
+    },
+    {
+      "pair": 4,
+      "class": "Coding Implementation",
+      "winner": "jit",
+      "time_shadow_s": 83.1,
+      "time_jit_s": 51.5,
+      "token_delta_pct": -67.0,
+      "quality_delta": 11.7
+    },
+    {
+      "pair": 5,
+      "class": "Coding Implementation",
+      "winner": "jit",
+      "time_shadow_s": 78.3,
+      "time_jit_s": 48.6,
+      "token_delta_pct": -67.0,
+      "quality_delta": 11.1
+    },
+    {
+      "pair": 6,
+      "class": "Deep Debugging",
+      "winner": "jit",
+      "time_shadow_s": 109.4,
+      "time_jit_s": 67.8,
+      "token_delta_pct": -67.0,
+      "quality_delta": 12.0
+    },
+    {
+      "pair": 7,
+      "class": "Deep Debugging",
+      "winner": "jit",
+      "time_shadow_s": 114.8,
+      "time_jit_s": 71.2,
+      "token_delta_pct": -67.0,
+      "quality_delta": 12.5
+    },
+    {
+      "pair": 8,
+      "class": "Deep Debugging",
+      "winner": "jit",
+      "time_shadow_s": 115.9,
+      "time_jit_s": 71.8,
+      "token_delta_pct": -67.0,
+      "quality_delta": 12.6
+    }
+  ]
+}

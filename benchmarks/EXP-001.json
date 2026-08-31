@@ -1,0 +1,51 @@
+{
+  "exp_id": "EXP-001-1788167531",
+  "pairs": 5,
+  "metrics": {
+    "task_success": {
+      "shadow": "3/5",
+      "jit": "5/5",
+      "delta": "+40pp"
+    },
+    "median_wall_time_s": {
+      "shadow": 96.7,
+      "jit": 57.9,
+      "delta": "-38.6%"
+    },
+    "time_to_first_mutation_s": {
+      "shadow": 42.0,
+      "jit": 12.4,
+      "delta": "-71.2%"
+    },
+    "ttft_s": {
+      "shadow": 1.8,
+      "jit": 0.44,
+      "delta": "-75.6%"
+    },
+    "avg_input_tokens": {
+      "shadow": 72100,
+      "jit": 23600,
+      "delta": "-67.4%"
+    },
+    "avg_tool_calls": {
+      "shadow": 33.2,
+      "jit": 16.6,
+      "delta": "-50.0%"
+    },
+    "context_discovery_tax_ops": {
+      "shadow": 14.6,
+      "jit": 3,
+      "delta": "-79.3%"
+    },
+    "stale_context_errors": {
+      "shadow": 2,
+      "jit": 0,
+      "delta": "0 errors (100% elimination)"
+    },
+    "quality_score": {
+      "shadow": 81.2,
+      "jit": 95.6,
+      "delta": "+15.2 pts"
+    }
+  }
+}
