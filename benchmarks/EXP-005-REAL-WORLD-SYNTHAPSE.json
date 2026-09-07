@@ -1,0 +1,69 @@
+{
+  "exp_id": "EXP-005-REAL-WORLD-SYNTHAPSE",
+  "timestamp": "2026-09-07T21:08:04Z",
+  "task": "Add direct MP3 format recording and export functionality to synthapse Web Audio codebase",
+  "model": "gemini-3.8-flash",
+  "harness": "Hermes Agent (delegate_task autonomous subagent runner)",
+  "codebase": "synthapse (TypeScript, Vite, Vitest, Web Audio)",
+  "metrics": {
+    "wall_time_s": {
+      "control_no_jit": 567.57,
+      "jit_active": 238.37,
+      "delta_pct": -58.0,
+      "speedup": "2.38x"
+    },
+    "llm_turns_api_calls": {
+      "control_no_jit": 171,
+      "jit_active": 66,
+      "delta_pct": -61.4,
+      "calls_saved": 105
+    },
+    "tool_calls_total": {
+      "control_no_jit": 169,
+      "jit_active": 64,
+      "delta_pct": -62.1
+    },
+    "read_file_calls": {
+      "control_no_jit": 73,
+      "jit_active": 24,
+      "delta_pct": -67.1
+    },
+    "discovery_ops_before_first_write": {
+      "control_no_jit": 65,
+      "jit_active": 31,
+      "delta_pct": -52.3
+    },
+    "time_to_first_mutation_s": {
+      "control_no_jit": 202.0,
+      "jit_active": 125.0,
+      "delta_s": -77.0,
+      "delta_pct": -38.1
+    },
+    "runtime_patch_test_errors": {
+      "control_no_jit": 8,
+      "jit_active": 0,
+      "details_control": [
+        "search_files OS permission errors on broad scan",
+        "rtk find syntax compound predicate errors",
+        "2 Vitest test failures on Float32 NaN/Infinity handling",
+        "3 patch string mismatch errors due to stale offsets",
+        "TypeScript transform syntax error in audioExport.ts"
+      ],
+      "details_jit": "Zero test failures, zero patch errors, zero syntax errors"
+    },
+    "scope_drift_files_touched": {
+      "control_no_jit": 14,
+      "jit_active": 4,
+      "drift_analysis": "Control agent without JIT experienced severe scope drift: drifted into DJ mixer console (dj.ts, dj.html), multitrack studio stems (studio.js, studio/index.html) violating studio invariant against external dependencies, and package version bumps. JIT agent modified only the targeted recording surface (play.ts, play.html) and added modular encoder."
+    },
+    "test_verification": {
+      "control_no_jit": "PASS (216/216 tests)",
+      "jit_active": "PASS (198/198 tests)",
+      "build_status": "Both exit 0"
+    },
+    "context_capsule_size": {
+      "chars": 457,
+      "tokens_est": 114
+    }
+  }
+}

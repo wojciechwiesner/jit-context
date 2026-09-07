@@ -53,6 +53,27 @@ Modern LLM-based autonomous agent architectures suffer from the **"Haystack Tax"
 
 ---
 
+## Empirical Production Benchmark: EXP-005 (Real-World Codebase)
+
+A head-to-head paired benchmark was executed on the production repository **Synthapse** (Web Audio Generative AI Techno Instrument, ~45 modules, Vitest + Vite build). Both autonomous agents were tasked with implementing direct MP3 audio export and recording alongside WAV:
+
+| Metric | With JIT Context OS | Control (No JIT / Long-Context) | Delta / Impact |
+|---|---|---|---|
+| **Wall Clock Time** | **238.37 s** (3m 58s) | **567.57 s** (9m 27s) | **-58.0% (2.38x faster)** |
+| **LLM API Calls (Turns)** | **66** | **171** | **-61.4% (105 rounds avoided)** |
+| **Total Tool Calls** | **64** | **169** | **-62.1%** |
+| **Files Read (`read_file`)** | **24** | **73** | **-67.1% (3x less context churn)** |
+| **Discovery Ops Before Edit** | **31** | **65** | **-52.3%** |
+| **Time to First Code Mutation** | **125 s** | **202 s** | **-38.1% (-77s)** |
+| **Runtime / Test / Patch Errors** | **0** (100% clean) | **8 errors** (tests, syntax, patch) | **100% error loop elimination** |
+| **Scope Drift (Files Touched)** | **4 files** (surgical SRP) | **14 files** (severe drift into DJ/Studio) | **Clean architectural boundaries** |
+| **Context Capsule Size** | **114 tokens** (457 chars) | Entire repository search dump | **Ceiling <1,500 tok; Real: 114 tok** |
+| **Test Verification** | **PASS** (198/198 tests) | **PASS** (216/216 tests) | Verified exit 0 |
+
+> **Key takeaway:** The JIT Context Capsule required **only 114 tokens** (~457 characters) to eliminate 105 redundant LLM calls, prevent scope drift into unrelated modules, and deliver a working feature in under 4 minutes.
+
+---
+
 ## Controlled Benchmark Highlights (EXP-001 – EXP-004)
 
 * **20 / 20 Paired Wins** against long-context baseline on complex software engineering tasks.
