@@ -157,20 +157,27 @@ jit-context/
 
 ## Quickstart & Verification
 
-### 1. Install & Test
+### 1-Command Universal Installation
+```bash
+curl -fsSL https://raw.githubusercontent.com/wojciechwiesner/jit-context/master/install.sh | bash
+```
+
+### Python Pip Installation
 ```bash
 # Clone the repository
 git clone https://github.com/wojciechwiesner/jit-context.git
 cd jit-context
 
-# Install dependencies and run test suite
-pip install pytest
+# Install package & dependencies
+pip install -e .
+
+# Run the 25 automated unit & invariant tests
 pytest src/tests/
 ```
 
 ### 2. Verify System Invariants
 ```bash
-# Run the built-in Doctor probe
+# Run the built-in Doctor probe (verifies 8/8 DoD checkpoints)
 python3 src/health/doctor.py
 ```
 

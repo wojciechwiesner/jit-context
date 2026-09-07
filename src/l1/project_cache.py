@@ -2,9 +2,9 @@
 
 import os
 import hashlib
-from typing import Dict, Optional, Tuple
+from typing import Dict, Optional
 from pathlib import Path
-from config import PROJECTS_DIR
+from config import PROJECTS_DIR, VAULT_DIR, WORKSPACE_DIR
 
 class ProjectCacheEntry:
     def __init__(self, path: Path, mtime_ns: int, size: int, content: str, sha256_hash: str):
@@ -17,17 +17,40 @@ class ProjectCacheEntry:
 _CACHE: Dict[str, ProjectCacheEntry] = {}
 
 def get_project_context(project_name: str, base_dir: Optional[Path] = None) -> Optional[str]:
-    """Retrieves project context from ~/Documents/Wojciech/projects/<name>.md with zero I/O on hit."""
-    vault_dir = base_dir or PROJECTS_DIR
-    target_file = vault_dir / f"{project_name}.md"
-    
-    if not target_file.exists():
-        # Try finding canonical entry point
-        alt_file = vault_dir / project_name / "_state.md"
-        if alt_file.exists():
-            target_file = alt_file
-        else:
-            return None
+    """Retrieves project context from Obsidian Vault or local repo (.planning/STATE.md)."""
+    target_file = None
+    cwd = Path.cwd()
+    resolved_name = project_name if project_name and project_name not in ["hermes", "active", "general"] else cwd.name
+
+    # 1. First Priority: Vault documentation
+    vault_base = base_dir or PROJECTS_DIR
+    candidates = [
+        VAULT_DIR / "context" / "projects" / f"{resolved_name}.md",
+        vault_base / f"{resolved_name}.md",
+        vault_base / resolved_name / "_state.md",
+        vault_base / resolved_name / "STATE.md",
+    ]
+    for cand in candidates:
+        if cand.exists():
+            target_file = cand
+            break
+
+    # 2. Fallback: Local workspace (.planning/STATE.md or PROJECT_CONTEXT.md)
+    if not target_file:
+        local_candidates = [
+            cwd / ".planning" / "STATE.md",
+            cwd / "STATE.md",
+            cwd / "docs" / "STATE.md",
+            WORKSPACE_DIR / resolved_name / ".planning" / "STATE.md",
+            WORKSPACE_DIR / resolved_name / "STATE.md",
+        ]
+        for loc in local_candidates:
+            if loc.exists():
+                target_file = loc
+                break
+
+    if not target_file or not target_file.exists():
+        return None
             
     try:
         stat_res = target_file.stat()
