@@ -47,6 +47,7 @@ def append_event(
     root_event_id: Optional[str] = None
 ) -> Tuple[str, int]:
     """Append event to WAL and atomically update last_seq."""
+    ensure_session(conn, session_id)
     now = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
     event_id = f"evt_{uuid.uuid4().hex[:12]}"
     content_hash = compute_content_hash(content)

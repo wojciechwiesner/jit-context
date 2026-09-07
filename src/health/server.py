@@ -7,8 +7,15 @@ import sqlite3
 import http.server
 import socketserver
 import threading
+import sys
 from typing import Optional, Dict, Any, List
 from pathlib import Path
+
+# Ensure plugin root is in sys.path
+_PLUGIN_ROOT = str(Path(__file__).resolve().parent.parent)
+if _PLUGIN_ROOT not in sys.path:
+    sys.path.insert(0, _PLUGIN_ROOT)
+
 from config import HEALTH_SERVER_HOST, HEALTH_SERVER_PORT, DB_PATH
 from l0.db import get_db, init_db
 from health.autocheck import get_health_report
@@ -42,7 +49,7 @@ QUOTAS = {
     }
 }
 
-def get_live_metrics_combined(view_mode: str = "session") -> Dict[str, Any]:
+def _legacy_dashboard_metrics(view_mode: str = "session") -> Dict[str, Any]:
     """Combines ona-context telemetry with live Hermes state.db and rate limit quotas."""
     now = time.time()
     total_cache_read = 0
@@ -220,6 +227,85 @@ def get_live_metrics_combined(view_mode: str = "session") -> Dict[str, Any]:
         "recent_turns": recent_turns,
         "recent_llm": recent_llm
     }
+
+def get_live_metrics_combined(view_mode: str = "session") -> Dict[str, Any]:
+    """Return only measurements emitted by registered Context OS hooks."""
+    now = time.time()
+    cutoff = 0 if view_mode == "all" else (START_TIMESTAMP if view_mode == "session" else now - 86400)
+    cutoff_iso = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(cutoff))
+    totals = {"cache": 0, "avoided": 0, "cost": 0.0, "l0": 0.0}
+    usage = {"gemini_tokens": 0, "gemini_requests": 0, "claude_5h": 0, "claude_7d": 0, "glm_24h": 0}
+    recent_turns: List[Dict[str, Any]] = []
+    recent_llm: List[Dict[str, Any]] = []
+
+    try:
+        conn = sqlite3.connect(f"file:{DB_PATH}?mode=ro", uri=True, timeout=0.1)
+        conn.row_factory = sqlite3.Row
+        row = conn.execute(
+            "SELECT COALESCE(SUM(jit_tokens_avoided_est), 0) avoided, COALESCE(AVG(l0_ms), 0) l0 "
+            "FROM turn_telemetry WHERE created_at >= ?", (cutoff_iso,),
+        ).fetchone()
+        totals["avoided"], totals["l0"] = row["avoided"], row["l0"]
+        row = conn.execute(
+            "SELECT COALESCE(SUM(cache_read_tokens), 0) cache, COALESCE(SUM(cost_usd), 0) cost "
+            "FROM llm_metrics WHERE status='success' AND started_at >= ?", (cutoff_iso,),
+        ).fetchone()
+        totals["cache"], totals["cost"] = row["cache"], row["cost"]
+
+        turns_sql = (
+            "SELECT t.turn_id, t.created_at, t.active_scope, t.l0_ms, t.l1_ms, t.capsule_tokens_est, "
+            "t.haystack_tokens_est, t.jit_tokens_avoided_est, t.user_query_hash, "
+            "COALESCE(SUM(l.input_tokens), 0) actual_input_tokens "
+            "FROM turn_telemetry t LEFT JOIN llm_metrics l ON l.session_id=t.session_id AND l.turn_id=t.turn_id "
+            "WHERE t.created_at >= ? GROUP BY t.id ORDER BY t.id DESC LIMIT 15"
+        )
+        for row in conn.execute(turns_sql, (cutoff_iso,)):
+            recent_turns.append({
+                "turn_id": row["turn_id"], "created_at": row["created_at"],
+                "user_query_preview": f"sha256:{row['user_query_hash']}",
+                "active_scope": row["active_scope"], "l0_ms": row["l0_ms"], "l1_ms": row["l1_ms"],
+                "capsule_tokens_est": row["capsule_tokens_est"],
+                "haystack_tokens_est": row["haystack_tokens_est"],
+                "jit_tokens_avoided_est": row["jit_tokens_avoided_est"],
+                "actual_input_tokens": row["actual_input_tokens"],
+            })
+        for row in conn.execute(
+            "SELECT requested_model, response_model, input_tokens, output_tokens, cache_read_tokens, "
+            "duration_ms, status, provider FROM llm_metrics WHERE started_at >= ? ORDER BY id DESC LIMIT 10", (cutoff_iso,),
+        ):
+            recent_llm.append(dict(row))
+
+        def model_usage(model_fragment: str, since: float, *, count: bool = False):
+            value = conn.execute(
+                "SELECT COALESCE(SUM(input_tokens + output_tokens), 0), COUNT(*) FROM llm_metrics "
+                "WHERE status='success' AND requested_model LIKE ? AND started_at >= ?",
+                (f"%{model_fragment}%", time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(since))),
+            ).fetchone()
+            return (value[0], value[1]) if count else value[0]
+
+        usage["gemini_tokens"], usage["gemini_requests"] = model_usage("gemini", now - 60, count=True)
+        usage["claude_5h"] = model_usage("claude", now - 18000)
+        usage["claude_7d"] = model_usage("claude", now - 604800)
+        usage["glm_24h"] = model_usage("glm", now - 86400)
+        conn.close()
+    except Exception as exc:
+        print(f"[ona-context:metrics] Error reading Context OS telemetry: {exc}")
+
+    gemini_headroom = round(max(0.0, 1 - usage["gemini_tokens"] / QUOTAS["gemini-3.7-flash"]["tpm_limit"]) * 100, 2)
+    claude_headroom = round(max(0.0, 1 - usage["claude_5h"] / QUOTAS["claude-opus-5"]["window_5h_limit"]) * 100, 2)
+    return {
+        "view_mode": view_mode, "telemetry_source": "ona-context/session_overlay.db",
+        "total_cache_read_tokens": totals["cache"], "session_cache_read_tokens": totals["cache"],
+        "total_jit_avoided_tokens": totals["avoided"], "total_cost_usd": round(totals["cost"], 4),
+        "l0_latency_ms": round(totals["l0"], 2),
+        "quotas": {
+            "gemini": {"active_model": "gemini", "tpm_consumed_1m": usage["gemini_tokens"], "tpm_limit": QUOTAS["gemini-3.7-flash"]["tpm_limit"], "headroom_pct": gemini_headroom, "rpm_consumed": usage["gemini_requests"], "rpm_limit": QUOTAS["gemini-3.7-flash"]["rpm_limit"]},
+            "claude": {"active_model": "claude", "tokens_5h": usage["claude_5h"], "limit_5h": QUOTAS["claude-opus-5"]["window_5h_limit"], "headroom_5h_pct": claude_headroom, "tokens_7d": usage["claude_7d"], "limit_7d": QUOTAS["claude-opus-5"]["weekly_7d_limit"]},
+            "glm": {"active_model": "glm", "tokens_24h": usage["glm_24h"], "plan": "Coding Plan Lite (Flat-rate)"},
+        },
+        "recent_turns": recent_turns, "recent_llm": recent_llm,
+    }
+
 
 DASHBOARD_HTML = """<!DOCTYPE html>
 <html lang="en">
@@ -490,19 +576,32 @@ class HealthHTTPHandler(http.server.BaseHTTPRequestHandler):
             elif self.path.startswith("/api/experiments"):
                 from health.experiment_runner import run_paired_experiment_exp001
                 from health.experiment_suites import run_exp002_multi_task_suite, run_exp003_tri_variant_suite, run_exp004_ablation_suite
+                from health.exp005_runner import run_exp005_lost_in_the_middle_and_gap_closure
+                from health.exp006_synthapse import run_exp006_synthapse_arbitration
+                from health.exp007_tulimy import run_exp007_tulimy_relational_benchmark
                 
-                if "exp002" in self.path:
+                path_lower = self.path.lower()
+                if "exp005" in path_lower:
+                    summary = run_exp005_lost_in_the_middle_and_gap_closure()
+                elif "exp006" in path_lower:
+                    summary = run_exp006_synthapse_arbitration()
+                elif "exp007" in path_lower:
+                    summary = run_exp007_tulimy_relational_benchmark()
+                elif "exp002" in path_lower:
                     summary = run_exp002_multi_task_suite(5)
-                elif "exp003" in self.path:
+                elif "exp003" in path_lower:
                     summary = run_exp003_tri_variant_suite()
-                elif "exp004" in self.path:
+                elif "exp004" in path_lower:
                     summary = run_exp004_ablation_suite()
                 else:
                     summary = {
                         "exp001": run_paired_experiment_exp001(5),
                         "exp002": run_exp002_multi_task_suite(5),
                         "exp003": run_exp003_tri_variant_suite(),
-                        "exp004": run_exp004_ablation_suite()
+                        "exp004": run_exp004_ablation_suite(),
+                        "exp005": run_exp005_small_model_suite(),
+                        "exp006": run_exp006_synthapse_arbitration(),
+                        "exp007": run_exp007_tulimy_relational_benchmark()
                     }
                 self.send_response(200)
                 self.send_header("Content-Type", "application/json")
@@ -548,3 +647,17 @@ def run_health_server(host: str = HEALTH_SERVER_HOST, port: int = HEALTH_SERVER_
     except OSError:
         print(f"[ona-context] Port {port} already bound by leader process; running in follower metrics mode.")
         return None
+
+if __name__ == "__main__":
+    import sys
+    plugin_root = str(Path(__file__).resolve().parent.parent)
+    if plugin_root not in sys.path:
+        sys.path.insert(0, plugin_root)
+    print(f"Starting Context OS Observatory on http://{HEALTH_SERVER_HOST}:{HEALTH_SERVER_PORT}")
+    init_db()
+    socketserver.TCPServer.allow_reuse_address = True
+    server = socketserver.TCPServer((HEALTH_SERVER_HOST, HEALTH_SERVER_PORT), HealthHTTPHandler)
+    try:
+        server.serve_forever()
+    except KeyboardInterrupt:
+        print("\nObservatory stopped.")
