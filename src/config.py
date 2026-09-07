@@ -3,12 +3,12 @@
 import os
 from pathlib import Path
 
-HERMES_HOME = Path(os.environ.get("HERMES_HOME", os.path.expanduser("~/.hermes")))
+HERMES_HOME = Path(os.environ.get("HERMES_HOME", Path.home() / ".hermes"))
 STATE_DIR = HERMES_HOME / "state" / "ona-context"
 STATE_DIR.mkdir(parents=True, exist_ok=True)
 
 DB_PATH = STATE_DIR / "session_overlay.db"
-PROJECTS_DIR = Path(os.environ.get("PROJECTS_VAULT", os.path.expanduser("~/Documents/Wojciech/projects")))
+PROJECTS_DIR = Path(os.environ.get("PROJECTS_VAULT", Path.home() / "Documents" / "projects"))
 
 # Performance & Timeouts
 L0_MAX_LATENCY_MS = 3.0

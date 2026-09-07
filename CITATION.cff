@@ -6,11 +6,11 @@ authors:
     orcid: "https://orcid.org/0009-0000-0000-0000"
     email: "wojciech@theones.io"
     affiliation: "The Ones (join.theones.io)"
-title: "Hermes JIT Context OS: An Epistemic Runtime for Long-Lived AI Agents"
-version: 0.1.0
-date-released: 2026-08-31
+title: "JIT-Context: An Epistemic Runtime for Long-Lived AI Agents"
+version: 0.1.2
+date-released: 2026-09-07
 license: MIT
-repository-code: "https://github.com/vizi2000/hermes-jit-context-os"
+repository-code: "https://github.com/vizi2000/jit-context"
 keywords:
   - "ai-agents"
   - "context-engineering"

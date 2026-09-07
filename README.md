@@ -1,16 +1,18 @@
-# Hermes JIT Context OS: An Epistemic Runtime for Long-Lived AI Agents
+# JIT-Context: An Epistemic Context Runtime for AI Agents
 
-**Version:** 0.1.0-canary (2026-08-31)  
-**Author:** Wojciech Wiesner (`wojciech@theones.io`) — *The Ones*  
-**Repository:** `https://github.com/vizi2000/hermes-jit-context-os`
+**Version:** 0.1.2 (2026-09-07)  
+**Author:** Wojciech Wiesner (`wojciech@theones.io`) — *The Ones* (`join.theones.io`)  
+**Repository:** `https://github.com/vizi2000/jit-context`
 
 ---
 
 ## Executive Abstract
 
-Modern LLM-based autonomous agent architectures suffer from the **"Haystack Tax"**: context window inflation (50k–100k+ tokens), severe attention degradation (*Lost-in-the-Middle*), self-poisoning through recursive consumption of prior assistant speculation, and severe rate-limiting (`429 Too Many Requests` / 5-hour rolling context exhaustion).
+Modern LLM-based autonomous agent architectures suffer from the **"Haystack Tax"**: context window inflation (50k–100k+ tokens), severe attention degradation (*Lost-in-the-Middle*), self-poisoning through recursive consumption of prior assistant speculation, and severe rate-limiting (`429 Too Many Requests` / rolling context exhaustion).
 
-**Hermes JIT Context OS** introduces a deterministic, multi-tier temporal memory architecture with **Epistemic Invariants (I1–I10)**. By decoupling hot-path operational state (<3ms local SQLite WAL) from slow remote associative brokers and enforcing strict authority weighting (User Authority = 1.0, Assistant Weight = 0.0), JIT Context OS compiles a **Lean Context Capsule (<1,500 tokens)** just-in-time for each LLM turn.
+**JIT-Context** is a universal, deterministic, multi-tier temporal memory and context runtime with **Epistemic Invariants (I1–I10)**. Designed as a drop-in runtime for autonomous agents (Claude Code, Hermes, Cursor, OpenCode, Codex, and custom multi-agent harnesses).
+
+By decoupling hot-path operational state (<3ms local SQLite WAL) from slow remote associative brokers and enforcing strict authority weighting (User Authority = 1.0, Assistant Weight = 0.0), **JIT-Context** compiles a **Lean Context Capsule (400–1,200 tokens, ceiling <1,500 tokens)** just-in-time for each turn.
 
 ```
                     ┌───────────────────────────────────────────────┐
