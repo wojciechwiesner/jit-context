@@ -47,13 +47,18 @@ def compile_context(
         if t["content"] not in current_statements:
             current_statements.append(t["content"])
             
-    # 4. L1 Project Context
+    # 4. L1 Project Context (GSD STATE.md & Architecture integration)
     project_doc = get_project_context(active_scope)
     project_summary = None
     if project_doc:
-        # Take header/first 300 chars of canonical state
-        lines = [l for l in project_doc.split("\n") if l.strip() and not l.startswith("#")]
-        project_summary = "\n".join(lines[:3]) if lines else project_doc[:200]
+        # Calibrated budget: up to ~4,500 chars (~1,100–1,200 tokens) to ensure complete certainty
+        # Preserves full Architecture, Engine, Key Files & Modules, and Active State
+        trimmed = project_doc.strip()
+        MAX_PROJECT_CHARS = 4500
+        if len(trimmed) <= MAX_PROJECT_CHARS:
+            project_summary = trimmed
+        else:
+            project_summary = trimmed[:MAX_PROJECT_CHARS] + "\n[...truncated to JIT budget]"
         
     # 5. L2 Deep Path Trigger (Invariant I6)
     recalled_facts = []
