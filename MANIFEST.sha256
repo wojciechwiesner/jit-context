@@ -26,9 +26,9 @@ d408a4b6a8f92f017372a4dd5621680a62e7ed68c1f0be7bb78ab3a11e8be6da  ./src/context/
 17595dd43efd2954b145a96cbeb8ac42c60fba70baf9c58cfc8c709a0e75c4c2  ./src/context/renderer.py
 230cf14fb8101cd628686d02a2588db68f119f92f49b97b2522ddd0ff46390de  ./src/health/autocheck.py
 0a5d908e5a71fed6ae36ab14e2e28724a9421133762d79dbc3197a156434a95a  ./src/health/doctor.py
-bc1ea4d1d3775ce253daeae553d2f0a941a56cf5638be7560b3b559067329fe0  ./src/health/exp005_runner.py
-cfa010105ce27553c34f9f20adb9ee6eebb156c688b1bce6e2f5bf3961f55d43  ./src/health/exp006_synthapse.py
-11531bb7744872d76186c1699f3276cd4174e6ee2056df6601e26ba92a0ee64d  ./src/health/exp007_tulimy.py
+e8aedf9966580a1b6091092ef4f9d0194fe50e13357597b3810450fc518cf376  ./src/health/exp005_runner.py
+64abb57099276b7fac2220ea196d387acde75e6b6f76169f483d197f329d413d  ./src/health/exp006_synthapse.py
+b6799a82fa95ec0b8507d5d3274b84732fd0c533ec846b50ed04a0c12919edfc  ./src/health/exp007_tulimy.py
 e05a8311667fc21cee2dbd64e95978c6f552dcee5296ec4fdfd314f031ef9e6a  ./src/health/experiment_runner.py
 75609e2d6db3485d7686b1610935faa0115dd0b46c7b0606dd79365dad2cdfab  ./src/health/experiment_suites.py
 0a89f9a6ecfe8ecccf7b2aa443ce36d232ef2250ffcc6fbf1c82dbb6f7bd0267  ./src/health/invariants.py
@@ -62,7 +62,7 @@ bdea79018d16adecf38698b324a299e974ee30ae6849e0c664bb1bf5c90fe26f  ./src/tests/__
 c0e56b32e95a7c5ca39f1ae80fcb0f7b5b6028934aad6622ad02d2f837cfbc61  ./src/tests/__pycache__/test_chaos.cpython-314-pytest-9.0.2.pyc
 8fa143a38f9a05ef717ce5fff883292964ba641decaacf01cea1e4274848dbfd  ./src/tests/__pycache__/test_invariants.cpython-314-pytest-9.0.2.pyc
 8c3cced273b298c0e6260acf5f954113153115478affa4a0565c0353d40a24f5  ./src/tests/__pycache__/test_performance.cpython-314-pytest-9.0.2.pyc
-266a909dd62c9a7d14392e904734e1613b153ffd5d4dd4cb1c82c047394c49fc  ./src/tests/benchmark_compare.py
+9e645ec957bf082cd45d831092b254de5878f9299b485ac35c57a87224453011  ./src/tests/benchmark_compare.py
 99a2045d6e32949b0696e59119ce7b51bd3815d33ebf436535d5fa7966ff3a94  ./src/tests/conftest.py
 902dfbae9acfb7eebc55b9b6c11510b83be51f769b821ee84e8341bbe1637ea0  ./src/tests/test_chaos.py
 deb3b1cb86546916138b0e0c8c6dc5320ba0bad226bb62fd1a820b638495dcaa  ./src/tests/test_invariants.py
