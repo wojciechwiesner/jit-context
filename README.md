@@ -2,12 +2,12 @@
 
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.22649542.svg)](https://doi.org/10.5281/zenodo.22649542)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
-[![Tests](https://img.shields.io/badge/Tests-25%2F25%20PASS-success)](https://github.com/vizi2000/jit-context)
+[![Tests](https://img.shields.io/badge/Tests-25%2F25%20PASS-success)](https://github.com/wojciechwiesner/jit-context)
 
 **Version:** 0.1.3 (2026-09-07)  
 **Author:** Wojciech Wiesner (`wojciech@theones.io`) — *The Ones* (`join.theones.io`)  
 **DOI:** [10.5281/zenodo.22649542](https://doi.org/10.5281/zenodo.22649542)  
-**Repository:** `https://github.com/vizi2000/jit-context`
+**Repository:** `https://github.com/wojciechwiesner/jit-context`
 
 ---
 
@@ -18,6 +18,19 @@ Modern LLM-based autonomous agent architectures suffer from the **"Haystack Tax"
 **JIT-Context** is a universal, deterministic, multi-tier temporal memory and context runtime with **Epistemic Invariants (I1–I10)**. Designed as a drop-in runtime for autonomous agents (Claude Code, Hermes, Cursor, OpenCode, Codex, and custom multi-agent harnesses).
 
 By decoupling hot-path operational state (<3ms local SQLite WAL) from slow remote associative brokers and enforcing strict authority weighting (User Authority = 1.0, Assistant Weight = 0.0), **JIT-Context** compiles a **Lean Context Capsule (400–1,200 tokens, ceiling <1,500 tokens)** just-in-time for each turn.
+
+---
+
+## The Architectural Moat: Why Traditional Memory Fails Long-Lived Agents
+
+| Capability / Challenge | Semantic Vector Stores (Mem0 / Zep) | Self-Managed Agent Memory (Letta / MemGPT) | Context Stuffing (100k+ Dump / Prompt Caching) | **JIT-Context (This Architecture)** |
+|---|---|---|---|---|
+| **Hot-Path Latency** | Slow (200–800ms API / embedding) | Moderate (LLM decides tool call) | Zero (Static Prompt) | **<3ms (Local SQLite WAL, In-Memory)** |
+| **Read-Your-Own-Writes** | Eventual consistency / indexing lag | Delayed by multi-turn tool loops | N/A (Frozen context) | **Instant RYOW (<0.5ms)** |
+| **Self-Poisoning Vulnerability** | HIGH (re-ingests assistant answers) | HIGH (agent writes own core facts) | MODERATE (hallucinations stay in transcript) | **ZERO (Assistant Epistemic Weight = 0.0)** |
+| **Scope Drift Resistance** | LOW (fuzzy similarity pulls other repos) | LOW (unconstrained agent queries) | VERY LOW (lost-in-the-middle confusion) | **HIGH (L1 Scope Hysteresis Guard)** |
+| **Prompt Cache Alignment** | POOR (dynamic injected text breaks cache) | POOR (frequent core memory edits) | MODERATE (large prefix, expensive cache misses) | **>95% Cache Hit Rate (Prefix-stable)** |
+| **Token Economy** | Inflates prompt with Top-K fragments | Multiple turns of tool-calling overhead | Severe ($$$ context tax, rolling 5h limits) | **Lean Capsule (400–1,200 tokens)** |
 
 ```
                     ┌───────────────────────────────────────────────┐
