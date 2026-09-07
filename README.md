@@ -1,7 +1,12 @@
 # JIT-Context: An Epistemic Context Runtime for AI Agents
 
-**Version:** 0.1.2 (2026-09-07)  
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.22649542.svg)](https://doi.org/10.5281/zenodo.22649542)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+[![Tests](https://img.shields.io/badge/Tests-25%2F25%20PASS-success)](https://github.com/vizi2000/jit-context)
+
+**Version:** 0.1.3 (2026-09-07)  
 **Author:** Wojciech Wiesner (`wojciech@theones.io`) — *The Ones* (`join.theones.io`)  
+**DOI:** [10.5281/zenodo.22649542](https://doi.org/10.5281/zenodo.22649542)  
 **Repository:** `https://github.com/vizi2000/jit-context`
 
 ---

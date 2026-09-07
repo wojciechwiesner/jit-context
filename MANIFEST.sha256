@@ -10,7 +10,7 @@ e568fabf39c8f2bffb51bb9d227ed921e97c690ddd856dfd0eb65efc4926d6c5  ./benchmarks/E
 d8cf78bfb36e063188469f10984e0c67669fc0aba8394342ef35da70cd602380  ./benchmarks/EXP-005-REAL-WORLD-SYNTHAPSE.json
 5bb57ce4dc74407ceb296d72f42eaa40eb726c81e487cdd5d5f3dc8011b1874d  ./CITATION.cff
 7d3f9ee8e5e5cf61dc33676899aa1d34e4acdd3492327ae39a6d7d5cb197f984  ./LICENSE
-c93d7f12e50022848d52efdd87960fdd439caa6bd511c3f395a59029f7f1e2a5  ./README.md
+3b46f461ca1d711579af0f866fb6f291b10d1cb64e78f6af41c69ffc8615d822  ./README.md
 1c0239c6f56657d954d2e7cca67ace206dd5b47f3d6b8c23223463c84af2c2cc  ./src/__init__.py
 35469ce9bb6867e22b1a2eac35c90618191d0fcb3c7f5640c5a9d0068116c41f  ./src/__pycache__/__init__.cpython-314.pyc
 ea4ab77f3fb993dba2020989ab48e5ff6d5ef94ccb08c04a5fd3c3cbbd783f12  ./src/__pycache__/config.cpython-314.pyc
