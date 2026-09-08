@@ -193,6 +193,15 @@ def _legacy_dashboard_metrics(view_mode: str = "session") -> Dict[str, Any]:
     claude_5h_headroom_pct = round(max(0.0, (1.0 - (claude_5h_tokens / QUOTAS["claude-opus-5"]["window_5h_limit"]))) * 100, 2)
     claude_7d_headroom_pct = round(max(0.0, (1.0 - (claude_7d_tokens / QUOTAS["claude-opus-5"]["weekly_7d_limit"]))) * 100, 2)
     
+    live_jit = {}
+    try:
+        live_p = "/tmp/hermes-jit-live.json"
+        if os.path.exists(live_p):
+            with open(live_p, "r", encoding="utf-8") as lf:
+                live_jit = json.load(lf)
+    except Exception:
+        pass
+
     return {
         "view_mode": view_mode,
         "total_cache_read_tokens": total_cache_read,
@@ -200,6 +209,7 @@ def _legacy_dashboard_metrics(view_mode: str = "session") -> Dict[str, Any]:
         "total_jit_avoided_tokens": total_jit_avoided,
         "total_cost_usd": round(total_cost, 4),
         "l0_latency_ms": l0_lat,
+        "live_jit": live_jit,
         "quotas": {
             "gemini": {
                 "active_model": "gemini-3.7-flash",
@@ -293,11 +303,22 @@ def get_live_metrics_combined(view_mode: str = "session") -> Dict[str, Any]:
 
     gemini_headroom = round(max(0.0, 1 - usage["gemini_tokens"] / QUOTAS["gemini-3.7-flash"]["tpm_limit"]) * 100, 2)
     claude_headroom = round(max(0.0, 1 - usage["claude_5h"] / QUOTAS["claude-opus-5"]["window_5h_limit"]) * 100, 2)
+
+    live_jit = {}
+    try:
+        live_p = "/tmp/hermes-jit-live.json"
+        if os.path.exists(live_p):
+            with open(live_p, "r", encoding="utf-8") as lf:
+                live_jit = json.load(lf)
+    except Exception:
+        pass
+
     return {
         "view_mode": view_mode, "telemetry_source": "ona-context/session_overlay.db",
         "total_cache_read_tokens": totals["cache"], "session_cache_read_tokens": totals["cache"],
         "total_jit_avoided_tokens": totals["avoided"], "total_cost_usd": round(totals["cost"], 4),
         "l0_latency_ms": round(totals["l0"], 2),
+        "live_jit": live_jit,
         "quotas": {
             "gemini": {"active_model": "gemini", "tpm_consumed_1m": usage["gemini_tokens"], "tpm_limit": QUOTAS["gemini-3.7-flash"]["tpm_limit"], "headroom_pct": gemini_headroom, "rpm_consumed": usage["gemini_requests"], "rpm_limit": QUOTAS["gemini-3.7-flash"]["rpm_limit"]},
             "claude": {"active_model": "claude", "tokens_5h": usage["claude_5h"], "limit_5h": QUOTAS["claude-opus-5"]["window_5h_limit"], "headroom_5h_pct": claude_headroom, "tokens_7d": usage["claude_7d"], "limit_7d": QUOTAS["claude-opus-5"]["weekly_7d_limit"]},
@@ -619,11 +640,16 @@ class HealthHTTPHandler(http.server.BaseHTTPRequestHandler):
                 self.send_header("Content-Type", "application/json")
                 self.end_headers()
                 self.wfile.write(json.dumps(payload).encode("utf-8"))
-            elif self.path == "/":
+            elif self.path in ["/", "/dashboard"]:
+                html_path = Path(__file__).parent / "dashboard.html"
+                if html_path.exists():
+                    body = html_path.read_bytes()
+                else:
+                    body = DASHBOARD_HTML.encode("utf-8")
                 self.send_response(200)
                 self.send_header("Content-Type", "text/html; charset=utf-8")
                 self.end_headers()
-                self.wfile.write(DASHBOARD_HTML.encode("utf-8"))
+                self.wfile.write(body)
             else:
                 self.send_response(404)
                 self.end_headers()

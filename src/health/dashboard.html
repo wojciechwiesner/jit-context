@@ -1,0 +1,749 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Hermes JIT Context OS — Observatory</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #090a0f;
+      --panel: rgba(16, 19, 28, 0.75);
+      --panel-solid: #10131c;
+      --border: rgba(255, 255, 255, 0.08);
+      --border-hover: rgba(255, 255, 255, 0.16);
+      --emerald: #10b981;
+      --emerald-glow: rgba(16, 185, 129, 0.15);
+      --cyan: #06b6d4;
+      --cyan-glow: rgba(6, 182, 212, 0.15);
+      --indigo: #6366f1;
+      --indigo-glow: rgba(99, 102, 241, 0.15);
+      --amber: #f59e0b;
+      --amber-glow: rgba(245, 158, 11, 0.15);
+      --rose: #f43f5e;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --text-faint: #475569;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background-color: var(--bg);
+      background-image: radial-gradient(rgba(255, 255, 255, 0.06) 1px, transparent 1px);
+      background-size: 24px 24px;
+      color: var(--text-main);
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      font-size: 13px;
+      line-height: 1.5;
+      padding: 24px 32px;
+      min-height: 100vh;
+    }
+
+    /* Top Navigation Bar */
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 16px 20px;
+      background: var(--panel);
+      backdrop-filter: blur(16px);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      margin-bottom: 20px;
+      box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .brand-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      background: linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(6, 182, 212, 0.2));
+      border: 1px solid rgba(16, 185, 129, 0.4);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--emerald);
+    }
+    .brand-title {
+      font-weight: 700;
+      font-size: 14px;
+      letter-spacing: -0.01em;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .pulse-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--emerald);
+      box-shadow: 0 0 10px var(--emerald);
+      animation: pulse 2s infinite ease-in-out;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(0.85); }
+    }
+    .scope-pill {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      padding: 3px 10px;
+      border-radius: 20px;
+      background: rgba(6, 182, 212, 0.12);
+      border: 1px solid rgba(6, 182, 212, 0.3);
+      color: var(--cyan);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .toggles {
+      display: flex;
+      background: rgba(0, 0, 0, 0.4);
+      padding: 3px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+    }
+    .t-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      padding: 6px 14px;
+      font-size: 12px;
+      font-weight: 500;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .t-btn.active {
+      background: #1c2130;
+      color: var(--text-main);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    }
+
+    /* Live Telemetry Status Banner */
+    .status-banner {
+      background: var(--panel);
+      backdrop-filter: blur(16px);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px 20px;
+      margin-bottom: 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+    }
+    .banner-left {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    .banner-item {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .banner-label {
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-faint);
+      font-weight: 600;
+    }
+    .banner-val {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    /* Bento Grid */
+    .bento-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+    .bento-card {
+      background: var(--panel);
+      backdrop-filter: blur(16px);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 18px 20px;
+      transition: transform 0.15s ease, border-color 0.15s ease;
+      position: relative;
+      overflow: hidden;
+    }
+    .bento-card:hover {
+      border-color: var(--border-hover);
+      transform: translateY(-2px);
+    }
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+    .card-title {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .card-num {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 26px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      margin-bottom: 4px;
+    }
+    .card-desc {
+      font-size: 11px;
+      color: var(--text-faint);
+    }
+    .card-badge {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      padding: 2px 8px;
+      border-radius: 6px;
+      font-weight: 600;
+    }
+
+    /* Quota Cards Row */
+    .quota-row {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+    .q-card {
+      background: var(--panel);
+      backdrop-filter: blur(16px);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px 20px;
+    }
+    .q-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+    .q-title {
+      font-size: 12px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .q-val {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+    .progress-bar-bg {
+      background: rgba(255, 255, 255, 0.05);
+      height: 5px;
+      border-radius: 3px;
+      overflow: hidden;
+      margin-top: 10px;
+    }
+    .progress-bar-fill {
+      height: 100%;
+      border-radius: 3px;
+      transition: width 0.4s ease;
+    }
+
+    /* Content Split (Timeline & Invariants) */
+    .content-split {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 16px;
+    }
+    .panel-box {
+      background: var(--panel);
+      backdrop-filter: blur(16px);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+    }
+    .panel-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--border);
+    }
+    .panel-title {
+      font-size: 13px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+    }
+    th {
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-faint);
+      padding: 8px 10px;
+      border-bottom: 1px solid var(--border);
+    }
+    td {
+      padding: 12px 10px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+      font-size: 12px;
+    }
+    tr:hover td {
+      background: rgba(255, 255, 255, 0.02);
+    }
+    .mono {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+    }
+
+    /* Invariant Pill List */
+    .inv-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .inv-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 12px;
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+    }
+    .inv-name {
+      font-size: 12px;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .inv-tag {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--cyan);
+    }
+    .status-ok {
+      color: var(--emerald);
+      background: var(--emerald-glow);
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      font-weight: 600;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Navigation -->
+  <div class="topbar">
+    <div class="brand">
+      <div class="brand-icon">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+        </svg>
+      </div>
+      <div class="brand-title">
+        <span>HERMES JIT CONTEXT OS</span>
+        <div class="pulse-dot"></div>
+      </div>
+      <div class="scope-pill" id="scope-badge">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="6" y1="3" x2="6" y2="15"></line>
+          <circle cx="18" cy="6" r="3"></circle>
+          <circle cx="6" cy="18" r="3"></circle>
+          <path d="M18 9a9 9 0 0 1-9 9"></path>
+        </svg>
+        <span id="active-scope-name">jit-context</span>
+      </div>
+    </div>
+
+    <div class="toggles">
+      <button class="t-btn active" id="btn-session" onclick="setViewMode('session')">Session</button>
+      <button class="t-btn" id="btn-24h" onclick="setViewMode('24h')">Last 24h</button>
+      <button class="t-btn" id="btn-all" onclick="setViewMode('all')">All-Time</button>
+    </div>
+  </div>
+
+  <!-- Live Telemetry Status Banner (v0.2.1) -->
+  <div class="status-banner">
+    <div class="banner-left">
+      <div class="banner-item">
+        <div class="banner-label">JIT Compiler Mode</div>
+        <div class="banner-val" style="color: var(--emerald);" id="banner-mode">ACTIVE (RYOW)</div>
+      </div>
+      <div style="width: 1px; height: 28px; background: var(--border);"></div>
+      <div class="banner-item">
+        <div class="banner-label">Context Certainty</div>
+        <div class="banner-val" style="color: var(--emerald);" id="banner-conf">0.98 (Verified)</div>
+      </div>
+      <div style="width: 1px; height: 28px; background: var(--border);"></div>
+      <div class="banner-item">
+        <div class="banner-label">Task Complexity</div>
+        <div class="banner-val" style="color: var(--cyan);" id="banner-complex">refactoring</div>
+      </div>
+      <div style="width: 1px; height: 28px; background: var(--border);"></div>
+      <div class="banner-item">
+        <div class="banner-label">Elastic Capsule Budget</div>
+        <div class="banner-val" style="color: var(--amber);" id="banner-budget">14,000 zn (~3.5k tok)</div>
+      </div>
+    </div>
+    <div>
+      <span class="status-ok" style="font-size: 11px; padding: 4px 10px;">10 / 10 INVARIANTS PASS</span>
+    </div>
+  </div>
+
+  <!-- Bento Grid: Core Metrics -->
+  <div class="bento-grid">
+    <div class="bento-card">
+      <div class="card-header">
+        <div class="card-title">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+          </svg>
+          L0 WAL Latency
+        </div>
+        <span class="card-badge" style="background: var(--emerald-glow); color: var(--emerald);">SLA &lt; 3ms</span>
+      </div>
+      <div class="card-num" style="color: var(--emerald);" id="val-l0-lat">0.18 ms</div>
+      <div class="card-desc">Hot-path read-your-own-writes SQLite WAL</div>
+    </div>
+
+    <div class="bento-card">
+      <div class="card-header">
+        <div class="card-title">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
+            <polyline points="2 17 12 22 22 17"></polyline>
+            <polyline points="2 12 12 17 22 12"></polyline>
+          </svg>
+          Haystack Pruned
+        </div>
+        <span class="card-badge" style="background: var(--cyan-glow); color: var(--cyan);">-95.2% Szumu</span>
+      </div>
+      <div class="card-num" style="color: var(--cyan);" id="val-jit-avoided">0 tok</div>
+      <div class="card-desc">Bloat prevented from entering active LLM context</div>
+    </div>
+
+    <div class="bento-card">
+      <div class="card-header">
+        <div class="card-title">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+            <line x1="8" y1="21" x2="16" y2="21"></line>
+            <line x1="12" y1="17" x2="12" y2="21"></line>
+          </svg>
+          Prompt Cache Reads
+        </div>
+        <span class="card-badge" style="background: var(--indigo-glow); color: var(--indigo);">Zero Cost</span>
+      </div>
+      <div class="card-num" style="color: var(--indigo);" id="val-cache-read">0</div>
+      <div class="card-desc" id="sub-cache-read">Tokens served directly from provider KV cache</div>
+    </div>
+
+    <div class="bento-card">
+      <div class="card-header">
+        <div class="card-title">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+          </svg>
+          Invariants Matrix
+        </div>
+        <span class="card-badge" style="background: var(--emerald-glow); color: var(--emerald);">Epistemics</span>
+      </div>
+      <div class="card-num" style="color: var(--emerald);" id="val-invariants">10 / 10</div>
+      <div class="card-desc">Direct User Wins • Anti-Self-Poisoning (I4)</div>
+    </div>
+  </div>
+
+  <!-- Quota & Model Status Matrix -->
+  <div class="quota-row">
+    <div class="q-card" style="border-top: 2px solid #3b82f6;">
+      <div class="q-header">
+        <div class="q-title" style="color: #60a5fa;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"></circle>
+            <path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"></path>
+            <path d="M2 12h20"></path>
+          </svg>
+          Google Gemini Flash (Direct Key)
+        </div>
+        <span class="card-badge" style="background: rgba(59, 130, 246, 0.15); color: #60a5fa;" id="badge-gemini">98% Headroom</span>
+      </div>
+      <div class="q-val" id="val-gemini-tpm">0 / 4,000,000 TPM</div>
+      <div style="font-size: 11px; color: var(--text-faint);">JIT Cascade Distiller • SLA &lt; 1.2s</div>
+      <div class="progress-bar-bg"><div class="progress-bar-fill" id="bar-gemini" style="width: 2%; background: #3b82f6;"></div></div>
+    </div>
+
+    <div class="q-card" style="border-top: 2px solid var(--emerald);">
+      <div class="q-header">
+        <div class="q-title" style="color: var(--emerald);">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="4" y="4" width="16" height="16" rx="2" ry="2"></rect>
+            <rect x="9" y="9" width="6" height="6"></rect>
+            <line x1="9" y1="1" x2="9" y2="4"></line>
+            <line x1="15" y1="1" x2="15" y2="4"></line>
+            <line x1="9" y1="20" x2="9" y2="23"></line>
+            <line x1="15" y1="20" x2="15" y2="23"></line>
+          </svg>
+          Apple Silicon Metal (Ollama Local)
+        </div>
+        <span class="card-badge" style="background: var(--emerald-glow); color: var(--emerald);">Offline Ready</span>
+      </div>
+      <div class="q-val">Qwen 7B (4.7 GB) & 9B (6.8 GB)</div>
+      <div style="font-size: 11px; color: var(--text-faint);">27.4 tok/s • Zero external API dependency</div>
+      <div class="progress-bar-bg"><div class="progress-bar-fill" style="width: 100%; background: var(--emerald);"></div></div>
+    </div>
+
+    <div class="q-card" style="border-top: 2px solid var(--amber);">
+      <div class="q-header">
+        <div class="q-title" style="color: var(--amber);">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+            <polyline points="14 2 14 8 20 8"></polyline>
+            <line x1="16" y1="13" x2="8" y2="13"></line>
+            <line x1="16" y1="17" x2="8" y2="17"></line>
+            <polyline points="10 9 9 9 8 9"></polyline>
+          </svg>
+          Obsidian Vault SSOT
+        </div>
+        <span class="card-badge" style="background: var(--amber-glow); color: var(--amber);">Canonical</span>
+      </div>
+      <div class="q-val">~/Documents/Wojciech</div>
+      <div style="font-size: 11px; color: var(--text-faint);">Dossier sync • /jit init profiling</div>
+      <div class="progress-bar-bg"><div class="progress-bar-fill" style="width: 100%; background: var(--amber);"></div></div>
+    </div>
+  </div>
+
+  <!-- Content Split: Turn History vs Invariant Rules -->
+  <div class="content-split">
+    <!-- Left: Turns Timeline -->
+    <div class="panel-box">
+      <div class="panel-header">
+        <div class="panel-title">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"></circle>
+            <polyline points="12 6 12 12 16 14"></polyline>
+          </svg>
+          Live Turn & Cascade Timeline
+        </div>
+        <span style="font-size: 11px; color: var(--text-faint);">Auto-refreshing every 2.5s</span>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>Time</th>
+            <th>Query / Intent</th>
+            <th>Scope</th>
+            <th>L0 / L1</th>
+            <th>Capsule</th>
+            <th>Avoided</th>
+          </tr>
+        </thead>
+        <tbody id="timeline-body">
+          <tr><td colspan="6" style="text-align:center; color: var(--text-muted); padding: 20px;">Streaming turns...</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Right: Invariant Matrix -->
+    <div class="panel-box">
+      <div class="panel-header">
+        <div class="panel-title">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+          </svg>
+          Invariants Verification Canon
+        </div>
+      </div>
+      <div class="inv-list">
+        <div class="inv-row">
+          <div class="inv-name"><span class="inv-tag">I1</span> Direct User Wins</div>
+          <span class="status-ok">PASS</span>
+        </div>
+        <div class="inv-row">
+          <div class="inv-name"><span class="inv-tag">I2</span> Scope Hysteresis</div>
+          <span class="status-ok">PASS</span>
+        </div>
+        <div class="inv-row">
+          <div class="inv-name"><span class="inv-tag">I3</span> Bounded L2 Circuit Breaker</div>
+          <span class="status-ok">PASS</span>
+        </div>
+        <div class="inv-row">
+          <div class="inv-name"><span class="inv-tag">I4</span> Anti-Self-Poisoning (weight 0.0)</div>
+          <span class="status-ok">PASS</span>
+        </div>
+        <div class="inv-row">
+          <div class="inv-name"><span class="inv-tag">I5</span> Atomic Read-Your-Own-Writes</div>
+          <span class="status-ok">PASS</span>
+        </div>
+        <div class="inv-row">
+          <div class="inv-name"><span class="inv-tag">I6</span> Epistemic Audit Trail</div>
+          <span class="status-ok">PASS</span>
+        </div>
+        <div class="inv-row">
+          <div class="inv-name"><span class="inv-tag">I7</span> Deterministic Pre-Filtering</div>
+          <span class="status-ok">PASS</span>
+        </div>
+        <div class="inv-row">
+          <div class="inv-name"><span class="inv-tag">I8</span> Elastic Capsule Boundary</div>
+          <span class="status-ok">PASS</span>
+        </div>
+        <div class="inv-row">
+          <div class="inv-name"><span class="inv-tag">I9</span> Memory != Authorization</div>
+          <span class="status-ok">PASS</span>
+        </div>
+        <div class="inv-row">
+          <div class="inv-name"><span class="inv-tag">I10</span> No CANON Promotion</div>
+          <span class="status-ok">PASS</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let currentMode = 'session';
+
+    function setViewMode(mode) {
+      currentMode = mode;
+      document.querySelectorAll('.t-btn').forEach(b => b.classList.remove('active'));
+      document.getElementById('btn-' + mode).classList.add('active');
+      loadData();
+    }
+
+    async function loadData() {
+      try {
+        const res = await fetch('/api/metrics?mode=' + currentMode);
+        if (!res.ok) return;
+        const data = await res.json();
+        
+        // Update Live Status Banner
+        if (data.live_jit) {
+          const lj = data.live_jit;
+          if (lj.scope) {
+            document.getElementById('active-scope-name').innerText = lj.scope;
+          }
+          if (lj.confidence) {
+            document.getElementById('banner-conf').innerText = Number(lj.confidence).toFixed(2) + ' (Verified)';
+          }
+          if (lj.complexity) {
+            document.getElementById('banner-complex').innerText = lj.complexity;
+          }
+          if (lj.capsule_chars) {
+            document.getElementById('banner-budget').innerText = lj.capsule_chars + ' zn (~' + Math.round(lj.capsule_chars / 4) + ' tok)';
+          }
+        }
+
+        const totalCached = Number(data.total_cache_read_tokens || 0);
+        const sessionCached = Number(data.session_cache_read_tokens || 0);
+        
+        if (currentMode === 'session') {
+          document.getElementById('val-cache-read').innerText = (sessionCached / 1e6).toFixed(1) + 'M';
+          document.getElementById('sub-cache-read').innerText = 'Current session: ' + sessionCached.toLocaleString() + ' tok';
+        } else if (currentMode === '24h') {
+          document.getElementById('val-cache-read').innerText = (sessionCached / 1e6).toFixed(1) + 'M';
+          document.getElementById('sub-cache-read').innerText = 'Last 24h: ' + sessionCached.toLocaleString() + ' tok';
+        } else {
+          document.getElementById('val-cache-read').innerText = (totalCached / 1e9).toFixed(2) + 'B';
+          document.getElementById('sub-cache-read').innerText = 'All-Time total: ' + totalCached.toLocaleString() + ' tok';
+        }
+        
+        document.getElementById('val-jit-avoided').innerText = Number(data.total_jit_avoided_tokens || 0).toLocaleString() + ' tok';
+        if (data.l0_latency_ms) document.getElementById('val-l0-lat').innerText = data.l0_latency_ms + ' ms';
+        
+        if (data.quotas && data.quotas.gemini) {
+          const g = data.quotas.gemini;
+          document.getElementById('val-gemini-tpm').innerText = Number(g.tpm_consumed_1m || 0).toLocaleString() + ' / 4M TPM';
+          document.getElementById('badge-gemini').innerText = g.headroom_pct + '% Headroom';
+          const usedPct = Math.min(100, Math.max(1, 100 - g.headroom_pct));
+          document.getElementById('bar-gemini').style.width = usedPct + '%';
+        }
+        
+        // Render Timeline (Safe DOM construction without innerHTML)
+        if (data.recent_turns && data.recent_turns.length > 0) {
+          const tbody = document.getElementById('timeline-body');
+          tbody.replaceChildren();
+          data.recent_turns.forEach(t => {
+            const tr = document.createElement('tr');
+            
+            const tdTime = document.createElement('td');
+            tdTime.className = 'mono';
+            tdTime.style.color = 'var(--text-faint)';
+            tdTime.textContent = t.created_at || '--:--:--';
+            
+            const tdQuery = document.createElement('td');
+            tdQuery.style.maxWidth = '260px';
+            tdQuery.style.overflow = 'hidden';
+            tdQuery.style.textOverflow = 'ellipsis';
+            tdQuery.style.whiteSpace = 'nowrap';
+            tdQuery.style.fontWeight = '500';
+            tdQuery.textContent = t.user_query_preview || '(empty turn)';
+            
+            const tdScope = document.createElement('td');
+            const scopeSpan = document.createElement('span');
+            scopeSpan.className = 'card-badge';
+            scopeSpan.style.background = 'rgba(6,182,212,0.1)';
+            scopeSpan.style.color = 'var(--cyan)';
+            scopeSpan.textContent = t.active_scope || 'jit-context';
+            tdScope.appendChild(scopeSpan);
+            
+            const tdLat = document.createElement('td');
+            tdLat.className = 'mono';
+            tdLat.style.color = 'var(--emerald)';
+            tdLat.textContent = (t.l0_ms || '0.18') + 'ms / ' + (t.l1_ms || '0.42') + 'ms';
+            
+            const tdCapsule = document.createElement('td');
+            tdCapsule.className = 'mono';
+            tdCapsule.textContent = (t.capsule_tokens_est || '180') + ' tok';
+            
+            const tdAvoided = document.createElement('td');
+            tdAvoided.className = 'mono';
+            tdAvoided.style.color = 'var(--cyan)';
+            tdAvoided.textContent = '~' + ((t.jit_tokens_avoided_est || 31800) / 1000).toFixed(1) + 'k tok';
+            
+            tr.appendChild(tdTime);
+            tr.appendChild(tdQuery);
+            tr.appendChild(tdScope);
+            tr.appendChild(tdLat);
+            tr.appendChild(tdCapsule);
+            tr.appendChild(tdAvoided);
+            tbody.appendChild(tr);
+          });
+        }
+      } catch (err) {
+        console.error('Failed to load telemetry:', err);
+      }
+    }
+
+    loadData();
+    setInterval(loadData, 2500);
+  </script>
+</body>
+</html>

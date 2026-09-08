@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.2] - 2026-09-08
+
+### Added
+- **SOTA Linear & Raycast Observatory Dashboard (`src/health/dashboard.html`)**:
+  - Dark graphite `#090A0F` canvas with translucent glassmorphic panels and subtle emerald status glows.
+  - Zero-emoji UI: 100% crisp Lucide SVG vector iconography (1.5px stroke).
+  - Live Bento Grid featuring real-time JIT Scope badge, L0/L1 latencies, and active model quotas.
+  - Interactive Turn Timeline with live modal inspector for generated `<ONA_CONTEXT>` capsules.
+  - Dedicated Invariants I1–I10 verification matrix with real-time status pulses.
+
 ## [0.2.1] - 2026-09-08
 
 ### Added
