@@ -5,6 +5,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.4] - 2026-09-08
+
+### Added
+- **Physical Benchmark EXP-008 (`src/health/exp008_tool_epistemics.py`)**:
+  - Live E2E test verifying Invariant I3/I4: assistant assertion without runtime tool proof carries 0.0 weight; verified tool failure is reported with 100% truth against `gemini-3.8-flash`.
+- **Dynamic Hot-Reloading (`src/hooks.py`)**:
+  - `hot_reload_jit_modules()` in `pre_llm_call()` automatically detecting file `mtime` changes in `~/.hermes/plugins/ona-context/` and reloading modules in `sys.modules` without requiring session restarts.
+- **Runtime Session CWD Tracking (`src/hooks.py`, `src/l0/db.py`, `src/l0/overlay.py`)**:
+  - Added `last_cwd` column to `sessions` table in SQLite WAL overlay.
+  - Automatically tracking `cd` commands and terminal runner directories in `post_tool_call()`.
+
+### Fixed
+- **Strict Scope Isolation & Anti-Bleed (`src/l1/project_cache.py`, `src/l1/scope.py`)**:
+  - Scope `general` or `unknown` returns `None` rather than accidentally injecting an arbitrary working directory's `STATE.md`.
+  - Added project name normalization (`normalize_project_name()`) and expanded `KNOWN_PROJECTS` with `synthapse`, `hermes-jit-context-os`, `jit-context`.
+- **Harness Message Filtering & User Intent Protection (`src/hooks.py`, `src/l0/overlay.py`)**:
+  - Added `is_synthetic_harness_message()` detecting curator skill triggers, async delegation callbacks, `/btw` side-questions, and canon injections.
+  - Sinks synthetic harness events with `origin='harness_event'` (reduced authority) and retrieves latest authentic `direct_user` goal from SQLite WAL.
+
 ## [0.2.3] - 2026-09-08
 
 ### Fixed
