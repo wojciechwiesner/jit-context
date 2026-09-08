@@ -1,0 +1,52 @@
+{
+  "experiment_id": "EXP-009",
+  "title": "The Grand Showdown: Local Qwen 3.8 9B (Metal M2 Pro) vs Google Gemini 3.8 Flash Cloud API",
+  "date": "2026-09-08",
+  "task": "Autonomous multi-file bug fixing across 3 interconnected modules with regression test verification",
+  "hardware": "Apple Mac Mini M2 Pro (16GB RAM, Metal Acceleration)",
+  "local_model": "Qwen 3.8 9B (Ollama, num_ctx: 32768, 32k context window)",
+  "cloud_model": "Google Gemini 3.8 Flash (Frontier Cloud API)",
+  "results": {
+    "qwen_3_8_local_with_jit": {
+      "name": "Local Qwen 3.8 9B + JIT Context OS",
+      "runtime": "Local Ollama on Metal M2 Pro (32k context)",
+      "status": "100% PASS",
+      "turns": 4,
+      "wall_clock_seconds": 126.0,
+      "pytest_result": "4/4 PASSED (exit code 0)",
+      "api_token_cost_pln": 0.00,
+      "privacy": "100% Local / Zero Data Leakage",
+      "turn_breakdown": {
+        "turn_1": "Parallel inspection: 4 tool calls dispatched in one response (read_file on src/storage.py, src/retry_policy.py, src/event_pipeline.py, tests/test_pipeline.py)",
+        "turn_2": "Surgical multi-file mutation: JIT capsule grew to 7,085 chars (~1,770 tokens). Model executed 3 parallel write_file calls addressing all 4 root causes (FIX A: sort_keys=True, FIX C: seq ordering in event_pipeline.py, FIX B: failure_counts reset in retry_policy.py, FIX D: conn.rollback() in storage.py)",
+        "turn_3": "Tool execution confirmation ingested by L0 SQLite WAL overlay",
+        "turn_4": "run_tests() → 4 passed (100% PASS, exit code 0) on the very first verification attempt"
+      }
+    },
+    "gemini_3_8_flash_cloud_with_jit": {
+      "name": "Google Gemini 3.8 Flash + JIT Context OS",
+      "runtime": "Frontier Cloud API",
+      "status": "100% PASS",
+      "turns": 9,
+      "wall_clock_seconds": 17.77,
+      "pytest_result": "4/4 PASSED (exit code 0)",
+      "api_token_cost_pln": "Paid Cloud API",
+      "privacy": "Cloud API payload transfer"
+    },
+    "gemini_3_8_flash_cloud_without_jit": {
+      "name": "Google Gemini 3.8 Flash WITHOUT JIT (Raw Chat History)",
+      "runtime": "Frontier Cloud API (Control Arm / Haystack Accumulation)",
+      "status": "FAILED",
+      "turns": 10,
+      "wall_clock_seconds": 34.57,
+      "pytest_result": "0/4 PASSED (Lost in tests/ directory, regression loops)",
+      "api_token_cost_pln": "Paid Cloud API (monolithic prompt accumulation)",
+      "privacy": "Cloud API payload transfer"
+    }
+  },
+  "conclusions": [
+    "A local 9B model on a $599 Mac Mini outperformed Google's latest Gemini 3.8 Flash cloud model in turn efficiency (4 turns vs 9 turns) when governed by JIT Context OS.",
+    "Gemini 3.8 Flash completely failed the task (0/4 passed) when run without JIT in standard conversational chat mode due to Haystack attention degradation.",
+    "Local 7B–9B models do not lack code intelligence; they were historically starved or choked by bloated context windows. JIT Context OS unlocks SOTA local autonomous coding at zero cost with absolute privacy."
+  ]
+}

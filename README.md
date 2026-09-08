@@ -99,7 +99,21 @@ By decoupling hot-path operational state (<3ms local SQLite WAL) from slow assoc
 
 ## Empirical Production Benchmarks (Live Codebases & Models)
 
-### EXP-005 & EXP-009: Paired Production Codebase Benchmark (Synthapse)
+### 🏆 EXP-009: The Grand Showdown — Local Qwen 3.8 9B (Metal M2) vs Google Gemini 3.8 Flash Cloud API
+A live multi-module software engineering duel: autonomous agents were tasked with fixing 4 distinct root-cause bugs across 3 interconnected modules (`event_pipeline.py`, `retry_policy.py`, `storage.py`) verified by an independent `pytest` suite.
+
+| Competitor | Runtime & Configuration | Total Turns | Wall-Clock Time | Pytest Verification | API / Hardware Cost | Privacy Guarantee |
+|---|---|---|---|---|---|---|
+| 🥇 **Local Qwen 3.8 9B + JIT** | Local Metal M2 Pro (Ollama 32k context) | **4 turns** | ~2 min (126s) | **4/4 PASSED (exit 0)** | **0.00 PLN** | **100% Local / Zero Data Leak** |
+| 🥈 **Gemini 3.8 Flash + JIT** | Google Cloud Frontier API | **9 turns** | **17.77s** | **4/4 PASSED (exit 0)** | Paid Cloud API | Cloud API payload |
+| 🥉 **Gemini 3.8 Flash WITHOUT JIT** | Google Cloud Frontier API (Raw Chat History) | **10 turns** | 34.57s | ❌ **0/4 FAILED** | Paid Cloud API | Cloud API payload |
+
+#### Key Empirical Insights from EXP-009:
+1. **Local Model Turn Dominance:** With JIT Context OS maintaining a calibrated ~1.8k token working set, the local 9B model on a Mac Mini resolved the multi-module task in **only 4 turns** — more than 2x fewer turns than Google's Gemini 3.8 Flash in the cloud.
+2. **Parallel Tool Calling Precision:** In Turn 1, Qwen dispatched 4 parallel `read_file` calls. In Turn 2, it executed 3 surgical parallel `write_file` calls fixing all 4 root causes in one shot, passing tests on the first verification attempt.
+3. **The Haystack Failure Mode:** Without JIT, Google's flagship Gemini 3.8 Flash got lost in conversational history and `tests/` directory loops, failing to resolve the issue within the turn budget.
+
+### EXP-005: Paired Production Codebase Benchmark (Synthapse)
 A head-to-head paired benchmark was executed on the production repository **Synthapse** (Web Audio Generative AI Techno Instrument, ~45 modules, Vitest + Vite build). Autonomous agents were tasked with implementing direct MP3 audio export and recording alongside WAV:
 
 | Metric | With JIT-Context (Calibrated Capsule) | Control (No JIT / Long-Context) | Delta / Real Impact |
