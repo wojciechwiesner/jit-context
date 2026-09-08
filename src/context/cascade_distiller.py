@@ -355,13 +355,14 @@ def assemble_elastic_capsule(
         for item in working_set:
             path = item.get("path", "")
             desc = item.get("summary") or item.get("signature") or item.get("status", "active")
+            ptr = item.get("pointer", f"@ref:{path}")
             snippet = item.get("snippet")
             if snippet:
-                lines.append(f"    • {escape_xml_content(path)} ({escape_xml_content(desc)}):")
-                for s_line in str(snippet).splitlines()[:25]:
+                lines.append(f"    • {ptr} ({escape_xml_content(desc)}):")
+                for s_line in str(snippet).splitlines()[:50]:
                     lines.append(f"        {escape_xml_content(s_line)}")
             else:
-                lines.append(f"    • {escape_xml_content(path)} ({escape_xml_content(desc)})")
+                lines.append(f"    • {ptr} ({escape_xml_content(desc)})")
 
     if verified_facts:
         lines.append("  [VERIFIED RUNTIME PROOFS (Authority 1.0)]")

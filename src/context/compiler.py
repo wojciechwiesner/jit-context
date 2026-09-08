@@ -111,25 +111,56 @@ def compile_context(
                 existing_paths.add(p)
                 v = o.get("value", "")
                 
-                # Extract snippet for active working set files if available
+                # Extract High-Density AST Pointer / Symbol Map
+                symbols = []
+                f_lines_count = 0
                 snippet = None
                 try:
                     f_path = cwd_obj / p if not Path(p).is_absolute() else Path(p)
                     if f_path.exists() and f_path.is_file():
-                        lines = f_path.read_text(encoding="utf-8", errors="ignore").splitlines()
-                        # Pick top signatures, classes, or first 25 lines
-                        sig_lines = [l for l in lines if l.strip().startswith(("def ", "class ", "export ", "async def "))]
-                        if sig_lines:
-                            snippet = "\n".join(sig_lines[:15])
+                        raw_content = f_path.read_text(encoding="utf-8", errors="ignore")
+                        all_lines = raw_content.splitlines()
+                        f_lines_count = len(all_lines)
+                        
+                        # Python AST Symbol extraction
+                        if p.endswith(".py"):
+                            import ast
+                            try:
+                                tree = ast.parse(raw_content)
+                                for node in tree.body:
+                                    if isinstance(node, ast.ClassDef):
+                                        methods = [n.name for n in node.body if isinstance(n, ast.FunctionDef)]
+                                        m_str = f"methods: {', '.join(methods[:6])}" if methods else "class"
+                                        symbols.append(f"class {node.name} ({m_str}, L{node.lineno})")
+                                    elif isinstance(node, ast.FunctionDef):
+                                        symbols.append(f"def {node.name}() L{node.lineno}")
+                            except Exception:
+                                pass
+                                
+                        # Fallback regex / line scan for non-python or unparseable files
+                        if not symbols:
+                            for idx, l in enumerate(all_lines[:40], 1):
+                                l_str = l.strip()
+                                if l_str.startswith(("def ", "class ", "export ", "async def ", "function ")):
+                                    symbols.append(f"{l_str.split('(')[0]} L{idx}")
+                                    if len(symbols) >= 6:
+                                        break
+                                        
+                        # Active short snippet (either full file if <= 60 lines or top signatures)
+                        if f_lines_count <= 60:
+                            snippet = raw_content.strip()
+                        elif symbols:
+                            snippet = "\n".join([f"- {s}" for s in symbols[:8]])
                         else:
-                            snippet = "\n".join(lines[:20])
+                            snippet = "\n".join(all_lines[:20])
                 except Exception:
                     pass
 
                 working_set.append({
                     "path": p,
-                    "summary": v if v and v != "read_ok" else "active module",
-                    "snippet": snippet
+                    "summary": f"{f_lines_count} lines" if f_lines_count else (v if v and v != "read_ok" else "active module"),
+                    "snippet": snippet,
+                    "pointer": f"@ref:{p}"
                 })
 
     # Dev Runtime Baseline
