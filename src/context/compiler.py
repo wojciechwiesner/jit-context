@@ -1,7 +1,7 @@
 """Context Compiler combining L0, L1, and L2 layers into an ONA_CONTEXT capsule."""
 
 import sqlite3
-from typing import Dict, List, Optional, Set
+from typing import List, Dict, Optional, Set, Any, Tuple
 from context.renderer import render_capsule
 from l0.overlay import ensure_session, get_active_overlays
 from l0.recent_fence import compute_content_hash, get_missing_recent_turns
@@ -18,7 +18,7 @@ def compile_context(
     transcript_messages: Optional[List[Dict]] = None,
     conversation_history: Optional[List[Dict]] = None,
     **kwargs
-) -> str:
+) -> Tuple[str, Dict[str, Any]]:
     messages = transcript_messages or conversation_history or []
     """Compiles the 3-tier cascade into a single <ONA_CONTEXT> capsule."""
     session = ensure_session(conn, session_id)
@@ -77,4 +77,26 @@ def compile_context(
         epoch=epoch,
         project_summary=project_summary
     )
-    return distill_result["capsule"]
+    
+    capsule = distill_result["capsule"]
+    confidence = distill_result.get("confidence", 1.0)
+    complexity = distill_result.get("complexity", "direct_fix")
+    
+    # Active Clarification Gate: If confidence < 0.85, inject mandatory clarification directive
+    if distill_result.get("requires_clarification", False) or confidence < 0.85:
+        clarification_directive = (
+            f"\n<CLARIFICATION_REQUIRED>\n"
+            f"  Pewność co do kontekstu wynosi {confidence:.2f} (< 0.85). Występuje niejednoznaczność celu lub projektu.\n"
+            f"  ZAKAZ wykonywania nieodwracalnych zmian i spekulatywnego kodu.\n"
+            f"  Zadaj 1-2 krótkie, precyzyjne pytania doprecyzowujące do użytkownika przed rozpoczęciem pracy.\n"
+            f"</CLARIFICATION_REQUIRED>\n"
+        )
+        capsule += clarification_directive
+
+    return capsule, {
+        "confidence": confidence,
+        "complexity": complexity,
+        "distilled": distill_result.get("distilled", False),
+        "duration_ms": distill_result.get("duration_ms", 0.0),
+        "budget": distill_result.get("budget", 6000)
+    }

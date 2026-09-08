@@ -137,11 +137,84 @@ class ProjectScanner:
 
         return resources
 
+def fetch_and_synthesize_deep_knowledge(target_dir: Path, stack: Dict[str, Any], tier: str = "deep") -> Dict[str, str]:
+    """Generates authoritative, up-to-date cheat sheets and links relevant knowhow."""
+    resources = {}
+    
+    # 1. Scan local ~/Documents/Wojciech/knowhow/ for architectural canon
+    knowhow_dir = Path("/Users/wojciechwiesner/Documents/Wojciech/knowhow")
+    matched_knowhow = []
+    if knowhow_dir.exists():
+        try:
+            for f in knowhow_dir.rglob("*.md"):
+                fname = f.name.lower()
+                for lang in stack.get("languages", []):
+                    if lang.lower() in fname:
+                        matched_knowhow.append(str(f))
+                for fw in stack.get("frameworks", []):
+                    if fw.lower() in fname:
+                        matched_knowhow.append(str(f))
+                for db in stack.get("databases", []):
+                    if db.lower().split()[0] in fname:
+                        matched_knowhow.append(str(f))
+        except Exception:
+            pass
+
+    if matched_knowhow:
+        resources["local_knowhow"] = "\n".join(f"- `{p}`" for p in sorted(list(set(matched_knowhow))))
+
+    # 2. Synthesize SOTA architecture reference cards for detected frameworks
+    cheat_sheets = []
+    for fw in stack.get("frameworks", []):
+        if fw == "FastAPI":
+            cheat_sheets.append(
+                "### SOTA FastAPI Reference Card\n"
+                "- **Routing**: Use `APIRouter(prefix=..., tags=[...])` with strict Pydantic v2 schemas.\n"
+                "- **Dependency Injection**: Use `Annotated[T, Depends(get_db)]` for clean async session lifetimes.\n"
+                "- **Tenant Scoping & Dual-Mode Auth**: Use `HttpOnly` cookie (SameSite=Lax) for HTML SSR fallback + strict `Authorization: Bearer` for JSON API."
+            )
+        elif fw == "Next.js":
+            cheat_sheets.append(
+                "### SOTA Next.js App Router Reference Card\n"
+                "- **Server Actions**: Define with `'use server'` and strict Zod validation.\n"
+                "- **State & Cache**: Avoid client hydration mismatches; isolate client components with `'use client'`."
+            )
+        elif fw == "Docker":
+            cheat_sheets.append(
+                "### SOTA Docker Production Deployment Card\n"
+                "- **Multi-stage builds**: Minimal distroless/alpine final image.\n"
+                "- **Healthchecks**: Built-in `HEALTHCHECK` checking `/health` or internal ping."
+            )
+
+    for db in stack.get("databases", []):
+        if "SQLite" in db:
+            cheat_sheets.append(
+                "### SOTA SQLite WAL Reference Card\n"
+                "- **Concurrency**: `PRAGMA journal_mode=WAL; PRAGMA synchronous=NORMAL; PRAGMA busy_timeout=5000;`\n"
+                "- **Read-Your-Own-Writes**: Immediate transaction commit before assistant response."
+            )
+        elif "asyncpg" in db or "PostgreSQL" in db:
+            cheat_sheets.append(
+                "### SOTA PostgreSQL asyncpg Reference Card\n"
+                "- **Connection Pooling**: Use `asyncpg.create_pool(min_size=2, max_size=10)`.\n"
+                "- **Transactions**: `async with pool.acquire() as conn: async with conn.transaction(): ...`"
+            )
+
+    if cheat_sheets:
+        resources["cheat_sheets"] = "\n\n".join(cheat_sheets)
+
+    return resources
+
 def run_init(target_path: Path, tier: str = "standard", goal: Optional[str] = None) -> Dict[str, Any]:
     scanner = ProjectScanner(target_path)
     stack = scanner.detect_stack()
     structure = scanner.inspect_structure()
     external_reqs = scanner.infer_required_external_knowledge(stack)
+
+    # Fetch deep knowledge if tier is deep or xhigh
+    deep_knowledge = {}
+    if tier in ["deep", "xhigh"]:
+        deep_knowledge = fetch_and_synthesize_deep_knowledge(scanner.target_dir, stack, tier=tier)
 
     # 1. Generate Obsidian Project Dossier
     OBSIDIAN_PROJECTS_DIR.mkdir(parents=True, exist_ok=True)
@@ -172,6 +245,20 @@ def run_init(target_path: Path, tier: str = "standard", goal: Optional[str] = No
             doc_lines.append(f"- `[{req['type'].upper()}]` **{req['target']}**: {req['description']}")
     else:
         doc_lines.append("- Zero third-party library documentation gaps detected.")
+
+    if deep_knowledge.get("local_knowhow"):
+        doc_lines.extend([
+            "",
+            "## Linked Obsidian Knowhow Canon",
+            deep_knowledge["local_knowhow"]
+        ])
+
+    if deep_knowledge.get("cheat_sheets"):
+        doc_lines.extend([
+            "",
+            "## Up-to-Date Architecture & SOTA Contracts",
+            deep_knowledge["cheat_sheets"]
+        ])
 
     doc_lines.extend([
         "",

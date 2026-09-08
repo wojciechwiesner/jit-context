@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.1] - 2026-09-08
+
+### Added
+- **Active Clarification Gate (`src/context/compiler.py`, `src/hooks.py`)**:
+  - Automatically assesses context certainty (`confidence < 0.85`).
+  - Injects mandatory `<CLARIFICATION_REQUIRED>` directive into prompt preventing speculative or irreversible actions.
+  - Surfaces real-time `⚠️ LOW CONF` indicator badge in CLI stream.
+- **Deep & XHigh Knowledge Synthesis (`src/init.py`)**:
+  - `jit init --tier deep`: Automatically links relevant knowhow canon from `~/Documents/Wojciech/knowhow/`.
+  - Generates authoritative, up-to-date SOTA architectural reference cards (FastAPI routes/auth, SQLite WAL pragmas, asyncpg pools, Next.js server actions, Docker multi-stage).
+- **Local Offline Fallback in Cascade Distiller (`src/context/cascade_distiller.py`)**:
+  - Seamless fallback to local Ollama `qwen2.5-coder:7b` when offline or without Google API.
+- **Observatory Telemetry Extensions (`src/hooks.py`)**:
+  - Added live tracking of `confidence`, `complexity`, and `budget` to `/tmp/hermes-jit-live.json`.
+
 ## [0.2.0] - 2026-09-08
 
 ### Added

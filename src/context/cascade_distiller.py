@@ -63,38 +63,57 @@ Respond ONLY with valid JSON matching:
 """
 
 def call_llm_classifier(raw_text: str, timeout: float = 6.0) -> Optional[Dict[str, Any]]:
-    """Calls Gemini Flash using direct GOOGLE_API_KEY with local fallback."""
-    key = get_google_api_key()
-    if not key:
-        return None
-
-    # Pre-clean obvious progress bars to save prompt tokens
+    """Calls Gemini Flash using direct GOOGLE_API_KEY with local Ollama fallback."""
     prefiltered = fast_deterministic_prefilter(raw_text[:6000])
 
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={key}"
-    payload = {
-        "contents": [
-            {"role": "user", "parts": [{"text": f"{CLASSIFIER_PROMPT}\n\nINPUT TO CLASSIFY:\n{prefiltered}"}]}
-        ],
-        "generationConfig": {
-            "temperature": 0.1,
-            "responseMimeType": "application/json",
-            "maxOutputTokens": 2000,
-            "thinkingConfig": {
-                "thinkingBudget": 0
+    # Tier 1: Cloud SOTA via Google Gemini Flash
+    key = get_google_api_key()
+    if key:
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={key}"
+        payload = {
+            "contents": [
+                {"role": "user", "parts": [{"text": f"{CLASSIFIER_PROMPT}\n\nINPUT TO CLASSIFY:\n{prefiltered}"}]}
+            ],
+            "generationConfig": {
+                "temperature": 0.1,
+                "responseMimeType": "application/json",
+                "maxOutputTokens": 2000,
+                "thinkingConfig": {
+                    "thinkingBudget": 0
+                }
             }
         }
-    }
+        try:
+            r = requests.post(url, json=payload, timeout=timeout)
+            if r.status_code == 200:
+                content = r.json().get("candidates", [{}])[0].get("content", {}).get("parts", [{}])[0].get("text", "")
+                cleaned = re.sub(r"^```(?:json)?\s*", "", content.strip(), flags=re.MULTILINE)
+                cleaned = re.sub(r"\s*```$", "", cleaned.strip(), flags=re.MULTILINE)
+                return json.loads(cleaned)
+        except Exception:
+            pass
+
+    # Tier 2: Local Offline Fallback via Ollama (qwen2.5-coder:7b)
     try:
-        r = requests.post(url, json=payload, timeout=timeout)
-        if r.status_code == 200:
-            content = r.json().get("candidates", [{}])[0].get("content", {}).get("parts", [{}])[0].get("text", "")
-            # Clean possible markdown wrapping ```json ... ```
+        ollama_payload = {
+            "model": "qwen2.5-coder:7b",
+            "prompt": f"{CLASSIFIER_PROMPT}\n\nINPUT TO CLASSIFY:\n{prefiltered}",
+            "format": "json",
+            "stream": False,
+            "options": {
+                "temperature": 0.1,
+                "num_predict": 400
+            }
+        }
+        r_ol = requests.post("http://localhost:11434/api/generate", json=ollama_payload, timeout=timeout)
+        if r_ol.status_code == 200:
+            content = r_ol.json().get("response", "")
             cleaned = re.sub(r"^```(?:json)?\s*", "", content.strip(), flags=re.MULTILINE)
             cleaned = re.sub(r"\s*```$", "", cleaned.strip(), flags=re.MULTILINE)
             return json.loads(cleaned)
-    except Exception as e:
+    except Exception:
         pass
+
     return None
 
 def assemble_elastic_capsule(

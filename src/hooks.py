@@ -60,14 +60,21 @@ def pre_llm_call(ctx: Dict[str, Any]) -> Dict[str, Any]:
         
         # Context compilation with L2 circuit breaker
         compile_start = time.time()
-        capsule = compile_context(
+        compile_res = compile_context(
             conn=conn,
             session_id=session_id,
             user_message=user_message,
             transcript_messages=ctx.get("messages", [])
         )
+        if isinstance(compile_res, tuple):
+            capsule, meta = compile_res
+        else:
+            capsule, meta = compile_res, {}
+
         compile_ms = (time.time() - compile_start) * 1000
         l2_ms = compile_ms
+        confidence = meta.get("confidence", 1.0)
+        complexity = meta.get("complexity", "direct_fix")
         
         # Check if project lacks canonical context and alert
         if active_scope and active_scope not in ["hermes", "default", "general"]:
@@ -114,6 +121,8 @@ def pre_llm_call(ctx: Dict[str, Any]) -> Dict[str, Any]:
             live_payload = {
                 "mode": current_mode,
                 "scope": active_scope,
+                "confidence": round(confidence, 2),
+                "complexity": complexity,
                 "compile_ms": round(compile_ms, 2),
                 "l0_ms": round(l0_ms, 2),
                 "hook_total_ms": round(hook_total_ms, 2),
@@ -130,7 +139,8 @@ def pre_llm_call(ctx: Dict[str, Any]) -> Dict[str, Any]:
         scope_badge = f"\033[36m[{active_scope}]\033[0m"
         time_badge = f"\033[32m{compile_ms:.1f}ms\033[0m"
         size_badge = f"\033[33m{len(capsule)} zn\033[0m"
-        status_line = f"⚡ \033[1mJIT Context\033[0m {scope_badge} • L0:{l0_ms:.1f}ms L1:{l1_ms:.1f}ms • {time_badge} ({size_badge})"
+        conf_badge = f"\033[32mconf:{confidence:.2f}\033[0m" if confidence >= 0.85 else f"\033[41;37m⚠️ LOW CONF:{confidence:.2f}\033[0m"
+        status_line = f"⚡ \033[1mJIT Context\033[0m {scope_badge} • L0:{l0_ms:.1f}ms L1:{l1_ms:.1f}ms • {conf_badge} • {time_badge} ({size_badge})"
         print(status_line, file=sys.stderr, flush=True)
         if current_mode == "shadow":
             print(f"[ona-context:shadow] Compiled capsule ({len(capsule)} chars) logged, injection bypassed.")
