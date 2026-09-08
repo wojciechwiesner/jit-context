@@ -222,14 +222,37 @@ def run_init(target_path: Path, tier: str = "standard", goal: Optional[str] = No
     }
 
 def main():
-    parser = argparse.ArgumentParser(description="Hermes JIT Context OS — Project Profiler")
-    parser.add_argument("path", nargs="?", default=".", help="Target project path")
-    parser.add_argument("--tier", choices=["simple", "standard", "deep", "xhigh"], default="standard", help="Initialization depth")
-    parser.add_argument("--goal", type=str, default=None, help="Explicit project goal")
+    parser = argparse.ArgumentParser(description="Hermes JIT Context OS — CLI")
+    subparsers = parser.add_subparsers(dest="command")
+    
+    # jit init
+    init_parser = subparsers.add_parser("init", help="Initialize and profile project context")
+    init_parser.add_argument("path", nargs="?", default=".", help="Target project path")
+    init_parser.add_argument("--tier", choices=["simple", "standard", "deep", "xhigh"], default="standard", help="Initialization depth")
+    init_parser.add_argument("--goal", type=str, default=None, help="Explicit project goal")
 
-    args = parser.parse_args()
-    target_dir = Path(args.path)
-    res = run_init(target_dir, tier=args.tier, goal=args.goal)
+    # Allow running directly as 'jit <path>' without subcommand
+    parser.add_argument("direct_path", nargs="?", default=None, help=argparse.SUPPRESS)
+    parser.add_argument("--tier", choices=["simple", "standard", "deep", "xhigh"], default="standard", help=argparse.SUPPRESS)
+    parser.add_argument("--goal", type=str, default=None, help=argparse.SUPPRESS)
+    
+    args, unknown = parser.parse_known_args()
+
+    target_path = "."
+    tier = "standard"
+    goal = None
+
+    if args.command == "init":
+        target_path = args.path
+        tier = args.tier
+        goal = args.goal
+    elif args.direct_path:
+        target_path = args.direct_path
+        tier = args.tier
+        goal = args.goal
+
+    target_dir = Path(target_path).resolve()
+    res = run_init(target_dir, tier=tier, goal=goal)
 
     print("=" * 60)
     print(f"⚡ JIT CONTEXT OS — INITIALIZED: {res['project']}")
