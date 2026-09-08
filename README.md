@@ -1,4 +1,4 @@
-# JIT-Context: The Trust-in-Time Context OS for AI Agents
+# JIT-Context: The Just-In-Time Context OS for AI Agents
 
 <p align="center">
   <strong>Stop the Haystack Tax. Cut agent turns by 60%, ship fixes 2.5x faster, and kill infinite amnesia loops.</strong>
@@ -27,7 +27,7 @@ As your agent chats and runs tools, standard systems stuff the entire conversati
 
 ---
 
-## 🚀 The Fix: Trust-in-Time (JIT) Context OS
+## 🚀 The Fix: Just-In-Time (JIT) Context OS
 
 **JIT-Context** is not another slow vector database. It is not an embedding wrapper that dumps fuzzy Top-K chunks into your context.
 

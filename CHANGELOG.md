@@ -14,7 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Added automatic epistemic intent tagging (`BUG_REPORT`, `FEATURE_SPEC`, `COMMAND`, `QUERY`, `DIRECT_TASK`).
   - Calibrated elastic context budget to the optimal sweet spot: 800–1,800 tokens (`direct_fix: 6000` chars, `feature: 9500` chars), qualifying for LLM Prompt Caching (>=1,024 tokens) while completely preventing working set amnesia.
 - **Value-First Open-Source Narrative & SOTA Positioning (`README.md`)**:
-  - Repositioned project documentation from academic jargon to high-impact developer marketing: "The Trust-in-Time Context OS for AI Agents".
+  - Repositioned project documentation from academic jargon to high-impact developer marketing: "The Just-In-Time Context OS for AI Agents".
   - Clear value levers highlighting empirical 2.44x speedup, 61.4% fewer turns, zero amnesia loops, and elimination of the "Haystack Tax".
 - **Formal Invariant & Claims Specification (`docs/SPECYFIKACJA.md`, `docs/audits/2026-09-08-baseline.md`)**:
   - Published baseline audit and invariant contract specification for Invariants I1–I10.
