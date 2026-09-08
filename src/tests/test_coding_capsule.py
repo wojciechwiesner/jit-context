@@ -56,6 +56,9 @@ def test_sota_coding_capsule_renders_all_sections(test_db, tmp_path):
     assert "[CURRENT — direct user]" in text
     assert "Goal: Napraw błąd walidacji w webhooku" in text
     assert "Intent: BUG_REPORT" in text
+    assert "Enhanced Technical Spec:" in text
+    assert "Acceptance Criteria: pytest passes with exit code 0" in text
+    assert "Target Files: [src/validator.py]" in text
 
     assert "[DEV RUNTIME & VERIFICATION]" in text
     assert f"Working Directory: {tmp_path}" in text

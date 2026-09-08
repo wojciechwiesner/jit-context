@@ -101,6 +101,8 @@ def compile_context(
     # Working Set from kwargs and L0 tool observations/mutations
     working_set = list(kwargs.get("working_set") or [])
     existing_paths = {w.get("path") for w in working_set if isinstance(w, dict)}
+    cwd_obj = Path(session_cwd) if session_cwd and Path(session_cwd).exists() else Path.cwd()
+
     for o in overlays:
         k = o.get("key", "")
         if k.startswith("read:") or k.startswith("file:") or k.startswith("write:"):
@@ -108,9 +110,26 @@ def compile_context(
             if p and p not in existing_paths:
                 existing_paths.add(p)
                 v = o.get("value", "")
+                
+                # Extract snippet for active working set files if available
+                snippet = None
+                try:
+                    f_path = cwd_obj / p if not Path(p).is_absolute() else Path(p)
+                    if f_path.exists() and f_path.is_file():
+                        lines = f_path.read_text(encoding="utf-8", errors="ignore").splitlines()
+                        # Pick top signatures, classes, or first 25 lines
+                        sig_lines = [l for l in lines if l.strip().startswith(("def ", "class ", "export ", "async def "))]
+                        if sig_lines:
+                            snippet = "\n".join(sig_lines[:15])
+                        else:
+                            snippet = "\n".join(lines[:20])
+                except Exception:
+                    pass
+
                 working_set.append({
                     "path": p,
-                    "summary": v if v and v != "read_ok" else "active module"
+                    "summary": v if v and v != "read_ok" else "active module",
+                    "snippet": snippet
                 })
 
     # Dev Runtime Baseline

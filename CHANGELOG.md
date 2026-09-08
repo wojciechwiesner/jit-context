@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - **SOTA High-Resolution Coding Capsule Architecture (`src/context/cascade_distiller.py`, `src/context/compiler.py`)**:
   - Implemented 4 high-resolution levers: `[DEV RUNTIME & VERIFICATION]` (cwd, verify command, git state, allowed tools), `[WORKING SET & CONTRACTS]` (actively read/mutated modules), `[ACTIVE INVARIANTS]` (auto-extracted from `.planning/STATE.md`), and `[AVAILABLE POINTERS]` (specification & knowhow links).
+  - Added JIT Prompt Enhancer generating concrete technical specifications (`Enhanced Technical Spec`), observable verification conditions (`Acceptance Criteria`), and primary target files (`Target Files`) without overriding direct user intent (Invariant I1).
   - Added automatic epistemic intent tagging (`BUG_REPORT`, `FEATURE_SPEC`, `COMMAND`, `QUERY`, `DIRECT_TASK`).
   - Calibrated elastic context budget to the optimal sweet spot: 800–1,800 tokens (`direct_fix: 6000` chars, `feature: 9500` chars), qualifying for LLM Prompt Caching (>=1,024 tokens) while completely preventing working set amnesia.
 - **Formal Invariant & Claims Specification (`docs/SPECYFIKACJA.md`, `docs/audits/2026-09-08-baseline.md`)**:

@@ -112,12 +112,16 @@ def fast_deterministic_prefilter(raw_text: str) -> str:
     return "\n".join(deduped_lines).strip()
 
 
-CLASSIFIER_PROMPT = """You are the Semantic Tagger for Hermes JIT Context OS.
+CLASSIFIER_PROMPT = """You are the Semantic Tagger & Prompt Enhancer for Hermes JIT Context OS.
 Analyze the provided noisy session text and classify components:
 1. Extract verbatim CRITICAL text (user instructions, exact error messages, file paths, ports, exports).
 2. Determine active scope/project name.
 3. Compute a confidence score (0.00 to 1.00) indicating if the project context and user goal are unambiguous.
 4. Estimate task complexity ('direct_fix', 'status', 'feature', 'refactoring').
+5. PROMPT ENHANCER:
+   - enhanced_technical_spec: Translate terse user instructions into a precise, concrete engineering specification grounded in the codebase and error state.
+   - acceptance_criteria: Exact observable verification condition (e.g. 'pytest tests/... passes with exit code 0').
+   - target_files: List of primary files to inspect or modify.
 
 Respond ONLY with valid JSON matching:
 {
@@ -126,7 +130,10 @@ Respond ONLY with valid JSON matching:
   "complexity": "refactoring",
   "critical_elements": ["exact file path or error or export rule", ...],
   "safe_summary_of_user_intent": "one-line summary of goal",
-  "background_process_note": "one-line status of background task if any"
+  "background_process_note": "one-line status of background task if any",
+  "enhanced_technical_spec": "precise technical specification",
+  "acceptance_criteria": "exact verification command and condition",
+  "target_files": ["path/to/file.py"]
 }
 """
 
@@ -185,13 +192,30 @@ def validate_classifier_output(
         return None
     bg_str = str(bg_note).strip() if bg_note else ""
 
+    # Prompt Enhancer validation
+    enhanced_spec = data.get("enhanced_technical_spec")
+    spec_str = str(enhanced_spec).strip()[:400] if enhanced_spec and isinstance(enhanced_spec, str) else None
+
+    criteria = data.get("acceptance_criteria")
+    crit_str = str(criteria).strip()[:300] if criteria and isinstance(criteria, str) else None
+
+    raw_targets = data.get("target_files")
+    target_files = []
+    if isinstance(raw_targets, list):
+        for t in raw_targets:
+            if isinstance(t, str) and t.strip():
+                target_files.append(t.strip()[:150])
+
     return {
         "active_scope": resolved_scope,
         "confidence": conf,
         "complexity": complexity,
         "critical_elements": valid_elements,
         "safe_summary_of_user_intent": summary_str,
-        "background_process_note": bg_str
+        "background_process_note": bg_str,
+        "enhanced_technical_spec": spec_str,
+        "acceptance_criteria": crit_str,
+        "target_files": target_files if target_files else None
     }
 
 
@@ -272,7 +296,10 @@ def assemble_elastic_capsule(
     working_set: Optional[List[Dict[str, Any]]] = None,
     active_invariants: Optional[List[str]] = None,
     available_pointers: Optional[List[str]] = None,
-    intent: Optional[str] = None
+    intent: Optional[str] = None,
+    enhanced_spec: Optional[str] = None,
+    acceptance_criteria: Optional[str] = None,
+    target_files: Optional[List[str]] = None
 ) -> Tuple[str, int]:
     """Assembles an elastically sized XML capsule preserving all critical elements verbatim and escaping all serialized content."""
     
@@ -296,6 +323,13 @@ def assemble_elastic_capsule(
         lines.append(f"    • Goal: {escape_xml_content(user_intent)}")
         if intent:
             lines.append(f"    • Intent: {escape_xml_content(intent)}")
+        if enhanced_spec:
+            lines.append(f"    • Enhanced Technical Spec: {escape_xml_content(enhanced_spec)}")
+        if acceptance_criteria:
+            lines.append(f"    • Acceptance Criteria: {escape_xml_content(acceptance_criteria)}")
+        if target_files:
+            targets_str = ", ".join(target_files) if isinstance(target_files, list) else str(target_files)
+            lines.append(f"    • Target Files: [{escape_xml_content(targets_str)}]")
         if background_note:
             lines.append(f"    • Background Status: {escape_xml_content(background_note)}")
 
@@ -317,7 +351,13 @@ def assemble_elastic_capsule(
         for item in working_set:
             path = item.get("path", "")
             desc = item.get("summary") or item.get("signature") or item.get("status", "active")
-            lines.append(f"    • {escape_xml_content(path)} ({escape_xml_content(desc)})")
+            snippet = item.get("snippet")
+            if snippet:
+                lines.append(f"    • {escape_xml_content(path)} ({escape_xml_content(desc)}):")
+                for s_line in str(snippet).splitlines()[:25]:
+                    lines.append(f"        {escape_xml_content(s_line)}")
+            else:
+                lines.append(f"    • {escape_xml_content(path)} ({escape_xml_content(desc)})")
 
     if verified_facts:
         lines.append("  [VERIFIED RUNTIME PROOFS (Authority 1.0)]")
@@ -415,11 +455,16 @@ def distill_context_cascade(
     # Fast check: if input is already clean and short (< 1500 chars), bypass LLM
     if len(raw_combined) < 1500 and "████" not in raw_combined:
         # Fast path: user_intent is strictly latest_user_intent (direct user)
+        # Fast deterministic prompt enhancement
+        d_targets = [str(w.get("path")) for w in working_set if isinstance(w, dict) and w.get("path")] if working_set else None
+        d_crit = f"{dev_runtime.get('verify_cmd', 'pytest')} passes with exit code 0" if dev_runtime and dev_runtime.get('verify_cmd') else None
+        d_spec = f"Execute '{latest_user_intent}' focusing on {', '.join(d_targets[:3])}." if d_targets else None
+
         capsule, budget = assemble_elastic_capsule(
             active_scope=resolved_scope,
             epoch=epoch,
             confidence=1.00,
-            complexity="direct_fix",
+            complexity="feature" if working_set else "direct_fix",
             user_intent=latest_user_intent,
             prior_statements=priors,
             verified_facts=verified_facts,
@@ -430,14 +475,17 @@ def distill_context_cascade(
             working_set=working_set,
             active_invariants=active_invariants,
             available_pointers=available_pointers,
-            intent=intent
+            intent=intent,
+            enhanced_spec=d_spec,
+            acceptance_criteria=d_crit,
+            target_files=d_targets
         )
         return {
             "capsule": capsule,
             "distilled": False,
             "duration_ms": round((time.time() - start_time) * 1000, 2),
             "confidence": 1.00,
-            "complexity": "direct_fix",
+            "complexity": "feature" if working_set else "direct_fix",
             "budget": budget
         }
 
@@ -449,6 +497,11 @@ def distill_context_cascade(
         cleaned_statements = [fast_deterministic_prefilter(s) for s in raw_statements if s.strip()]
         user_intent = cleaned_statements[-1] if cleaned_statements else latest_user_intent
         clean_priors = cleaned_statements[:-1] if len(cleaned_statements) > 1 else priors
+        
+        fb_targets = [str(w.get("path")) for w in working_set if isinstance(w, dict) and w.get("path")] if working_set else None
+        fb_crit = f"{dev_runtime.get('verify_cmd', 'pytest')} passes with exit code 0" if dev_runtime and dev_runtime.get('verify_cmd') else None
+        fb_spec = f"Execute '{user_intent}' focusing on {', '.join(fb_targets[:3])}." if fb_targets else None
+
         capsule, budget = assemble_elastic_capsule(
             active_scope=resolved_scope,
             epoch=epoch,
@@ -464,7 +517,10 @@ def distill_context_cascade(
             working_set=working_set,
             active_invariants=active_invariants,
             available_pointers=available_pointers,
-            intent=intent
+            intent=intent,
+            enhanced_spec=fb_spec,
+            acceptance_criteria=fb_crit,
+            target_files=fb_targets
         )
         return {
             "capsule": capsule,
@@ -491,6 +547,9 @@ def distill_context_cascade(
         if isinstance(elem, str) and elem.strip() and elem.strip() in raw_combined
     ]
     bg_note = llm_meta.get("background_process_note")
+    llm_spec = llm_meta.get("enhanced_technical_spec")
+    llm_crit = llm_meta.get("acceptance_criteria")
+    llm_targets = llm_meta.get("target_files")
 
     capsule, budget = assemble_elastic_capsule(
         active_scope=resolved_scope,
@@ -508,7 +567,10 @@ def distill_context_cascade(
         working_set=working_set,
         active_invariants=active_invariants,
         available_pointers=available_pointers,
-        intent=intent
+        intent=intent,
+        enhanced_spec=llm_spec,
+        acceptance_criteria=llm_crit,
+        target_files=llm_targets
     )
 
     return {
