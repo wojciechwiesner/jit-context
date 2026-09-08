@@ -11,6 +11,18 @@ from l2.triggers import should_trigger_deep_retrieval
 from l2.client import query_deep_context
 from context.cascade_distiller import distill_context_cascade
 
+class CapsuleResult(str):
+    """String subclass allowing tuple unpacking for backward compatibility."""
+    meta: Dict[str, Any]
+
+    def __new__(cls, text: str, meta: Optional[Dict[str, Any]] = None):
+        obj = super().__new__(cls, text)
+        obj.meta = meta or {}
+        return obj
+
+    def __iter__(self):  # type: ignore[override]
+        return iter((str(self), self.meta))
+
 def compile_context(
     conn: sqlite3.Connection,
     session_id: str,
@@ -18,7 +30,7 @@ def compile_context(
     transcript_messages: Optional[List[Dict]] = None,
     conversation_history: Optional[List[Dict]] = None,
     **kwargs
-) -> Tuple[str, Dict[str, Any]]:
+) -> CapsuleResult:
     messages = transcript_messages or conversation_history or []
     """Compiles the 3-tier cascade into a single <ONA_CONTEXT> capsule."""
     session = ensure_session(conn, session_id)
@@ -32,8 +44,9 @@ def compile_context(
     )
     
     # 2. L0 Active Overlays (RYOW - Invariant I2)
-    overlays = get_active_overlays(conn, session_id, limit=5)
-    current_statements = [o["value"] for o in overlays if o["value"] != user_message]
+    overlays = get_active_overlays(conn, session_id, limit=10)
+    current_statements = [o["value"] for o in overlays if o.get("kind") == "statement" and o["value"] != user_message]
+    verified_facts = [{"key": o.get("key", ""), "value": o.get("value", "")} for o in overlays if o.get("kind") == "verified_fact"]
     
     # 3. L0 RecentTurnFence (Deduplication across compressions)
     transcript_hashes: Set[str] = set()
@@ -75,6 +88,8 @@ def compile_context(
         raw_statements=raw_statements,
         active_scope=active_scope,
         epoch=epoch,
+        prior_statements=current_statements,
+        verified_facts=verified_facts,
         project_summary=project_summary
     )
     
@@ -93,10 +108,10 @@ def compile_context(
         )
         capsule += clarification_directive
 
-    return capsule, {
+    return CapsuleResult(capsule, {
         "confidence": confidence,
         "complexity": complexity,
         "distilled": distill_result.get("distilled", False),
         "duration_ms": distill_result.get("duration_ms", 0.0),
         "budget": distill_result.get("budget", 6000)
-    }
+    })

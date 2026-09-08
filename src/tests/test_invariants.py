@@ -152,3 +152,33 @@ def test_i10_external_text_cannot_write_canon():
 def test_i10_explicit_promotion_path_can_write_canon():
     system_auth = get_authority_for_role("system", "system")
     assert system_auth == 1.0
+
+# --- Runtime Tool Verification & Fact Extraction ---
+def test_runtime_tool_verified_in_overlay(test_db):
+    session_id = "s_tool_ver"
+    ensure_session(test_db, session_id)
+    append_event(
+        test_db,
+        session_id,
+        "tool",
+        "[terminal] exit_code: 0",
+        "runtime_tool_verified",
+        fact_kind="verified_fact",
+        fact_key="cmd:pytest",
+        fact_value="exit_code=0 (verified)"
+    )
+    overlays = get_active_overlays(test_db, session_id)
+    assert any(o["key"] == "cmd:pytest" and o["kind"] == "verified_fact" and o["authority"] == 1.0 for o in overlays)
+    capsule = compile_context(test_db, session_id, "Czy testy przeszły?")
+    assert "[cmd:pytest]" in capsule
+    assert "exit_code=0 (verified)" in capsule
+
+def test_assistant_claims_without_tools_never_enter_verified_proofs(test_db):
+    session_id = "s_asst_claim"
+    ensure_session(test_db, session_id)
+    append_event(test_db, session_id, "assistant", "Naprawiłem plik hooks.py i wszystko działa", "assistant")
+    overlays = get_active_overlays(test_db, session_id)
+    assert not any("hooks.py" in o.get("key", "") for o in overlays)
+    capsule = compile_context(test_db, session_id, "Jaki jest stan?")
+    assert "[VERIFIED RUNTIME PROOFS" not in capsule
+

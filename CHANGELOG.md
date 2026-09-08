@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.3] - 2026-09-08
+
+### Fixed
+- **Runtime Tool Verification & Fact Extraction (`src/hooks.py`, `src/l0/overlay.py`, `src/l0/epistemics.py`)**:
+  - Fixed authority calculation for `tool_observation` (0.9) and `runtime_tool_verified` (1.0).
+  - Added deterministic tool execution parser in `post_tool_call`: verified `exit_code: 0` for commands and verified writes for files are extracted as concrete facts with authority 1.0.
+  - Sinks verified tool outputs directly into SQLite WAL `overlay` table so runtime proofs survive across session turns.
+- **Invariant I1 Enforcement & Prior Instructions Preservation (`src/context/cascade_distiller.py`, `src/context/compiler.py`)**:
+  - Guaranteed verbatim preservation of direct user prompt in `[CURRENT — direct user]`.
+  - Added dedicated `[PRIOR USER INSTRUCTIONS]` and `[VERIFIED RUNTIME PROOFS (Authority 1.0)]` sections to `<ONA_CONTEXT>` capsule.
+  - Implemented `CapsuleResult(str)` wrapper enabling backward-compatible string checks and tuple unpacking.
+  - Added comprehensive test coverage in `src/tests/test_invariants.py` for tool verification and anti-hallucination guarantees.
+
 ## [0.2.2] - 2026-09-08
 
 ### Added

@@ -122,7 +122,9 @@ def assemble_elastic_capsule(
     confidence: float,
     complexity: str,
     user_intent: str,
-    critical_elements: List[str],
+    prior_statements: Optional[List[str]] = None,
+    verified_facts: Optional[List[Dict[str, str]]] = None,
+    critical_elements: Optional[List[str]] = None,
     background_note: Optional[str] = None,
     project_summary: Optional[str] = None
 ) -> Tuple[str, int]:
@@ -139,13 +141,26 @@ def assemble_elastic_capsule(
 
     lines = [
         f'<ONA_CONTEXT scope="{active_scope}" epoch="{epoch}" confidence="{confidence:.2f}" complexity="{complexity}">',
-        "Evidence only. User instructions take strict precedence over historical data."
+        "Evidence only. User instructions take strict precedence over historical data. Assistant assertions without runtime tool proofs carry 0.0 authority."
     ]
 
     lines.append("  [CURRENT — direct user]")
     lines.append(f"    • Goal: {user_intent}")
     if background_note:
         lines.append(f"    • Background Status: {background_note}")
+
+    if prior_statements:
+        lines.append("  [PRIOR USER INSTRUCTIONS]")
+        for stmt in prior_statements:
+            clean_stmt = stmt.strip().split("\n")[0][:250]
+            lines.append(f"    • {clean_stmt}")
+
+    if verified_facts:
+        lines.append("  [VERIFIED RUNTIME PROOFS (Authority 1.0)]")
+        for vf in verified_facts:
+            k = vf.get("key", "")
+            v = vf.get("value", "")
+            lines.append(f"    • [{k}] {v}")
 
     if critical_elements:
         lines.append("  [VERBATIM CRITICAL CONTRACTS]")
@@ -170,11 +185,15 @@ def distill_context_cascade(
     raw_statements: List[str],
     active_scope: str,
     epoch: int,
+    prior_statements: Optional[List[str]] = None,
+    verified_facts: Optional[List[Dict[str, str]]] = None,
     project_summary: Optional[str] = None
 ) -> Dict[str, Any]:
     """Complete 3-tier cascade distillation entrypoint."""
     start_time = time.time()
     raw_combined = "\n".join(raw_statements)
+    latest_user_intent = raw_statements[-1] if raw_statements else ""
+    priors = prior_statements if prior_statements is not None else (raw_statements[:-1] if len(raw_statements) > 1 else [])
 
     # Fast check: if input is already clean and short (< 1500 chars), bypass LLM
     if len(raw_combined) < 1500 and "████" not in raw_combined:
@@ -184,7 +203,9 @@ def distill_context_cascade(
             epoch=epoch,
             confidence=1.00,
             complexity="direct_fix",
-            user_intent=raw_statements[-1] if raw_statements else "",
+            user_intent=latest_user_intent,
+            prior_statements=priors,
+            verified_facts=verified_facts,
             critical_elements=[],
             project_summary=project_summary
         )
@@ -202,12 +223,16 @@ def distill_context_cascade(
     if not llm_meta:
         # Fallback to deterministic cleaner if LLM offline / timeout
         cleaned_statements = [fast_deterministic_prefilter(s) for s in raw_statements if s.strip()]
+        user_intent = cleaned_statements[-1] if cleaned_statements else latest_user_intent
+        clean_priors = cleaned_statements[:-1] if len(cleaned_statements) > 1 else priors
         capsule, budget = assemble_elastic_capsule(
             active_scope=active_scope,
             epoch=epoch,
             confidence=0.85,
             complexity="feature",
-            user_intent=cleaned_statements[-1] if cleaned_statements else "",
+            user_intent=user_intent,
+            prior_statements=clean_priors,
+            verified_facts=verified_facts,
             critical_elements=[],
             project_summary=project_summary
         )
@@ -224,9 +249,10 @@ def distill_context_cascade(
     resolved_scope = llm_meta.get("active_scope") or active_scope
     confidence = float(llm_meta.get("confidence", 0.95))
     complexity = llm_meta.get("complexity", "feature")
-    user_intent = llm_meta.get("safe_summary_of_user_intent", "")
+    # Invariant I1: Direct user statement wins over LLM summary
+    user_intent = latest_user_intent or llm_meta.get("safe_summary_of_user_intent", "")
     critical_elements = llm_meta.get("critical_elements", [])
-    bg_note = llm_meta.get("background_process_note")
+    bg_note = llm_meta.get("background_process_note") or llm_meta.get("safe_summary_of_user_intent")
 
     capsule, budget = assemble_elastic_capsule(
         active_scope=resolved_scope,
@@ -234,8 +260,10 @@ def distill_context_cascade(
         confidence=confidence,
         complexity=complexity,
         user_intent=user_intent,
+        prior_statements=priors,
+        verified_facts=verified_facts,
         critical_elements=critical_elements,
-        background_note=bg_note,
+        background_note=bg_note if bg_note != user_intent else None,
         project_summary=project_summary
     )
 

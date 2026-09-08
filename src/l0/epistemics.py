@@ -8,7 +8,9 @@ def get_authority_for_role(origin: str, role: str) -> float:
         return 0.0
     if origin == "direct_user" or (role == "user" and origin != "external"):
         return 1.0
-    if origin == "tool":
+    if origin in ("runtime_tool_verified", "tool_verified"):
+        return 1.0
+    if origin in ("tool", "tool_observation"):
         return 0.9
     if origin == "system":
         return 1.0

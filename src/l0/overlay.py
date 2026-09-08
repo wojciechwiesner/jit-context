@@ -44,7 +44,10 @@ def append_event(
     content: str,
     origin: str,
     turn_id: Optional[str] = None,
-    root_event_id: Optional[str] = None
+    root_event_id: Optional[str] = None,
+    fact_kind: Optional[str] = None,
+    fact_key: Optional[str] = None,
+    fact_value: Optional[str] = None
 ) -> Tuple[str, int]:
     """Append event to WAL and atomically update last_seq."""
     ensure_session(conn, session_id)
@@ -97,11 +100,23 @@ def append_event(
             """,
             (entry_id, session_id, content, event_id, seq, authority, now)
         )
+    elif (origin in ("runtime_tool_verified", "tool_verified", "tool_observation")) and fact_key:
+        entry_id = f"ovl_{uuid.uuid4().hex[:12]}"
+        kind = fact_kind or ("verified_fact" if authority >= 1.0 else "tool_observation")
+        conn.execute(
+            """
+            INSERT INTO overlay (
+                entry_id, session_id, kind, key, value,
+                source_event_id, seq, authority, status, created_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'active', ?)
+            """,
+            (entry_id, session_id, kind, fact_key, fact_value or content, event_id, seq, authority, now)
+        )
         
     conn.commit()
     return event_id, seq
 
-def get_active_overlays(conn: sqlite3.Connection, session_id: str, limit: int = 5) -> List[Dict]:
+def get_active_overlays(conn: sqlite3.Connection, session_id: str, limit: int = 10) -> List[Dict]:
     """Retrieve active session overlay items (Read-Your-Own-Writes / Invariant I2)."""
     cursor = conn.execute(
         """

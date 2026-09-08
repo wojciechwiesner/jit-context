@@ -7,7 +7,7 @@ import sqlite3
 import uuid
 import json
 from pathlib import Path
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, Tuple
 from l0.db import get_db, init_db
 from l0.overlay import append_event, ensure_session, get_active_overlays
 from l1.scope import resolve_scope
@@ -238,8 +238,66 @@ def api_request_error(ctx: Dict[str, Any]) -> None:
     finally:
         conn.close()
 
+def parse_tool_execution(tool_name: str, tool_input: Any, tool_output: Any) -> Tuple[str, Optional[str], Optional[str], Optional[str]]:
+    """Parses tool execution to extract verified facts vs observations vs errors."""
+    output_data = tool_output
+    if isinstance(tool_output, str):
+        try:
+            output_data = json.loads(tool_output)
+        except Exception:
+            pass
+
+    origin = "tool_observation"
+    fact_kind = None
+    fact_key = None
+    fact_value = None
+
+    inp = tool_input if isinstance(tool_input, dict) else {}
+
+    if tool_name == "terminal":
+        cmd = inp.get("command", "")
+        cmd_short = cmd.strip().split("\n")[0][:60]
+        exit_code = None
+        if isinstance(output_data, dict):
+            exit_code = output_data.get("exit_code")
+        
+        if exit_code == 0:
+            origin = "runtime_tool_verified"
+            fact_kind = "verified_fact"
+            fact_key = f"cmd:{cmd_short}"
+            fact_value = "exit_code=0 (verified)"
+        elif exit_code is not None and exit_code != 0:
+            origin = "tool_observation"
+            fact_kind = "tool_error"
+            fact_key = f"cmd_fail:{cmd_short}"
+            fact_value = f"exit_code={exit_code}"
+
+    elif tool_name in ("write_file", "patch"):
+        path = inp.get("path", "")
+        is_err = False
+        if isinstance(output_data, dict):
+            if output_data.get("error") or output_data.get("success") is False:
+                is_err = True
+        elif isinstance(tool_output, str):
+            if "error:" in tool_output.lower() or "exception" in tool_output.lower():
+                is_err = True
+        
+        if not is_err and path:
+            origin = "runtime_tool_verified"
+            fact_kind = "verified_fact"
+            action = "written" if tool_name == "write_file" else "patched"
+            fact_key = f"file:{path}"
+            fact_value = f"{action}_verified (verified)"
+        elif is_err and path:
+            origin = "tool_observation"
+            fact_kind = "tool_error"
+            fact_key = f"file_fail:{path}"
+            fact_value = "modification_failed"
+
+    return origin, fact_kind, fact_key, fact_value
+
 def post_tool_call(ctx: Dict[str, Any]) -> None:
-    """Post-tool call hook: Records tool observations into L0 event stream."""
+    """Post-tool call hook: Records tool observations and verified facts into L0 event stream."""
     session_id = ctx.get("session_id", "default")
     turn_id = ctx.get("turn_id", "default")
     tool_name = ctx.get("tool_name", "unknown")
@@ -248,14 +306,18 @@ def post_tool_call(ctx: Dict[str, Any]) -> None:
     
     conn = get_db()
     try:
+        origin, fact_kind, fact_key, fact_value = parse_tool_execution(tool_name, tool_input, tool_output)
         content_preview = str(tool_output)[:400]
         append_event(
             conn=conn,
             session_id=session_id,
             role="tool",
             content=f"[{tool_name}] {content_preview}",
-            origin="tool_observation",
-            turn_id=turn_id
+            origin=origin,
+            turn_id=turn_id,
+            fact_kind=fact_kind,
+            fact_key=fact_key,
+            fact_value=fact_value
         )
     except Exception as e:
         print(f"[ona-context:error] post_tool_call: {e}")
