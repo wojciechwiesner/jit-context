@@ -126,6 +126,12 @@ def pre_llm_call(ctx: Dict[str, Any]) -> Dict[str, Any]:
         except Exception:
             pass
         
+        # Render live visual streaming line to CLI stderr/stdout
+        scope_badge = f"\033[36m[{active_scope}]\033[0m"
+        time_badge = f"\033[32m{compile_ms:.1f}ms\033[0m"
+        size_badge = f"\033[33m{len(capsule)} zn\033[0m"
+        status_line = f"⚡ \033[1mJIT Context\033[0m {scope_badge} • L0:{l0_ms:.1f}ms L1:{l1_ms:.1f}ms • {time_badge} ({size_badge})"
+        print(status_line, file=sys.stderr, flush=True)
         if current_mode == "shadow":
             print(f"[ona-context:shadow] Compiled capsule ({len(capsule)} chars) logged, injection bypassed.")
             return {}
