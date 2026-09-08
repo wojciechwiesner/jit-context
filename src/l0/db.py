@@ -99,6 +99,10 @@ def init_db(db_path: Optional[Path] = None) -> None:
         with conn:
             conn.executescript(SCHEMA_SQL)
             try:
+                conn.execute("ALTER TABLE sessions ADD COLUMN last_cwd TEXT;")
+            except Exception:
+                pass # Already exists
+            try:
                 from telemetry.db_schema import init_telemetry_schema
                 init_telemetry_schema(conn)
             except Exception as e:

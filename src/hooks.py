@@ -26,6 +26,36 @@ from telemetry.collector import (
 ONA_CONTEXT_MODE = os.environ.get("ONA_CONTEXT_MODE", "active")
 WATCHDOG_BUDGET_MS = 650.0
 
+_MODULE_MTIMES: Dict[str, float] = {}
+
+def hot_reload_jit_modules() -> None:
+    """Dynamically reloads in-memory modules if on-disk files changed."""
+    try:
+        plugin_root = Path(__file__).resolve().parent
+        needs_reload = False
+        for py_file in plugin_root.glob("**/*.py"):
+            try:
+                mtime = py_file.stat().st_mtime
+                old = _MODULE_MTIMES.get(str(py_file))
+                if old is not None and mtime > old:
+                    needs_reload = True
+                _MODULE_MTIMES[str(py_file)] = mtime
+            except OSError:
+                pass
+
+        if needs_reload:
+            import importlib
+            for mod_name in list(sys.modules.keys()):
+                if any(mod_name.startswith(p) for p in ("l0", "l1", "l2", "context", "health", "config")):
+                    mod = sys.modules.get(mod_name)
+                    if mod:
+                        try:
+                            importlib.reload(mod)
+                        except Exception:
+                            pass
+    except Exception:
+        pass
+
 def is_synthetic_harness_message(text: str) -> bool:
     """Detect internal Hermes harness prompts (curator, delegation, /btw, canon)."""
     if not text:
@@ -48,6 +78,7 @@ def on_session_start(ctx: Dict[str, Any]) -> None:
 
 def pre_llm_call(ctx: Dict[str, Any]) -> Dict[str, Any]:
     """Pre-LLM hook: Compile lean context capsule (<1,500 tokens) just-in-time."""
+    hot_reload_jit_modules()
     start_time = time.time()
     session_id = ctx.get("session_id", "default")
     turn_id = ctx.get("turn_id") or f"turn_{int(start_time * 1000)}"
@@ -70,16 +101,18 @@ def pre_llm_call(ctx: Dict[str, Any]) -> Dict[str, Any]:
         l0_ms = (time.time() - l0_start) * 1000
         
         # Determine genuine user message for scope resolution and context compilation
-        from l0.overlay import get_latest_direct_user_message
+        from l0.overlay import get_latest_direct_user_message, get_session_cwd
         effective_user_message = user_message
         if is_synthetic:
             latest_real = get_latest_direct_user_message(conn, session_id)
             if latest_real:
                 effective_user_message = latest_real
 
-        # L1 Scope resolution (<1ms, uses current repo cwd as default)
+        # L1 Scope resolution (<1ms, tracks session_cwd from terminal tool execution)
         l1_start = time.time()
-        cwd_name = Path.cwd().name
+        session_cwd = get_session_cwd(conn, session_id)
+        active_cwd = Path(session_cwd) if session_cwd and Path(session_cwd).exists() else Path.cwd()
+        cwd_name = active_cwd.name
         default_scope = cwd_name if cwd_name not in ["wojciechwiesner", "Projects", "active"] else "hermes"
         active_scope, retrieval_scopes, _, _ = resolve_scope(effective_user_message, default_scope)
         l1_ms = (time.time() - l1_start) * 1000
@@ -344,6 +377,23 @@ def post_tool_call(ctx: Dict[str, Any]) -> None:
             fact_key=fact_key,
             fact_value=fact_value
         )
+
+        # Track session working directory from terminal commands
+        from l0.overlay import update_session_cwd
+        if isinstance(tool_output, dict) and "cwd" in tool_output:
+            update_session_cwd(conn, session_id, tool_output["cwd"])
+        elif tool_name == "terminal" and isinstance(tool_input, dict):
+            cmd = tool_input.get("command", "")
+            if "cd " in cmd:
+                parts = cmd.split("&&")[0].strip().split()
+                if len(parts) >= 2 and parts[0] == "cd":
+                    dest = parts[1]
+                    try:
+                        p = Path(dest).expanduser().resolve()
+                        if p.exists() and p.is_dir():
+                            update_session_cwd(conn, session_id, str(p))
+                    except Exception:
+                        pass
     except Exception as e:
         print(f"[ona-context:error] post_tool_call: {e}")
     finally:

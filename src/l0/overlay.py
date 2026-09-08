@@ -13,13 +13,22 @@ def ensure_session(
     default_scope: str = "general"
 ) -> Dict:
     now = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
-    cursor = conn.execute(
-        "SELECT session_id, active_scope, scope_epoch, scope_confidence, last_seq FROM sessions WHERE session_id = ?",
-        (session_id,)
-    )
-    row = cursor.fetchone()
-    if row:
-        return dict(row)
+    try:
+        cursor = conn.execute(
+            "SELECT session_id, active_scope, scope_epoch, scope_confidence, last_seq, last_cwd FROM sessions WHERE session_id = ?",
+            (session_id,)
+        )
+        row = cursor.fetchone()
+        if row:
+            return dict(row)
+    except Exception:
+        cursor = conn.execute(
+            "SELECT session_id, active_scope, scope_epoch, scope_confidence, last_seq FROM sessions WHERE session_id = ?",
+            (session_id,)
+        )
+        row = cursor.fetchone()
+        if row:
+            return dict(row)
         
     conn.execute(
         """
@@ -34,7 +43,8 @@ def ensure_session(
         "active_scope": default_scope,
         "scope_epoch": 1,
         "scope_confidence": 1.0,
-        "last_seq": 0
+        "last_seq": 0,
+        "last_cwd": None
     }
 
 def append_event(
@@ -142,4 +152,25 @@ def get_latest_direct_user_message(conn: sqlite3.Connection, session_id: str) ->
     )
     row = cursor.fetchone()
     return row[0] if row else None
+
+def update_session_cwd(conn: sqlite3.Connection, session_id: str, cwd: str) -> None:
+    """Persist current working directory for session scope tracking."""
+    if not cwd:
+        return
+    now = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+    try:
+        conn.execute("UPDATE sessions SET last_cwd = ?, updated_at = ? WHERE session_id = ?", (cwd, now, session_id))
+        conn.commit()
+    except Exception:
+        pass
+
+def get_session_cwd(conn: sqlite3.Connection, session_id: str) -> Optional[str]:
+    """Retrieve last known working directory for this session."""
+    try:
+        cursor = conn.execute("SELECT last_cwd FROM sessions WHERE session_id = ?", (session_id,))
+        row = cursor.fetchone()
+        return row[0] if row and row[0] else None
+    except Exception:
+        return None
+
 

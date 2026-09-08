@@ -16,7 +16,8 @@ CROSS_PROJECT_QUERY_PATTERNS = [
 KNOWN_PROJECTS = {
     "boocco", "invoiceflow", "faktury", "onboarding_flow", "masteros",
     "thesaiver", "lifos", "hermes", "borg", "uniproos", "uniproworks",
-    "whatsapp_center", "videosy", "twojastara", "dwa_kroki"
+    "whatsapp_center", "videosy", "twojastara", "dwa_kroki",
+    "synthapse", "hermes-jit-context-os", "jit-context", "jit", "aipraca"
 }
 
 def resolve_scope(

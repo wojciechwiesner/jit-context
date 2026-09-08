@@ -62,7 +62,8 @@ def compile_context(
             current_statements.append(t["content"])
             
     # 4. L1 Project Context (GSD STATE.md & Architecture integration)
-    project_doc = get_project_context(active_scope)
+    session_cwd = session.get("last_cwd") or kwargs.get("session_cwd")
+    project_doc = get_project_context(active_scope, session_cwd=session_cwd)
     project_summary = None
     if project_doc:
         # Calibrated budget: up to ~4,500 chars (~1,100–1,200 tokens) to ensure complete certainty
