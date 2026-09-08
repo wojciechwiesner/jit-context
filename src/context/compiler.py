@@ -9,6 +9,7 @@ from l1.scope import resolve_scope
 from l1.project_cache import get_project_context
 from l2.triggers import should_trigger_deep_retrieval
 from l2.client import query_deep_context
+from context.cascade_distiller import distill_context_cascade
 
 def compile_context(
     conn: sqlite3.Connection,
@@ -67,11 +68,13 @@ def compile_context(
         deep_res = query_deep_context(user_message, retrieval_scopes, conn)
         if deep_res:
             recalled_facts.append(deep_res)
-            
-    return render_capsule(
-        scope=active_scope,
+
+    # 6. Cascade Distillation (LLM Semantic Classifier -> Verbatim Cleaner -> Elastic Assembler)
+    raw_statements = current_statements + [user_message]
+    distill_result = distill_context_cascade(
+        raw_statements=raw_statements,
+        active_scope=active_scope,
         epoch=epoch,
-        current_statements=current_statements,
-        project_summary=project_summary,
-        recalled_facts=recalled_facts if recalled_facts else None
+        project_summary=project_summary
     )
+    return distill_result["capsule"]
