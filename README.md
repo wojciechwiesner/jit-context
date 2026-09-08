@@ -2,13 +2,32 @@
 
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.22649542.svg)](https://doi.org/10.5281/zenodo.22649542)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
-[![Tests](https://img.shields.io/badge/Tests-27%2F27%20PASS-success)](https://github.com/wojciechwiesner/jit-context)
-[![Benchmarks](https://img.shields.io/badge/Benchmarks-2.44x%20Faster-orange)](https://github.com/wojciechwiesner/jit-context#empirical-production-benchmark-exp-005--exp-009-real-world-codebase)
+[![Tests](https://img.shields.io/badge/Tests-28%2F28%20PASS-success)](https://github.com/wojciechwiesner/jit-context)
+[![Benchmarks](https://img.shields.io/badge/Benchmarks-2.44x%20Faster-orange)](https://github.com/wojciechwiesner/jit-context#empirical-production-benchmarks-live-codebases--models)
 
 **Version:** 0.2.4 (2026-09-08)  
 **Author:** Wojciech Wiesner (`wojciech@theones.io`) — *The Ones* (`join.theones.io`)  
 **DOI:** [10.5281/zenodo.22649542](https://doi.org/10.5281/zenodo.22649542)  
 **Repository:** [https://github.com/wojciechwiesner/jit-context](https://github.com/wojciechwiesner/jit-context)
+
+---
+
+## Executive Scorecard: Verified Empirical Proofs
+
+> **Paired Production Codebase Benchmark** (*Synthapse Web Audio*, 45 modules, Vitest E2E):  
+> Head-to-head evaluation of autonomous coding agents under standard long-context dump vs. JIT-Context OS:
+
+| Metric | Baseline (Standard Long-Context) | JIT-Context OS | Production Moat / Delta |
+| :--- | :--- | :--- | :--- |
+| **Task Delivery Time** | 9m 27s (567s) | **3m 52s (232s)** | **2.44x Faster Delivery (-59.0%)** |
+| **LLM Inference Turns** | 171 API calls | **66 API calls** | **-61.4% Turns (-105 rounds avoided)** |
+| **Tool Execution Churn** | 169 tool ops | **64 tool ops** | **-62.1% Agent Churn Reduction** |
+| **File Read Churn** | 73 file reads | **24 file reads** | **-67.1% Less Context Thrashing** |
+| **Scope Drift / Collateral Edits** | 14 files touched (drift) | **4 files (surgical SRP)** | **Zero Scope Drift** |
+| **Runtime & Test Error Loops** | 8 error loops | **0 errors (clean first-shot)** | **100% Error Loop Elimination** |
+| **Prompt Context Size** | >50,000 tokens (Haystack) | **482 tokens (Capsule)** | **>99% Token Reduction** |
+| **Hot-Path RYOW Latency** | 200–800ms (Vector API) | **<3ms (SQLite WAL)** | **Zero-Latency Ground Truth** |
+| **Epistemic Invariants** | Vulnerable to self-poisoning | **10/10 PASS (I1–I10)** | **100% Anti-Hallucination Gate** |
 
 ---
 
