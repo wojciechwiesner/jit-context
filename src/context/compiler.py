@@ -150,6 +150,24 @@ def compile_context(
     if not dev_runtime.get("allowed_tools") and kwargs.get("allowed_tools"):
         dev_runtime["allowed_tools"] = kwargs.get("allowed_tools")
 
+    # Codebase Map discovery
+    if not dev_runtime.get("codebase_map") and session_cwd:
+        try:
+            cwd_p = Path(session_cwd)
+            found_files = []
+            for pattern in ("src/**/*.py", "src/**/*.ts", "src/**/*.js", "tests/**/*.py", "tests/**/*.ts", "tests/**/*.js"):
+                for fp in cwd_p.glob(pattern):
+                    if fp.is_file() and not fp.name.startswith("__"):
+                        found_files.append(str(fp.relative_to(cwd_p)))
+                        if len(found_files) >= 12:
+                            break
+                if len(found_files) >= 12:
+                    break
+            if found_files:
+                dev_runtime["codebase_map"] = found_files
+        except Exception:
+            pass
+
     # Active Invariants (max 3)
     active_invariants = list(kwargs.get("active_invariants") or [])
     if not active_invariants and session_cwd:

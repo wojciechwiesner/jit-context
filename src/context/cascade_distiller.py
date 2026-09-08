@@ -345,6 +345,10 @@ def assemble_elastic_capsule(
             tools_val = dev_runtime["allowed_tools"]
             tools_str = ", ".join(tools_val) if isinstance(tools_val, list) else str(tools_val)
             lines.append(f"    • Allowed Tools: [{escape_xml_content(tools_str)}]")
+        if dev_runtime.get("codebase_map"):
+            cmap = dev_runtime["codebase_map"]
+            cmap_str = ", ".join(cmap) if isinstance(cmap, list) else str(cmap)
+            lines.append(f"    • Codebase Map: [{escape_xml_content(cmap_str)}]")
 
     if working_set:
         lines.append("  [WORKING SET & CONTRACTS]")
@@ -456,7 +460,14 @@ def distill_context_cascade(
     if len(raw_combined) < 1500 and "████" not in raw_combined:
         # Fast path: user_intent is strictly latest_user_intent (direct user)
         # Fast deterministic prompt enhancement
-        d_targets = [str(w.get("path")) for w in working_set if isinstance(w, dict) and w.get("path")] if working_set else None
+        d_targets = [str(w.get("path")) for w in working_set if isinstance(w, dict) and w.get("path")] if working_set else []
+        cmap = dev_runtime.get("codebase_map") if dev_runtime else []
+        if cmap and isinstance(cmap, list):
+            for cf in cmap:
+                bname = str(cf).split("/")[-1]
+                if (bname.lower() in latest_user_intent.lower() or str(cf).lower() in latest_user_intent.lower()) and str(cf) not in d_targets:
+                    d_targets.append(str(cf))
+        d_targets = d_targets if d_targets else None
         d_crit = f"{dev_runtime.get('verify_cmd', 'pytest')} passes with exit code 0" if dev_runtime and dev_runtime.get('verify_cmd') else None
         d_spec = f"Execute '{latest_user_intent}' focusing on {', '.join(d_targets[:3])}." if d_targets else None
 
