@@ -5,6 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.0] - 2026-09-08
+
+### Added
+- **3-Tier Cascade Distillation Engine (`src/context/cascade_distiller.py`)**:
+  - LLM Semantic Classifier (Gemini Flash with `thinkingBudget: 0`) delivering sub-1.2s extraction.
+  - Verbatim protection of critical contracts (file paths, ports, error messages, export identifiers).
+  - Elastic capsule assembler automatically scaling from 750 tokens up to 3,500 tokens based on task complexity.
+- **Automated Project Profiler & Ingestion (`/jit init` / `src/init.py`)**:
+  - Automatic language, framework, database, and test suite inspection.
+  - Bidirectional sync to Obsidian SSOT (`~/Documents/Wojciech/projects/<name>.md`) and `.planning/STATE.md`.
+  - Context7 and Hugging Face resource gap detection.
+- **Real-Time CLI Telemetry Badges (`src/hooks.py`)**:
+  - Direct stderr streaming of active scope, L0/L1 latencies, compilation duration, and capsule character count.
+- **Comprehensive Benchmark Suite (`benchmarks/`)**:
+  - EXP-005 local model evaluation on Apple Silicon M2 Pro.
+  - Clean 1:1 refactoring duel between local Qwen-7B and cloud models on `retro-plumber-run`.
+  - Distillation quality and speed comparison across local and cloud engines.
+
 ## [0.1.1] - 2026-09-07
 
 ### Added
