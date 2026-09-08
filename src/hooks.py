@@ -1,6 +1,7 @@
 """Hook implementations for Hermes Plugin Lifecycle with Full LLM & Context Telemetry."""
 
 import os
+import sys
 import time
 import sqlite3
 import uuid
