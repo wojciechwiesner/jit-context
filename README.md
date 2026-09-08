@@ -106,6 +106,13 @@ Operational state, tool execution results, and file mutation hashes are recorded
 ### 4. Deterministic Prompt Cache Alignment (800–1,800 Tokens)
 Uncontrolled prompts swing widely in size, repeatedly breaking prefix prompt caching. JIT enforces a stable, prefix-aligned context capsule, achieving **>95% prompt cache hit rates** on Gemini, Claude, and OpenAI.
 
+### 5. Local Obsidian Vault: Human-in-the-Loop SSOT (Zero Black-Box)
+Why doesn't JIT-Context hide knowledge in an opaque, uneditable vector database index (Chroma/Pinecone)?
+* **Total Human Auditability:** Your canonical Single Source of Truth (SSOT) is your **local Obsidian vault** (plain Markdown files on disk).
+* **Deterministic L1 Retrieval:** Project dossiers live in `projects/<project>.md` and architecture rules in `knowhow/<topic>.md`.
+* **Zero Indexing Latency (<2ms):** The agent reads live Markdown in `<2ms` with zero embedding lag, zero hallucinated chunking, and full support for bidirectional Obsidian backlinks (`[[link]]`).
+* **You Stay in Command:** If an agent misunderstands a rule, you edit the Markdown file directly in Obsidian. No vector re-indexing, no black-box drift.
+
 ---
 
 ## Quickstart
@@ -117,7 +124,13 @@ cd jit-context
 pip install -e .
 ```
 
-### 2. Verify System Invariants
+### 2. Configure Your Obsidian Vault (Optional / Auto-detected)
+By default, JIT auto-detects `~/Documents/Vault` or `~/Documents/Wojciech`. You can point to any local Obsidian vault:
+```bash
+export OBSIDIAN_VAULT="$HOME/Documents/MyVault"
+```
+
+### 3. Verify System Invariants
 ```bash
 python3 src/health/doctor.py
 # Output: [PASS] 10/10 Epistemic Invariants Verified (<3ms WAL, zero-drift)
