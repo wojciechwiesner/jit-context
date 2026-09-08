@@ -129,3 +129,17 @@ def get_active_overlays(conn: sqlite3.Connection, session_id: str, limit: int = 
         (session_id, limit)
     )
     return [dict(r) for r in cursor.fetchall()]
+
+def get_latest_direct_user_message(conn: sqlite3.Connection, session_id: str) -> Optional[str]:
+    """Retrieve the most recent genuine direct_user message from WAL."""
+    cursor = conn.execute(
+        """
+        SELECT content FROM events
+        WHERE session_id = ? AND origin = 'direct_user' AND status = 'active'
+        ORDER BY seq DESC LIMIT 1
+        """,
+        (session_id,)
+    )
+    row = cursor.fetchone()
+    return row[0] if row else None
+

@@ -26,6 +26,22 @@ from telemetry.collector import (
 ONA_CONTEXT_MODE = os.environ.get("ONA_CONTEXT_MODE", "active")
 WATCHDOG_BUDGET_MS = 650.0
 
+def is_synthetic_harness_message(text: str) -> bool:
+    """Detect internal Hermes harness prompts (curator, delegation, /btw, canon)."""
+    if not text:
+        return False
+    t = text.strip()
+    prefixes = (
+        "[ASYNC DELEGATION",
+        "Review the conversation above and update the skill library",
+        "The user asked a quick SIDE question with /btw",
+        "[OUT-OF-BAND USER MESSAGE",
+        "ENGINEERING CANON (~",
+        "<ONA_CONTEXT",
+        "[ONA_CONTEXT",
+    )
+    return any(t.startswith(p) for p in prefixes)
+
 def on_session_start(ctx: Dict[str, Any]) -> None:
     """Initialize database and verify schema on session startup."""
     init_db()
@@ -36,6 +52,7 @@ def pre_llm_call(ctx: Dict[str, Any]) -> Dict[str, Any]:
     session_id = ctx.get("session_id", "default")
     turn_id = ctx.get("turn_id") or f"turn_{int(start_time * 1000)}"
     user_message = ctx.get("user_message", "")
+    is_synthetic = is_synthetic_harness_message(user_message)
     
     conn = get_db()
     try:
@@ -47,16 +64,24 @@ def pre_llm_call(ctx: Dict[str, Any]) -> Dict[str, Any]:
                 session_id=session_id,
                 role="user",
                 content=user_message,
-                origin="direct_user",
+                origin="harness_event" if is_synthetic else "direct_user",
                 turn_id=turn_id
             )
         l0_ms = (time.time() - l0_start) * 1000
         
+        # Determine genuine user message for scope resolution and context compilation
+        from l0.overlay import get_latest_direct_user_message
+        effective_user_message = user_message
+        if is_synthetic:
+            latest_real = get_latest_direct_user_message(conn, session_id)
+            if latest_real:
+                effective_user_message = latest_real
+
         # L1 Scope resolution (<1ms, uses current repo cwd as default)
         l1_start = time.time()
         cwd_name = Path.cwd().name
         default_scope = cwd_name if cwd_name not in ["wojciechwiesner", "Projects", "active"] else "hermes"
-        active_scope, retrieval_scopes, _, _ = resolve_scope(user_message, default_scope)
+        active_scope, retrieval_scopes, _, _ = resolve_scope(effective_user_message, default_scope)
         l1_ms = (time.time() - l1_start) * 1000
         
         # Context compilation with L2 circuit breaker
@@ -64,7 +89,7 @@ def pre_llm_call(ctx: Dict[str, Any]) -> Dict[str, Any]:
         compile_res = compile_context(
             conn=conn,
             session_id=session_id,
-            user_message=user_message,
+            user_message=effective_user_message,
             transcript_messages=ctx.get("messages", [])
         )
         if isinstance(compile_res, tuple):
