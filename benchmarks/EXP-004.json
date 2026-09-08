@@ -1,5 +1,7 @@
 {
   "exp_id": "EXP-004-Epistemic-Ablation",
+  "type": "synthetic_demo",
+  "clarification": "Synthetic illustration baseline; not hardware-clocked execution runs.",
   "variants": {
     "JIT_Full_Invariants": {
       "stale_context_conflict_rate": "0.0%",

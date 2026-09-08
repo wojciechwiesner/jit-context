@@ -1,4 +1,9 @@
-"""EXP-002, EXP-003, EXP-004: Multi-Task & Tri-Variant & Ablation Experiment Suites."""
+"""EXP-002, EXP-003, EXP-004: Multi-Task & Tri-Variant & Ablation Experiment Suites.
+
+NOTE: These suites generate synthetic demo datasets ('synthetic_demo') using
+statistical/procedural models to illustrate expected behavior and contrasts.
+They do NOT represent hardware-clocked empirical execution runs.
+"""
 
 import os
 import sys
@@ -93,6 +98,9 @@ def run_exp002_multi_task_suite(n_pairs_per_class: int = 5) -> Dict[str, Any]:
         
     return {
         "exp_id": "EXP-002-Statistical-20Runs",
+        "type": "synthetic_demo",
+        "dataset_type": "synthetic_demo",
+        "clarification": "Synthetic illustration baseline; not hardware-clocked execution runs.",
         "total_pairs": len(pairs_detail),
         "paired_wins": paired_wins,
         "metrics": {
@@ -109,9 +117,14 @@ def run_exp003_tri_variant_suite() -> Dict[str, Any]:
     - Variant A: Naive Shadow (Haystack)
     - Variant B: Vanilla Semantic RAG (Top-k Chunks)
     - Variant C: Hermes JIT Context OS (L0 WAL + L1 Scope + Epistemics)
+
+    Dataset type: 'synthetic_demo' (procedurally modeled illustration baseline).
     """
     return {
         "exp_id": "EXP-003-Tri-Variant-Benchmark",
+        "type": "synthetic_demo",
+        "dataset_type": "synthetic_demo",
+        "clarification": "Synthetic illustration baseline; not hardware-clocked execution runs.",
         "variants": {
             "A_Naive_Shadow": {
                 "success_rate": "12/20 (60%)",
@@ -146,9 +159,14 @@ def run_exp004_ablation_suite() -> Dict[str, Any]:
     EXP-004: Epistemic Ablation Study:
     - JIT Full (with Invariants I1-I10)
     - JIT Ablated (Capsule without Authority / Invariants I1/I3/I5)
+
+    Dataset type: 'synthetic_demo' (procedurally modeled illustration baseline).
     """
     return {
         "exp_id": "EXP-004-Epistemic-Ablation",
+        "type": "synthetic_demo",
+        "dataset_type": "synthetic_demo",
+        "clarification": "Synthetic illustration baseline; not hardware-clocked execution runs.",
         "variants": {
             "JIT_Full_Invariants": {
                 "stale_context_conflict_rate": "0.0%",

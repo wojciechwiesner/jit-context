@@ -1,5 +1,7 @@
 {
   "exp_id": "EXP-001-1788167531",
+  "type": "synthetic_demo",
+  "clarification": "Synthetic illustration baseline; not hardware-clocked execution runs.",
   "pairs": 5,
   "metrics": {
     "task_success": {

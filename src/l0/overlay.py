@@ -110,7 +110,7 @@ def append_event(
             """,
             (entry_id, session_id, content, event_id, seq, authority, now)
         )
-    elif (origin in ("runtime_tool_verified", "tool_verified", "tool_observation")) and fact_key:
+    elif (origin in ("runtime_tool_verified", "tool_verified", "tool_observation", "tool")) and fact_key:
         entry_id = f"ovl_{uuid.uuid4().hex[:12]}"
         kind = fact_kind or ("verified_fact" if authority >= 1.0 else "tool_observation")
         conn.execute(

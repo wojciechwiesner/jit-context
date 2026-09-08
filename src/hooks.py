@@ -6,6 +6,7 @@ import time
 import sqlite3
 import uuid
 import json
+import re
 from pathlib import Path
 from typing import Dict, Any, Optional, Tuple
 from l0.db import get_db, init_db
@@ -78,11 +79,20 @@ def on_session_start(ctx: Dict[str, Any]) -> None:
 
 def pre_llm_call(ctx: Dict[str, Any]) -> Dict[str, Any]:
     """Pre-LLM hook: Compile lean context capsule (<1,500 tokens) just-in-time."""
+    current_mode = os.environ.get("ONA_CONTEXT_MODE", ONA_CONTEXT_MODE).lower()
+    if current_mode in ("disabled", "off", "0"):
+        return {}
+
     hot_reload_jit_modules()
     start_time = time.time()
     session_id = ctx.get("session_id", "default")
     turn_id = ctx.get("turn_id") or f"turn_{int(start_time * 1000)}"
-    user_message = ctx.get("user_message", "")
+    user_message = ctx.get("user_message") or ctx.get("user_prompt") or ""
+    if not user_message and ctx.get("messages"):
+        for m in reversed(ctx["messages"]):
+            if isinstance(m, dict) and m.get("role") == "user":
+                user_message = m.get("content", "")
+                break
     is_synthetic = is_synthetic_harness_message(user_message)
     
     conn = get_db()
@@ -194,18 +204,57 @@ def pre_llm_call(ctx: Dict[str, Any]) -> Dict[str, Any]:
         except Exception:
             pass
         
-        # Render live visual streaming line to CLI stderr/stdout
+        # Render live visual streaming block to CLI
         scope_badge = f"\033[36m[{active_scope}]\033[0m"
         time_badge = f"\033[32m{compile_ms:.1f}ms\033[0m"
         size_badge = f"\033[33m{len(capsule)} zn\033[0m"
         conf_badge = f"\033[32mconf:{confidence:.2f}\033[0m" if confidence >= 0.85 else f"\033[41;37m⚠️ LOW CONF:{confidence:.2f}\033[0m"
-        status_line = f"⚡ \033[1mJIT Context\033[0m {scope_badge} • L0:{l0_ms:.1f}ms L1:{l1_ms:.1f}ms • {conf_badge} • {time_badge} ({size_badge})"
-        print(status_line, file=sys.stderr, flush=True)
+        
         if current_mode == "shadow":
-            print(f"[ona-context:shadow] Compiled capsule ({len(capsule)} chars) logged, injection bypassed.")
+            print(f"⚡ \033[1mJIT Context\033[0m [shadow] {scope_badge} • {time_badge} ({size_badge})", file=sys.stderr, flush=True)
             return {}
             
-        print(f"[ona-context:active] ⚡ Injected JIT capsule ({len(capsule)} chars) for scope '{active_scope}'.")
+        # Extract meaningful summary fields from compiled capsule
+        goal_match = re.search(r"• Goal:\s*(.+)", capsule)
+        intent_match = re.search(r"• Intent:\s*(.+)", capsule)
+        verify_match = re.search(r"• Verify Command:\s*(.+)", capsule)
+        
+        # Count working set files, invariants and proofs
+        ws_matches = re.findall(r"• ([^\n\(]+) \((?:active module|written|read_ok)", capsule)
+        inv_matches = re.findall(r"\[ACTIVE INVARIANTS\]\n((?:    • .+\n?)+)", capsule)
+        invariants_count = len(inv_matches[0].strip().splitlines()) if inv_matches else 0
+        proof_matches = re.findall(r"\[(?:RUNTIME PROOFS|VERIFIED RUNTIME PROOFS)[^\]]*\]\n((?:    • .+\n?)+)", capsule)
+        proofs_count = len(proof_matches[0].strip().splitlines()) if proof_matches else 0
+        
+        goal_text = goal_match.group(1).strip()[:90] if goal_match else ""
+        intent_text = intent_match.group(1).strip() if intent_match else ""
+        verify_text = verify_match.group(1).strip() if verify_match else ""
+        
+        status_lines = [
+            f"⚡ \033[1mJIT Context\033[0m {scope_badge} • L0:{l0_ms:.1f}ms L1:{l1_ms:.1f}ms • {time_badge} ({size_badge}) • {conf_badge}"
+        ]
+        if goal_text:
+            intent_badge = f" \033[90m[{intent_text}]\033[0m" if intent_text else ""
+            status_lines.append(f"  \033[90m├─\033[0m \033[33mCel:\033[0m {goal_text}{intent_badge}")
+            
+        details = []
+        if verify_text:
+            details.append(f"verify: \033[32m{verify_text}\033[0m")
+        if ws_matches:
+            file_names = [Path(p.strip()).name for p in ws_matches[:3]]
+            more = f" +{len(ws_matches)-3}" if len(ws_matches) > 3 else ""
+            details.append(f"pliki: \033[36m{', '.join(file_names)}{more}\033[0m")
+        if invariants_count:
+            details.append(f"inwarianty: \033[35m{invariants_count}\033[0m")
+        if proofs_count:
+            details.append(f"dowody L0: \033[32m{proofs_count}\033[0m")
+            
+        if details:
+            status_lines.append(f"  \033[90m└─\033[0m \033[90mStan:\033[0m {' • '.join(details)}")
+        else:
+            status_lines.append(f"  \033[90m└─\033[0m \033[90mStan:\033[0m czysty kontekst roboczy")
+            
+        print("\n".join(status_lines), file=sys.stderr, flush=True)
         return {"context": capsule}
     except Exception as e:
         print(f"[ona-context:error] pre_llm failed open: {e}")
@@ -296,63 +345,7 @@ def api_request_error(ctx: Dict[str, Any]) -> None:
     finally:
         conn.close()
 
-def parse_tool_execution(tool_name: str, tool_input: Any, tool_output: Any) -> Tuple[str, Optional[str], Optional[str], Optional[str]]:
-    """Parses tool execution to extract verified facts vs observations vs errors."""
-    output_data = tool_output
-    if isinstance(tool_output, str):
-        try:
-            output_data = json.loads(tool_output)
-        except Exception:
-            pass
-
-    origin = "tool_observation"
-    fact_kind = None
-    fact_key = None
-    fact_value = None
-
-    inp = tool_input if isinstance(tool_input, dict) else {}
-
-    if tool_name == "terminal":
-        cmd = inp.get("command", "")
-        cmd_short = cmd.strip().split("\n")[0][:60]
-        exit_code = None
-        if isinstance(output_data, dict):
-            exit_code = output_data.get("exit_code")
-        
-        if exit_code == 0:
-            origin = "runtime_tool_verified"
-            fact_kind = "verified_fact"
-            fact_key = f"cmd:{cmd_short}"
-            fact_value = "exit_code=0 (verified)"
-        elif exit_code is not None and exit_code != 0:
-            origin = "tool_observation"
-            fact_kind = "tool_error"
-            fact_key = f"cmd_fail:{cmd_short}"
-            fact_value = f"exit_code={exit_code}"
-
-    elif tool_name in ("write_file", "patch"):
-        path = inp.get("path", "")
-        is_err = False
-        if isinstance(output_data, dict):
-            if output_data.get("error") or output_data.get("success") is False:
-                is_err = True
-        elif isinstance(tool_output, str):
-            if "error:" in tool_output.lower() or "exception" in tool_output.lower():
-                is_err = True
-        
-        if not is_err and path:
-            origin = "runtime_tool_verified"
-            fact_kind = "verified_fact"
-            action = "written" if tool_name == "write_file" else "patched"
-            fact_key = f"file:{path}"
-            fact_value = f"{action}_verified (verified)"
-        elif is_err and path:
-            origin = "tool_observation"
-            fact_kind = "tool_error"
-            fact_key = f"file_fail:{path}"
-            fact_value = "modification_failed"
-
-    return origin, fact_kind, fact_key, fact_value
+from l0.tool_evidence import parse_tool_execution
 
 def post_tool_call(ctx: Dict[str, Any]) -> None:
     """Post-tool call hook: Records tool observations and verified facts into L0 event stream."""

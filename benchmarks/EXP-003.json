@@ -1,5 +1,7 @@
 {
   "exp_id": "EXP-003-Tri-Variant-Benchmark",
+  "type": "synthetic_demo",
+  "clarification": "Synthetic illustration baseline; not hardware-clocked execution runs.",
   "variants": {
     "A_Naive_Shadow": {
       "success_rate": "12/20 (60%)",

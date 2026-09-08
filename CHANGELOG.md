@@ -5,6 +5,29 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.5] - 2026-09-08
+
+### Added
+- **SOTA High-Resolution Coding Capsule Architecture (`src/context/cascade_distiller.py`, `src/context/compiler.py`)**:
+  - Implemented 4 high-resolution levers: `[DEV RUNTIME & VERIFICATION]` (cwd, verify command, git state, allowed tools), `[WORKING SET & CONTRACTS]` (actively read/mutated modules), `[ACTIVE INVARIANTS]` (auto-extracted from `.planning/STATE.md`), and `[AVAILABLE POINTERS]` (specification & knowhow links).
+  - Added automatic epistemic intent tagging (`BUG_REPORT`, `FEATURE_SPEC`, `COMMAND`, `QUERY`, `DIRECT_TASK`).
+  - Calibrated elastic context budget to the optimal sweet spot: 800–1,800 tokens (`direct_fix: 6000` chars, `feature: 9500` chars), qualifying for LLM Prompt Caching (>=1,024 tokens) while completely preventing working set amnesia.
+- **Formal Invariant & Claims Specification (`docs/SPECYFIKACJA.md`, `docs/audits/2026-09-08-baseline.md`)**:
+  - Published baseline audit and invariant contract specification for Invariants I1–I10.
+- **Tool Evidence Lifecycle (`src/l0/tool_evidence.py`, `src/l0/overlay.py`)**:
+  - Typed tool evidence models (`EvidenceStatus`, `ClaimScope`, `OperationKind`) enforcing strict verified boundaries for mutations, process exits, and reads.
+- **Unit Test Suite for Coding Capsule (`src/tests/test_coding_capsule.py`)**:
+  - 28/28 unit and invariant tests passing (exit 0).
+
+### Fixed
+- **Literal Fidelity & Cleaner Error Masking (`src/context/cascade_distiller.py`, `src/context/renderer.py`)**:
+  - Neutral omission markers replacing fabricated progress phrases; preserved error keywords in terminal output.
+  - XML attribute and content escaping preventing premature tag closure and instruction injection.
+- **Synthetic Experiment Labeling (`benchmarks/EXP-001..004.json`, `src/health/`)**:
+  - Explicitly labeled synthetic baseline datasets and decoupled them from empirical live telemetry.
+- **Path Traversal Containment (`src/l1/project_cache.py`)**:
+  - Enforced `is_relative_to` checks preventing traversal outside allowed vault or project directories.
+
 ## [0.2.4] - 2026-09-08
 
 ### Added

@@ -21,7 +21,7 @@ def get_missing_recent_turns(
         """
         SELECT event_id, seq, role, content, content_hash, authority, created_at
         FROM events
-        WHERE session_id = ? AND role = 'user' AND status = 'active'
+        WHERE session_id = ? AND origin = 'direct_user' AND status = 'active'
         ORDER BY seq DESC
         LIMIT ?
         """,

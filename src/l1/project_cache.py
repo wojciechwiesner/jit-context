@@ -62,9 +62,17 @@ def get_project_context(
         VAULT_DIR / "context" / "projects" / f"{raw_name}.md",
     ]
     for cand in candidates:
-        if cand.exists() and cand.is_file():
-            target_file = cand
-            break
+        try:
+            resolved = cand.resolve()
+            # Prevent path traversal outside allowed vault or project directories
+            allowed_roots = [VAULT_DIR.resolve(), vault_base.resolve()]
+            if not any(resolved.is_relative_to(root) for root in allowed_roots):
+                continue
+            if resolved.exists() and resolved.is_file():
+                target_file = resolved
+                break
+        except (ValueError, RuntimeError):
+            continue
 
     # 2. Local workspace (.planning/STATE.md or STATE.md)
     if not target_file:

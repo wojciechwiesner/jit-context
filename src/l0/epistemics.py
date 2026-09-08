@@ -6,16 +6,22 @@ def get_authority_for_role(origin: str, role: str) -> float:
     """
     if role == "assistant" or origin == "assistant":
         return 0.0
-    if origin == "direct_user" or (role == "user" and origin != "external"):
+    if origin == "direct_user":
         return 1.0
+    if origin in ("harness_event", "synthetic", "synthetic_demo"):
+        return 0.2
+    if role == "user" and origin != "external":
+        return 0.9 if origin != "direct_user" else 1.0
     if origin in ("runtime_tool_verified", "tool_verified"):
         return 1.0
     if origin in ("tool", "tool_observation"):
         return 0.9
-    if origin == "system":
+    if origin == "system" and role == "system":
         return 1.0
-    if origin == "external":
+    if origin == "system":
         return 0.5
+    if origin == "external":
+        return 0.2
     return 0.0
 
 def cap_derived_authority(root_authority: float, claimed_authority: float) -> float:

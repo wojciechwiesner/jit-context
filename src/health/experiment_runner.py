@@ -1,4 +1,9 @@
-"""EXP-001: Paired A/B Experiment Runner (Shadow vs Active L0/L1 JIT Context OS)."""
+"""EXP-001: Paired A/B Experiment Runner (Shadow vs Active L0/L1 JIT Context OS).
+
+NOTE: This runner generates a synthetic demo dataset ('synthetic_demo') using
+procedural formulas to illustrate expected behavior and metrics contrast.
+It does NOT represent hardware-clocked empirical execution.
+"""
 
 import os
 import sys
@@ -41,9 +46,15 @@ def init_exp_db():
             stale_context_errors INTEGER NOT NULL,
             actual_cost_usd REAL NOT NULL,
             quality_score REAL NOT NULL,
+            dataset_type TEXT DEFAULT 'synthetic_demo',
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     """)
+    # Ensure dataset_type column exists if table was created with an older schema
+    cursor = conn.execute("PRAGMA table_info(paired_runs)")
+    columns = [col[1] for col in cursor.fetchall()]
+    if "dataset_type" not in columns:
+        conn.execute("ALTER TABLE paired_runs ADD COLUMN dataset_type TEXT DEFAULT 'synthetic_demo'")
     conn.commit()
     conn.close()
 
@@ -51,6 +62,8 @@ def run_paired_experiment_exp001(pairs_count: int = 5) -> Dict[str, Any]:
     """
     Executes EXP-001: Paired A/B Canary (Shadow Control vs JIT Active).
     Simulates real complex coding task with stale decisions in history vs canon in L0/L1.
+
+    Dataset type: 'synthetic_demo' (procedurally generated illustration baseline).
     """
     init_exp_db()
     exp_id = f"EXP-001-{int(time.time())}"
@@ -82,8 +95,8 @@ def run_paired_experiment_exp001(pairs_count: int = 5) -> Dict[str, Any]:
         conn.execute("""
             INSERT INTO paired_runs (exp_id, pair_idx, variant, task_name, success, wall_time_s, ttft_s, 
                 time_to_first_mutation_s, input_tokens, output_tokens, cache_read_tokens, tool_calls, 
-                context_discovery_ops, stale_context_errors, actual_cost_usd, quality_score)
-            VALUES (?, ?, 'SHADOW', 'EXP-001-ComplexCoding', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                context_discovery_ops, stale_context_errors, actual_cost_usd, quality_score, dataset_type)
+            VALUES (?, ?, 'SHADOW', 'EXP-001-ComplexCoding', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'synthetic_demo')
         """, (exp_id, i, s_success, s_wall_time, s_ttft, s_mutation_time, s_in_tokens, s_out_tokens, s_cache_read, s_tool_calls, s_disc_ops, s_stale_errors, s_cost, s_quality))
         
         # 2. JIT ACTIVE (L0 SQLite WAL + L1 Scope Capsule)
@@ -104,8 +117,8 @@ def run_paired_experiment_exp001(pairs_count: int = 5) -> Dict[str, Any]:
         conn.execute("""
             INSERT INTO paired_runs (exp_id, pair_idx, variant, task_name, success, wall_time_s, ttft_s, 
                 time_to_first_mutation_s, input_tokens, output_tokens, cache_read_tokens, tool_calls, 
-                context_discovery_ops, stale_context_errors, actual_cost_usd, quality_score)
-            VALUES (?, ?, 'JIT_ACTIVE', 'EXP-001-ComplexCoding', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                context_discovery_ops, stale_context_errors, actual_cost_usd, quality_score, dataset_type)
+            VALUES (?, ?, 'JIT_ACTIVE', 'EXP-001-ComplexCoding', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'synthetic_demo')
         """, (exp_id, i, j_success, j_wall_time, j_ttft, j_mutation_time, j_in_tokens, j_out_tokens, j_cache_read, j_tool_calls, j_disc_ops, j_stale_errors, j_cost, j_quality))
         
         results_shadow.append({
@@ -125,6 +138,9 @@ def run_paired_experiment_exp001(pairs_count: int = 5) -> Dict[str, Any]:
     # Compute Aggregates
     summary = {
         "exp_id": exp_id,
+        "type": "synthetic_demo",
+        "dataset_type": "synthetic_demo",
+        "clarification": "Synthetic illustration baseline; not hardware-clocked execution runs.",
         "pairs": pairs_count,
         "metrics": {
             "task_success": {

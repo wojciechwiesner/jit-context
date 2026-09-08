@@ -314,7 +314,9 @@ def get_live_metrics_combined(view_mode: str = "session") -> Dict[str, Any]:
         pass
 
     return {
-        "view_mode": view_mode, "telemetry_source": "ona-context/session_overlay.db",
+        "view_mode": view_mode,
+        "telemetry_type": "empirical_live",
+        "telemetry_source": "ona-context/session_overlay.db (measured live)",
         "total_cache_read_tokens": totals["cache"], "session_cache_read_tokens": totals["cache"],
         "total_jit_avoided_tokens": totals["avoided"], "total_cost_usd": round(totals["cost"], 4),
         "l0_latency_ms": round(totals["l0"], 2),
@@ -385,6 +387,7 @@ DASHBOARD_HTML = """<!DOCTYPE html>
     <div class="logo">
       <span>⚡ HERMES CONTEXT OS OBSERVATORY</span>
       <span class="pill" id="status-badge">● LIVE HEALTHY</span>
+      <span class="pill" style="background: rgba(99,102,241,0.15); color: #818cf8; border-color: rgba(99,102,241,0.3);">EMPIRICAL TELEMETRY</span>
     </div>
     
     <div class="view-toggles">
@@ -436,18 +439,23 @@ DASHBOARD_HTML = """<!DOCTYPE html>
     <div class="card">
       <div class="card-title">JIT Context Avoided (Est.)</div>
       <div class="card-value" style="color: #38bdf8;" id="val-jit-avoided">0</div>
-      <div class="card-sub">Haystack tokens filtered by L0/L1 Lean Capsule</div>
+      <div class="card-sub">Live measured turn telemetry from session_overlay.db</div>
     </div>
     <div class="card">
       <div class="card-title">L0 WAL Latency</div>
-      <div class="card-value" style="color: var(--success);" id="val-l0-lat">0.18 ms</div>
-      <div class="card-sub">Read-Your-Own-Writes Hot-Path (p95 &lt; 3ms)</div>
+      <div class="card-value" style="color: var(--success);" id="val-l0-lat">--</div>
+      <div class="card-sub">Measured live via turn_telemetry (p95 &lt; 3ms)</div>
     </div>
     <div class="card">
       <div class="card-title">Invariants I1–I10</div>
       <div class="card-value" style="color: var(--success);" id="val-invariants">10 / 10</div>
       <div class="card-sub">Safety & Epistemic Authority: PASS</div>
     </div>
+  </div>
+
+  <div style="margin-bottom: 20px; padding: 10px 14px; background: rgba(34,38,52,0.6); border: 1px solid var(--border); border-radius: 6px; font-size: 11px; color: var(--text-muted); display: flex; justify-content: space-between; align-items: center;">
+    <span><strong>Telemetry Scope:</strong> Live empirical measurements from <code>session_overlay.db</code>. Synthetic demo benchmarks (EXP-001..004) are decoupled from live stats.</span>
+    <span>Datasets: <a href="/api/experiments" style="color: #818cf8; text-decoration: none;">/api/experiments</a></span>
   </div>
 
   <div class="split">
@@ -596,33 +604,114 @@ class HealthHTTPHandler(http.server.BaseHTTPRequestHandler):
                     conn.close()
             elif self.path.startswith("/api/experiments"):
                 from health.experiment_runner import run_paired_experiment_exp001
-                from health.experiment_suites import run_exp002_multi_task_suite, run_exp003_tri_variant_suite, run_exp004_ablation_suite
+                from health.experiment_suites import (
+                    run_exp002_multi_task_suite,
+                    run_exp003_tri_variant_suite,
+                    run_exp004_ablation_suite,
+                )
                 from health.exp005_runner import run_exp005_lost_in_the_middle_and_gap_closure
                 from health.exp006_synthapse import run_exp006_synthapse_arbitration
                 from health.exp007_tulimy import run_exp007_tulimy_relational_benchmark
                 
                 path_lower = self.path.lower()
-                if "exp005" in path_lower:
-                    summary = run_exp005_lost_in_the_middle_and_gap_closure()
-                elif "exp006" in path_lower:
-                    summary = run_exp006_synthapse_arbitration()
-                elif "exp007" in path_lower:
-                    summary = run_exp007_tulimy_relational_benchmark()
+                if "exp001" in path_lower:
+                    summary = run_paired_experiment_exp001(5)
                 elif "exp002" in path_lower:
                     summary = run_exp002_multi_task_suite(5)
                 elif "exp003" in path_lower:
                     summary = run_exp003_tri_variant_suite()
                 elif "exp004" in path_lower:
                     summary = run_exp004_ablation_suite()
-                else:
+                elif "exp005" in path_lower:
+                    summary = run_exp005_lost_in_the_middle_and_gap_closure()
+                    summary.setdefault("type", "empirical_live")
+                    summary.setdefault("dataset_type", "empirical_live")
+                elif "exp006" in path_lower:
+                    summary = run_exp006_synthapse_arbitration()
+                    summary.setdefault("type", "empirical_live")
+                    summary.setdefault("dataset_type", "empirical_live")
+                elif "exp007" in path_lower:
+                    summary = run_exp007_tulimy_relational_benchmark()
+                    summary.setdefault("type", "empirical_live")
+                    summary.setdefault("dataset_type", "empirical_live")
+                elif "category=synthetic" in path_lower or "mode=synthetic" in path_lower:
                     summary = {
-                        "exp001": run_paired_experiment_exp001(5),
-                        "exp002": run_exp002_multi_task_suite(5),
-                        "exp003": run_exp003_tri_variant_suite(),
-                        "exp004": run_exp004_ablation_suite(),
-                        "exp005": run_exp005_small_model_suite(),
-                        "exp006": run_exp006_synthapse_arbitration(),
-                        "exp007": run_exp007_tulimy_relational_benchmark()
+                        "dataset_category": "synthetic_demo",
+                        "clarification": "Simulated illustration baselines; not hardware-clocked execution runs.",
+                        "experiments": {
+                            "exp001": run_paired_experiment_exp001(5),
+                            "exp002": run_exp002_multi_task_suite(5),
+                            "exp003": run_exp003_tri_variant_suite(),
+                            "exp004": run_exp004_ablation_suite(),
+                        },
+                    }
+                elif "category=empirical" in path_lower or "mode=empirical" in path_lower:
+                    def safe_run(fn, default_id):
+                        try:
+                            res = fn()
+                            res.setdefault("type", "empirical_live")
+                            res.setdefault("dataset_type", "empirical_live")
+                            return res
+                        except Exception as exc:
+                            return {"exp_id": default_id, "type": "empirical_live", "error": str(exc), "status": "unavailable"}
+
+                    summary = {
+                        "dataset_category": "empirical_live",
+                        "clarification": "Live physical model and hardware execution runs.",
+                        "experiments": {
+                            "exp005": safe_run(run_exp005_lost_in_the_middle_and_gap_closure, "EXP-005"),
+                            "exp006": safe_run(run_exp006_synthapse_arbitration, "EXP-006"),
+                            "exp007": safe_run(run_exp007_tulimy_relational_benchmark, "EXP-007"),
+                        },
+                    }
+                else:
+                    def safe_run(fn, default_id):
+                        try:
+                            res = fn()
+                            res.setdefault("type", "empirical_live")
+                            res.setdefault("dataset_type", "empirical_live")
+                            return res
+                        except Exception as exc:
+                            return {"exp_id": default_id, "type": "empirical_live", "error": str(exc), "status": "unavailable"}
+
+                    exp001_res = run_paired_experiment_exp001(5)
+                    exp002_res = run_exp002_multi_task_suite(5)
+                    exp003_res = run_exp003_tri_variant_suite()
+                    exp004_res = run_exp004_ablation_suite()
+                    exp005_res = safe_run(run_exp005_lost_in_the_middle_and_gap_closure, "EXP-005")
+                    exp006_res = safe_run(run_exp006_synthapse_arbitration, "EXP-006")
+                    exp007_res = safe_run(run_exp007_tulimy_relational_benchmark, "EXP-007")
+
+                    summary = {
+                        "dataset_categories": {
+                            "synthetic_demo": ["exp001", "exp002", "exp003", "exp004"],
+                            "empirical_live": ["exp005", "exp006", "exp007"],
+                        },
+                        "synthetic_demo": {
+                            "clarification": "Simulated illustration baselines; not hardware-clocked execution runs.",
+                            "experiments": {
+                                "exp001": exp001_res,
+                                "exp002": exp002_res,
+                                "exp003": exp003_res,
+                                "exp004": exp004_res,
+                            },
+                        },
+                        "empirical_live": {
+                            "clarification": "Measured live physical model and hardware execution runs.",
+                            "experiments": {
+                                "exp005": exp005_res,
+                                "exp006": exp006_res,
+                                "exp007": exp007_res,
+                            },
+                        },
+                        # Backwards compatibility flat keys:
+                        "exp001": exp001_res,
+                        "exp002": exp002_res,
+                        "exp003": exp003_res,
+                        "exp004": exp004_res,
+                        "exp005": exp005_res,
+                        "exp006": exp006_res,
+                        "exp007": exp007_res,
                     }
                 self.send_response(200)
                 self.send_header("Content-Type", "application/json")

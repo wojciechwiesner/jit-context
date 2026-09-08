@@ -1,5 +1,7 @@
 {
   "exp_id": "EXP-002-Statistical-20Runs",
+  "type": "synthetic_demo",
+  "clarification": "Synthetic illustration baseline; not hardware-clocked execution runs.",
   "total_pairs": 20,
   "paired_wins": {
     "jit": 20,
