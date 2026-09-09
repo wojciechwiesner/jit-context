@@ -112,7 +112,7 @@ def fast_deterministic_prefilter(raw_text: str) -> str:
     return "\n".join(deduped_lines).strip()
 
 
-CLASSIFIER_PROMPT = """You are the Semantic Tagger & Prompt Enhancer for Hermes JIT Context OS.
+CLASSIFIER_PROMPT = """You are the Semantic Tagger, Prompt Enhancer & Cascade Impact Analyzer for Hermes JIT Context OS.
 Analyze the provided noisy session text and classify components:
 1. Extract verbatim CRITICAL text (user instructions, exact error messages, file paths, ports, exports).
 2. Determine active scope/project name.
@@ -121,7 +121,9 @@ Analyze the provided noisy session text and classify components:
 5. PROMPT ENHANCER:
    - enhanced_technical_spec: Translate terse user instructions into a precise, concrete engineering specification grounded in the codebase and error state.
    - acceptance_criteria: Exact observable verification condition (e.g. 'pytest tests/... passes with exit code 0').
-   - target_files: List of primary files to inspect or modify.
+   - target_files: List of primary files to inspect or modify (use real codebase paths if provided in Codebase Map, do not invent fictitious paths).
+6. CASCADING CONTRACT ANALYSIS:
+   - cascading_impacts: List all sibling files, dependent routes, callers, or auth/schema providers that share this contract and MUST be inspected or updated to prevent broken invariants (e.g. when changing session cookies/tokens, check all token issuers, SSO endpoints, and client session handlers).
 
 Respond ONLY with valid JSON matching:
 {
@@ -133,7 +135,8 @@ Respond ONLY with valid JSON matching:
   "background_process_note": "one-line status of background task if any",
   "enhanced_technical_spec": "precise technical specification",
   "acceptance_criteria": "exact verification command and condition",
-  "target_files": ["path/to/file.py"]
+  "target_files": ["path/to/file.py"],
+  "cascading_impacts": ["Contract impact description: sibling files to verify", ...]
 }
 """
 
@@ -206,6 +209,13 @@ def validate_classifier_output(
             if isinstance(t, str) and t.strip():
                 target_files.append(t.strip()[:150])
 
+    raw_impacts = data.get("cascading_impacts")
+    cascading_impacts = []
+    if isinstance(raw_impacts, list):
+        for imp in raw_impacts:
+            if isinstance(imp, str) and imp.strip():
+                cascading_impacts.append(imp.strip()[:200])
+
     return {
         "active_scope": resolved_scope,
         "confidence": conf,
@@ -215,7 +225,8 @@ def validate_classifier_output(
         "background_process_note": bg_str,
         "enhanced_technical_spec": spec_str,
         "acceptance_criteria": crit_str,
-        "target_files": target_files if target_files else None
+        "target_files": target_files if target_files else None,
+        "cascading_impacts": cascading_impacts if cascading_impacts else None
     }
 
 
@@ -299,18 +310,20 @@ def assemble_elastic_capsule(
     intent: Optional[str] = None,
     enhanced_spec: Optional[str] = None,
     acceptance_criteria: Optional[str] = None,
-    target_files: Optional[List[str]] = None
+    target_files: Optional[List[str]] = None,
+    cascading_impacts: Optional[List[str]] = None
 ) -> Tuple[str, int]:
     """Assembles an elastically sized XML capsule preserving all critical elements verbatim and escaping all serialized content."""
     
     # Determine elastic character budget based on task complexity
+    # Scaled to support real AST working sets, codebase map, and cascade contract analysis
     budget_map = {
-        "status": 3500,         # ~900 tokens
-        "direct_fix": 6000,     # ~1500 tokens (calibrated SOTA sweet spot)
-        "feature": 9500,        # ~2400 tokens
-        "refactoring": 14000    # ~3500 tokens
+        "status": 5000,         # ~1250 tokens
+        "direct_fix": 10000,    # ~2500 tokens (calibrated SOTA sweet spot with AST & cascade contracts)
+        "feature": 16000,       # ~4000 tokens
+        "refactoring": 25000    # ~6250 tokens
     }
-    char_budget = budget_map.get(complexity, 6000)
+    char_budget = budget_map.get(complexity, 10000)
 
     lines = [
         f'<ONA_CONTEXT scope="{escape_xml_attr(active_scope)}" epoch="{int(epoch)}" confidence="{confidence:.2f}" complexity="{escape_xml_attr(complexity)}">',
@@ -330,6 +343,10 @@ def assemble_elastic_capsule(
         if target_files:
             targets_str = ", ".join(target_files) if isinstance(target_files, list) else str(target_files)
             lines.append(f"    • Target Files: [{escape_xml_content(targets_str)}]")
+        if cascading_impacts:
+            lines.append("  [CASCADING CONTRACT IMPACTS & SIBLING VERIFICATION]")
+            for impact in cascading_impacts:
+                lines.append(f"    • Cascade Check: {escape_xml_content(impact)}")
         if background_note:
             lines.append(f"    • Background Status: {escape_xml_content(background_note)}")
 
@@ -562,6 +579,7 @@ def distill_context_cascade(
     llm_spec = llm_meta.get("enhanced_technical_spec")
     llm_crit = llm_meta.get("acceptance_criteria")
     llm_targets = llm_meta.get("target_files")
+    llm_cascade = llm_meta.get("cascading_impacts")
 
     capsule, budget = assemble_elastic_capsule(
         active_scope=resolved_scope,
@@ -582,7 +600,8 @@ def distill_context_cascade(
         intent=intent,
         enhanced_spec=llm_spec,
         acceptance_criteria=llm_crit,
-        target_files=llm_targets
+        target_files=llm_targets,
+        cascading_impacts=llm_cascade
     )
 
     return {

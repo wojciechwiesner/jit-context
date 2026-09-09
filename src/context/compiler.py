@@ -181,27 +181,49 @@ def compile_context(
     if not dev_runtime.get("allowed_tools") and kwargs.get("allowed_tools"):
         dev_runtime["allowed_tools"] = kwargs.get("allowed_tools")
 
-    # Codebase Map discovery
+    # Codebase Map discovery across all standard project layouts (app/, src/, lib/)
     if not dev_runtime.get("codebase_map") and session_cwd:
         try:
             cwd_p = Path(session_cwd)
             found_files = []
-            for pattern in ("src/**/*.py", "src/**/*.ts", "src/**/*.js", "tests/**/*.py", "tests/**/*.ts", "tests/**/*.js"):
+            patterns = (
+                "app/**/*.py", "src/**/*.py", "lib/**/*.py",
+                "app/**/*.ts", "src/**/*.ts", "lib/**/*.ts",
+                "app/**/*.js", "src/**/*.js", "lib/**/*.js",
+                "tests/**/*.py", "tests/**/*.ts", "tests/**/*.js",
+            )
+            for pattern in patterns:
                 for fp in cwd_p.glob(pattern):
-                    if fp.is_file() and not fp.name.startswith("__"):
+                    if fp.is_file() and not fp.name.startswith("__") and not fp.name.startswith("."):
                         found_files.append(str(fp.relative_to(cwd_p)))
-                        if len(found_files) >= 12:
+                        if len(found_files) >= 16:
                             break
-                if len(found_files) >= 12:
+                if len(found_files) >= 16:
                     break
             if found_files:
                 dev_runtime["codebase_map"] = found_files
         except Exception:
             pass
 
-    # Active Invariants (max 3)
+    # Active Invariants (max 4)
     active_invariants = list(kwargs.get("active_invariants") or [])
-    if not active_invariants and session_cwd:
+
+    # Automated Cascade Contract Invariants based on user intent & domain keywords
+    combined_signal = f"{user_message} {' '.join(current_statements[-3:])}".lower()
+    if any(k in combined_signal for k in ("auth", "login", "sesj", "session", "cookie", "ciasteczk", "wylog", "token", "jwt", "sso", "oauth")):
+        active_invariants.append(
+            "CASCADE INVARIANT (Auth Graph): Token/cookie changes require verifying all issuers (login, refresh, OAuth/SSO, session endpoints) and client session handlers."
+        )
+    if any(k in combined_signal for k in ("tenant", "company", "firma", "scoping", "rls", "wielofirm")):
+        active_invariants.append(
+            "CASCADE INVARIANT (Tenant Scope): Endpoints must scope DB access by company_id and return 404 (not 403) on cross-tenant requests."
+        )
+    if any(k in combined_signal for k in ("migracj", "migration", "alembic", "model", "kolumn", "column", "schema")):
+        active_invariants.append(
+            "CASCADE INVARIANT (Schema Cascade): DB model mutations require corresponding migration files and API schema synchronization."
+        )
+
+    if session_cwd and len(active_invariants) < 4:
         try:
             cwd_p = Path(session_cwd)
             state_file = cwd_p / ".planning" / "STATE.md"
@@ -209,9 +231,9 @@ def compile_context(
                 for line in state_file.read_text(encoding="utf-8").splitlines():
                     if any(w in line for w in ("Invariant", "Inwariant", "ZAKAZ", "CANON", "MANDATORY")):
                         clean_inv = line.strip().lstrip("-*# ").strip()
-                        if clean_inv and len(clean_inv) < 200:
+                        if clean_inv and len(clean_inv) < 200 and clean_inv not in active_invariants:
                             active_invariants.append(clean_inv)
-                            if len(active_invariants) >= 3:
+                            if len(active_invariants) >= 4:
                                 break
         except Exception:
             pass
@@ -265,5 +287,5 @@ def compile_context(
         "complexity": complexity,
         "distilled": distill_result.get("distilled", False),
         "duration_ms": distill_result.get("duration_ms", 0.0),
-        "budget": distill_result.get("budget", 6000)
+        "budget": distill_result.get("budget", 10000)
     })

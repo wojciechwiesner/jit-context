@@ -182,3 +182,32 @@ def test_assistant_claims_without_tools_never_enter_verified_proofs(test_db):
     capsule = compile_context(test_db, session_id, "Jaki jest stan?")
     assert "[VERIFIED RUNTIME PROOFS" not in capsule
 
+
+# --- Cascade Contract Invariants ---
+def test_cascade_auth_invariant_triggered_on_auth_keywords(test_db):
+    session_id = "s_cascade_auth"
+    ensure_session(test_db, session_id)
+    capsule = compile_context(test_db, session_id, "sprawdz dlaczego mikita karney jest wylogowywany z faktur")
+    assert "CASCADE INVARIANT (Auth Graph)" in capsule
+    assert "Token/cookie changes require verifying all issuers" in capsule
+
+
+def test_cascade_tenant_invariant_triggered_on_tenant_keywords(test_db):
+    session_id = "s_cascade_tenant"
+    ensure_session(test_db, session_id)
+    capsule = compile_context(test_db, session_id, "popraw tenant scoping w widoku firm")
+    assert "CASCADE INVARIANT (Tenant Scope)" in capsule
+
+
+def test_cascade_codebase_map_discovers_app_directory(test_db, tmp_path):
+    session_id = "s_cascade_map"
+    ensure_session(test_db, session_id)
+    # Create app/ and tests/ structure
+    app_dir = tmp_path / "app" / "api"
+    app_dir.mkdir(parents=True)
+    (app_dir / "routes.py").write_text("def index(): pass\n")
+    
+    capsule = compile_context(test_db, session_id, "sprawdz api", session_cwd=str(tmp_path))
+    assert "app/api/routes.py" in capsule
+
+
