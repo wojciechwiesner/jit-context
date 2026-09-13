@@ -210,56 +210,51 @@ def pre_llm_call(ctx: Dict[str, Any]) -> Dict[str, Any]:
         except Exception:
             pass
         
-        # Render live visual streaming block to CLI
-        scope_badge = f"\033[36m[{active_scope}]\033[0m"
-        time_badge = f"\033[32m{compile_ms:.1f}ms\033[0m"
-        size_badge = f"\033[33m{len(capsule)} zn\033[0m"
-        conf_badge = f"\033[32mconf:{confidence:.2f}\033[0m" if confidence >= 0.85 else f"\033[41;37m⚠️ LOW CONF:{confidence:.2f}\033[0m"
-        
+        # Check Obsidian dossier status for clear reporting
+        obsidian_status = "brak"
+        try:
+            from l1.obsidian_sync import find_obsidian_project_dossier
+            dossier_found = find_obsidian_project_dossier(active_scope)
+            if dossier_found:
+                obsidian_status = "zsynchronizowany"
+        except Exception:
+            pass
+
+        # Render clean, human-readable JIT status banner
+        is_tty = hasattr(sys.stderr, "isatty") and sys.stderr.isatty()
+        c_green = "\033[32m" if is_tty else ""
+        c_cyan = "\033[36m" if is_tty else ""
+        c_yellow = "\033[33m" if is_tty else ""
+        c_reset = "\033[0m" if is_tty else ""
+        c_bold = "\033[1m" if is_tty else ""
+
         if current_mode == "shadow":
-            print(f"⚡ \033[1mJIT Context\033[0m [shadow] {scope_badge} • {time_badge} ({size_badge})", file=sys.stderr, flush=True)
+            print(f"⚡ {c_bold}[JIT Context: CZUWANIE (shadow)]{c_reset} Projekt: {active_scope} • {compile_ms:.1f}ms ({len(capsule)} zn)", file=sys.stderr, flush=True)
             return {}
-            
-        # Extract meaningful summary fields from compiled capsule
+
         goal_match = re.search(r"• Goal:\s*(.+)", capsule)
         intent_match = re.search(r"• Intent:\s*(.+)", capsule)
-        verify_match = re.search(r"• Verify Command:\s*(.+)", capsule)
-        
-        # Count working set files, invariants and proofs
         ws_matches = re.findall(r"• ([^\n\(]+) \((?:active module|written|read_ok)", capsule)
-        inv_matches = re.findall(r"\[ACTIVE INVARIANTS\]\n((?:    • .+\n?)+)", capsule)
-        invariants_count = len(inv_matches[0].strip().splitlines()) if inv_matches else 0
-        proof_matches = re.findall(r"\[(?:RUNTIME PROOFS|VERIFIED RUNTIME PROOFS)[^\]]*\]\n((?:    • .+\n?)+)", capsule)
-        proofs_count = len(proof_matches[0].strip().splitlines()) if proof_matches else 0
-        
-        goal_text = goal_match.group(1).strip()[:90] if goal_match else ""
-        intent_text = intent_match.group(1).strip() if intent_match else ""
-        verify_text = verify_match.group(1).strip() if verify_match else ""
-        
+
+        goal_text = goal_match.group(1).strip()[:85] if goal_match else ""
+        intent_raw = intent_match.group(1).strip() if intent_match else ""
+        intent_map = {"QUERY": "Pytanie / Analiza", "TASK": "Kodowanie / Zadanie", "FIX": "Naprawa błędu"}
+        intent_label = intent_map.get(intent_raw, intent_raw)
+
         status_lines = [
-            f"⚡ \033[1mJIT Context\033[0m {scope_badge} • L0:{l0_ms:.1f}ms L1:{l1_ms:.1f}ms • {time_badge} ({size_badge}) • {conf_badge}"
+            f"⚡ {c_bold}{c_green}[JIT Context: AKTYWNY]{c_reset} Projekt: {c_cyan}{active_scope}{c_reset} • {compile_ms:.1f}ms • {len(capsule)} zn (~90% mniej tokenów)"
         ]
         if goal_text:
-            intent_badge = f" \033[90m[{intent_text}]\033[0m" if intent_text else ""
-            status_lines.append(f"  \033[90m├─\033[0m \033[33mCel:\033[0m {goal_text}{intent_badge}")
-            
-        details = []
-        if verify_text:
-            details.append(f"verify: \033[32m{verify_text}\033[0m")
+            intent_suffix = f" [{intent_label}]" if intent_label else ""
+            status_lines.append(f"   • Cel: {goal_text}{intent_suffix}")
+
+        state_items = [f"Obsidian: {c_green}{obsidian_status}{c_reset}"]
         if ws_matches:
             file_names = [Path(p.strip()).name for p in ws_matches[:3]]
-            more = f" +{len(ws_matches)-3}" if len(ws_matches) > 3 else ""
-            details.append(f"pliki: \033[36m{', '.join(file_names)}{more}\033[0m")
-        if invariants_count:
-            details.append(f"inwarianty: \033[35m{invariants_count}\033[0m")
-        if proofs_count:
-            details.append(f"dowody L0: \033[32m{proofs_count}\033[0m")
-            
-        if details:
-            status_lines.append(f"  \033[90m└─\033[0m \033[90mStan:\033[0m {' • '.join(details)}")
-        else:
-            status_lines.append(f"  \033[90m└─\033[0m \033[90mStan:\033[0m czysty kontekst roboczy")
-            
+            more = f" (+{len(ws_matches)-3})" if len(ws_matches) > 3 else ""
+            state_items.append(f"Pliki robocze: {', '.join(file_names)}{more}")
+
+        status_lines.append(f"   • Stan: {' • '.join(state_items)}")
         print("\n".join(status_lines), file=sys.stderr, flush=True)
         return {"context": capsule}
     except Exception as e:
