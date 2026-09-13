@@ -29,6 +29,10 @@ Standard harnesses append the entire conversation history, verbose compiler logs
 
 ## The Architecture: Just-In-Time (JIT) Context OS
 
+> **Target Environment & Runtime Notice:**  
+> JIT-Context is specifically architected for **autonomous coding agents that possess active tool execution access** (file read/write, patch, terminal execution, AST parsing). It is not a generic chatbot wrapper. The runtime's epistemic arbitration relies on deterministic physical tool feedback (`exit_code: 0`, runtime assertions, hash verification) to enforce Authority 1.0 ground truth while discarding speculative assistant monologue (Authority 0.0).  
+> It was engineered and verified primarily in live agent execution harnesses (e.g., cmux agent loops, Hermes Agent architecture). Behavior in arbitrary chat-only platforms without tool sandboxes or external harness integration is neither tested nor intended.
+
 **JIT-Context** is not a vector database or an embedding wrapper that injects fuzzy Top-K chunks into the prompt.
 
 It is a **deterministic, sub-3ms runtime memory engine** operating between the agent harness and the LLM. It compiles an ultra-precise, high-density **Context Capsule (<1,500 tokens)** just in time for every turn.

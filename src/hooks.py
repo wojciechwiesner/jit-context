@@ -147,12 +147,18 @@ def pre_llm_call(ctx: Dict[str, Any]) -> Dict[str, Any]:
         
         # Check if project lacks canonical context and alert
         if active_scope and active_scope not in ["hermes", "default", "general"]:
-            obs_file = VAULT_DIR / "context" / "projects" / f"{active_scope}.md"
-            local_state = Path.cwd() / ".planning" / "STATE.md"
-            if not obs_file.exists() and not local_state.exists():
+            from l1.obsidian_sync import check_obsidian_staleness, find_obsidian_project_dossier
+            dossier_path = find_obsidian_project_dossier(active_scope)
+            active_path = Path(session_cwd) if session_cwd else Path.cwd()
+            local_state = active_path / ".planning" / "STATE.md"
+            if not dossier_path and not local_state.exists():
                 alert_msg = f"⚠️ [JIT Context Warning]: Projekt '{active_scope}' nie ma jeszcze zebranego kontekstu (.planning/STATE.md ani Obsidian)"
                 print(f"\n{alert_msg}")
                 capsule += f"\n<CONTEXT_ALERT: Projekt '{active_scope}' nie posiada pliku .planning/STATE.md ani notatki w Obsidianie. Zaproponuj utworzenie planu lub zainicjalizuj stan.>\n"
+            elif dossier_path:
+                stale_alert = check_obsidian_staleness(active_scope, str(active_path))
+                if stale_alert:
+                    capsule += f"\n<OBSIDIAN_SYNC_ALERT: {stale_alert}>\n"
 
         hook_total_ms = (time.time() - start_time) * 1000
         
@@ -387,6 +393,16 @@ def post_tool_call(ctx: Dict[str, Any]) -> None:
                             update_session_cwd(conn, session_id, str(p))
                     except Exception:
                         pass
+            
+            # Auto-sync Obsidian SSOT on git commit / deploy commands
+            if "git commit" in cmd or "git push" in cmd or "rsync" in cmd:
+                from l1.obsidian_sync import sync_obsidian_on_commit
+                active_cwd = tool_input.get("workdir") or os.getcwd()
+                scope_name = Path(active_cwd).name
+                if scope_name and scope_name not in ("general", "hermes", "default"):
+                    ok, msg = sync_obsidian_on_commit(scope_name, str(active_cwd))
+                    if ok:
+                        print(f"📖 \033[32m[Obsidian SSOT Auto-Synced]\033[0m: {msg}", file=sys.stderr, flush=True)
     except Exception as e:
         print(f"[ona-context:error] post_tool_call: {e}")
     finally:
