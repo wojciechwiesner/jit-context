@@ -119,3 +119,54 @@ def check_obsidian_staleness(scope: str, cwd: str) -> Optional[str]:
     except Exception:
         pass
     return None
+
+def get_obsidian_dossier_info(scope: str, cwd: Optional[str] = None) -> dict:
+    """Returns detailed status and timestamp of the Obsidian SSOT dossier."""
+    dossier = find_obsidian_project_dossier(scope)
+    if not dossier:
+        return {
+            "exists": False,
+            "status": "brak notatki",
+            "date_str": "",
+            "is_stale": False,
+            "filename": "",
+        }
+
+    date_str = ""
+    try:
+        content = dossier.read_text(encoding="utf-8")
+        patterns = [
+            r"-\s+\*\*Ostatnia synchronizacja:\*\*\s+`?([^`\n]+)`?",
+            r"-\s+\*\*Ostatnia aktualizacja:\*\*\s+`?([^`\n]+)`?",
+            r"-\s+\*\*Data aktualizacji:\*\*\s+`?([^`\n]+)`?",
+            r"-\s+\*\*Data:\*\*\s+`?([^`\n]+)`?",
+        ]
+        for pat in patterns:
+            m = re.search(pat, content)
+            if m:
+                raw_date = m.group(1).strip()
+                date_str = raw_date[:16].replace("T", " ")
+                break
+
+        if not date_str:
+            mtime = dossier.stat().st_mtime
+            date_str = datetime.fromtimestamp(mtime).strftime("%Y-%m-%d %H:%M")
+    except Exception:
+        date_str = "nieznana"
+
+    is_stale = False
+    if cwd:
+        staleness = check_obsidian_staleness(scope, cwd)
+        if staleness and "desync" in staleness.lower():
+            is_stale = True
+
+    status_label = f"zsynchronizowany (z {date_str})" if not is_stale else f"wymaga aktualizacji (z {date_str})"
+
+    return {
+        "exists": True,
+        "status": status_label,
+        "date_str": date_str,
+        "is_stale": is_stale,
+        "filename": dossier.name,
+    }
+

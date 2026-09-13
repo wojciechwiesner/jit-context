@@ -210,13 +210,12 @@ def pre_llm_call(ctx: Dict[str, Any]) -> Dict[str, Any]:
         except Exception:
             pass
         
-        # Check Obsidian dossier status for clear reporting
-        obsidian_status = "brak"
+        # Check Obsidian dossier status for clear reporting with SSOT timestamp
+        obsidian_status = "brak notatki"
         try:
-            from l1.obsidian_sync import find_obsidian_project_dossier
-            dossier_found = find_obsidian_project_dossier(active_scope)
-            if dossier_found:
-                obsidian_status = "zsynchronizowany"
+            from l1.obsidian_sync import get_obsidian_dossier_info
+            dossier_info = get_obsidian_dossier_info(active_scope, str(active_cwd))
+            obsidian_status = dossier_info.get("status", "brak notatki")
         except Exception:
             pass
 
@@ -248,7 +247,8 @@ def pre_llm_call(ctx: Dict[str, Any]) -> Dict[str, Any]:
             intent_suffix = f" [{intent_label}]" if intent_label else ""
             status_lines.append(f"   • Cel: {goal_text}{intent_suffix}")
 
-        state_items = [f"Obsidian: {c_green}{obsidian_status}{c_reset}"]
+        obs_color = c_green if "zsynchronizowany" in obsidian_status else c_yellow
+        state_items = [f"Obsidian SSOT: {obs_color}{obsidian_status}{c_reset}"]
         if ws_matches:
             file_names = [Path(p.strip()).name for p in ws_matches[:3]]
             more = f" (+{len(ws_matches)-3})" if len(ws_matches) > 3 else ""
