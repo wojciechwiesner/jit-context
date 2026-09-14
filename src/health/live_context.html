@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8">
+  <title>Hermes JIT Context OS — Podgląd Kontekstu Sesji Live</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #090a0f;
+      --panel: rgba(16, 19, 28, 0.85);
+      --panel-solid: #10131c;
+      --border: rgba(255, 255, 255, 0.08);
+      --border-hover: rgba(255, 255, 255, 0.16);
+      --emerald: #10b981;
+      --emerald-glow: rgba(16, 185, 129, 0.15);
+      --cyan: #06b6d4;
+      --cyan-glow: rgba(6, 182, 212, 0.15);
+      --indigo: #6366f1;
+      --indigo-glow: rgba(99, 102, 241, 0.15);
+      --amber: #f59e0b;
+      --amber-glow: rgba(245, 158, 11, 0.15);
+      --rose: #f43f5e;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --text-faint: #475569;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background-color: var(--bg);
+      background-image: radial-gradient(rgba(255, 255, 255, 0.06) 1px, transparent 1px);
+      background-size: 24px 24px;
+      color: var(--text-main);
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      font-size: 13px;
+      line-height: 1.5;
+      padding: 24px 32px;
+      min-height: 100vh;
+    }
+
+    /* Top Navigation Bar */
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 16px 20px;
+      background: var(--panel);
+      backdrop-filter: blur(16px);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      margin-bottom: 24px;
+      box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .brand-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      background: linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(6, 182, 212, 0.2));
+      border: 1px solid rgba(16, 185, 129, 0.4);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--emerald);
+    }
+    .brand-title {
+      font-weight: 700;
+      font-size: 14px;
+      letter-spacing: -0.01em;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .pulse-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--emerald);
+      box-shadow: 0 0 10px var(--emerald);
+      animation: pulse 2s infinite ease-in-out;
+    }
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.3); opacity: 0.6; }
+    }
+    .nav-links {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+    .nav-btn {
+      padding: 6px 12px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: rgba(255, 255, 255, 0.04);
+      color: var(--text-muted);
+      text-decoration: none;
+      font-size: 12px;
+      font-weight: 500;
+      transition: all 0.15s ease;
+      cursor: pointer;
+    }
+    .nav-btn:hover {
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--text-main);
+      border-color: var(--border-hover);
+    }
+    .nav-btn.active {
+      background: rgba(16, 185, 129, 0.12);
+      border-color: rgba(16, 185, 129, 0.4);
+      color: var(--emerald);
+    }
+
+    /* Grid Layout */
+    .grid-cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    .card {
+      background: var(--panel);
+      backdrop-filter: blur(12px);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px 20px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+    }
+    .card-label {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .card-val {
+      font-size: 20px;
+      font-weight: 700;
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--text-main);
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+    }
+    .card-sub {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 6px;
+      font-family: 'Inter', sans-serif;
+    }
+
+    /* Progress Bar */
+    .progress-track {
+      width: 100%;
+      height: 8px;
+      background: rgba(255, 255, 255, 0.08);
+      border-radius: 4px;
+      overflow: hidden;
+      margin-top: 10px;
+    }
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--emerald), var(--cyan));
+      border-radius: 4px;
+      transition: width 0.3s ease;
+      box-shadow: 0 0 12px rgba(16, 185, 129, 0.4);
+    }
+
+    /* Badges */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 3px 8px;
+      border-radius: 5px;
+      font-size: 11px;
+      font-weight: 600;
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .badge-emerald {
+      background: rgba(16, 185, 129, 0.15);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      color: var(--emerald);
+    }
+    .badge-cyan {
+      background: rgba(6, 182, 212, 0.15);
+      border: 1px solid rgba(6, 182, 212, 0.3);
+      color: var(--cyan);
+    }
+    .badge-indigo {
+      background: rgba(99, 102, 241, 0.15);
+      border: 1px solid rgba(99, 102, 241, 0.3);
+      color: var(--indigo);
+    }
+    .badge-amber {
+      background: rgba(245, 158, 11, 0.15);
+      border: 1px solid rgba(245, 158, 11, 0.3);
+      color: var(--amber);
+    }
+
+    /* Goal Banner */
+    .goal-banner {
+      background: var(--panel);
+      backdrop-filter: blur(12px);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px 20px;
+      margin-bottom: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .goal-title {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      display: flex;
+      justify-content: space-between;
+    }
+    .goal-text {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-main);
+      font-family: 'Inter', sans-serif;
+    }
+
+    /* Capsule Viewer */
+    .capsule-panel {
+      background: var(--panel-solid);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 6px 30px rgba(0, 0, 0, 0.4);
+    }
+    .panel-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 14px 20px;
+      background: rgba(255, 255, 255, 0.02);
+      border-bottom: 1px solid var(--border);
+    }
+    .panel-title {
+      font-size: 12px;
+      font-weight: 600;
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--text-main);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .panel-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .copy-btn {
+      padding: 5px 12px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--text-main);
+      font-size: 11px;
+      font-weight: 600;
+      font-family: 'JetBrains Mono', monospace;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .copy-btn:hover {
+      background: rgba(255, 255, 255, 0.1);
+      border-color: var(--border-hover);
+    }
+    .copy-btn:active {
+      transform: scale(0.97);
+    }
+    .code-box {
+      padding: 20px;
+      margin: 0;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      line-height: 1.6;
+      color: #cbd5e1;
+      overflow-x: auto;
+      white-space: pre-wrap;
+      word-break: break-word;
+      background: #0b0d14;
+      max-height: 65vh;
+      overflow-y: auto;
+    }
+
+    /* XML Syntax Styling */
+    .xml-tag { color: #38bdf8; font-weight: 600; }
+    .xml-attr { color: #a78bfa; }
+    .xml-val { color: #fde047; }
+    .xml-section { color: #34d399; font-weight: 600; }
+    .xml-bullet { color: #94a3b8; }
+
+    /* Footer */
+    .footer {
+      margin-top: 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 11px;
+      color: var(--text-faint);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Navigation -->
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand-icon">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+        </svg>
+      </div>
+      <div class="brand-title">
+        <span>HERMES JIT CONTEXT OS</span>
+        <span class="pulse-dot"></span>
+        <span style="font-size: 11px; font-weight: 500; color: var(--text-muted); margin-left: 4px;">PODGLĄD SESJI LIVE</span>
+      </div>
+    </div>
+    <div class="nav-links">
+      <span id="refresh-badge" class="badge badge-emerald">AUTO-ODŚWIEŻANIE (1.5s)</span>
+      <a href="/dashboard" class="nav-btn">Observatory Dashboard</a>
+      <a href="/health" class="nav-btn" target="_blank">Health JSON</a>
+      <a href="/api/context/live" class="nav-btn active" target="_blank">API JSON</a>
+    </div>
+  </header>
+
+  <!-- Metric Cards -->
+  <section class="grid-cards">
+    <!-- Card 1: Capsule Budget & Usage -->
+    <div class="card">
+      <div class="card-label">
+        <span>Zużycie Kapsuły</span>
+        <span id="pct-badge" class="badge badge-emerald">0.0%</span>
+      </div>
+      <div class="card-val">
+        <span id="capsule-chars">0</span>
+        <span style="font-size: 13px; font-weight: 500; color: var(--text-muted);">/ <span id="budget-chars">10,000</span> zn</span>
+      </div>
+      <div class="progress-track">
+        <div id="progress-fill" class="progress-fill" style="width: 0%;"></div>
+      </div>
+      <div class="card-sub">
+        Szacowane tokeny: <strong id="capsule-tokens" style="color: var(--text-main);">0</strong> / <span id="budget-tokens">2,500</span> tok (~91% redukcji)
+      </div>
+    </div>
+
+    <!-- Card 2: Scope & Complexity -->
+    <div class="card">
+      <div class="card-label">
+        <span>Projekt & Zakres</span>
+        <span id="mode-badge" class="badge badge-emerald">AKTYWNY</span>
+      </div>
+      <div class="card-val">
+        <span id="scope-badge" style="color: var(--cyan);">hermes</span>
+      </div>
+      <div class="card-sub" style="margin-top: 10px;">
+        Złożoność: <span id="complexity-badge" class="badge badge-indigo">direct_fix</span>
+        Pewność: <span id="confidence-badge" class="badge badge-cyan">1.00</span>
+      </div>
+    </div>
+
+    <!-- Card 3: Compiler Telemetry -->
+    <div class="card">
+      <div class="card-label">
+        <span>Czas Kompilacji (L0/L2)</span>
+        <span id="status-latency-badge" class="badge badge-cyan">FAST-PATH</span>
+      </div>
+      <div class="card-val">
+        <span id="compile-ms">0.0</span>
+        <span style="font-size: 13px; font-weight: 500; color: var(--text-muted);">ms</span>
+      </div>
+      <div class="card-sub" style="margin-top: 10px;">
+        L0 Hot-Path: <strong id="l0-ms" style="color: var(--text-main);">0.0</strong> ms • Całkowity hook: <strong id="hook-ms" style="color: var(--text-main);">0.0</strong> ms
+      </div>
+    </div>
+
+    <!-- Card 4: SSOT State -->
+    <div class="card">
+      <div class="card-label">
+        <span>Obsidian SSOT Master</span>
+        <span id="obs-badge" class="badge badge-emerald">SSOT</span>
+      </div>
+      <div class="card-val" style="font-size: 14px; font-weight: 600; line-height: 1.4;">
+        <span id="obsidian-status" style="color: var(--emerald);">zsynchronizowany</span>
+      </div>
+      <div class="card-sub" style="margin-top: 10px;">
+        Ostatnia aktualizacja: <span id="updated-at" style="color: var(--text-main);">-</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- Goal Banner -->
+  <section class="goal-banner">
+    <div class="goal-title">
+      <span>Bieżący Cel (Human Prompt)</span>
+      <span id="intent-tag" class="badge badge-indigo">Zadanie</span>
+    </div>
+    <div id="goal-text" class="goal-text">Ładowanie stanu sesji...</div>
+  </section>
+
+  <!-- Capsule Viewer -->
+  <main class="capsule-panel">
+    <div class="panel-header">
+      <div class="panel-title">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--cyan);">
+          <polyline points="16 18 22 12 16 6"></polyline>
+          <polyline points="8 6 2 12 8 18"></polyline>
+        </svg>
+        <span>AKTYWNA KAPSUŁA &lt;ONA_CONTEXT&gt;</span>
+        <span id="capsule-info" style="color: var(--text-muted); font-size: 11px; font-weight: 400;">(wstrzykiwana bezpośrednio do modelu)</span>
+      </div>
+      <div class="panel-actions">
+        <button id="copy-btn" class="copy-btn" onclick="copyCapsule()">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+          </svg>
+          <span id="copy-text">Kopiuj XML</span>
+        </button>
+      </div>
+    </div>
+    <pre id="capsule-view" class="code-box"><code>Ładowanie aktywnej kapsuły...</code></pre>
+  </main>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div>Hermes JIT Context OS v0.2 • CERN Zenodo DOI: 10.5281/zenodo.22649542 • Invariants I1–I10 10/10 PASS</div>
+    <div>Host: Mac Mini M2 Pro • Local Port :8765</div>
+  </footer>
+
+  <script>
+    let rawCapsuleText = "";
+
+    async function fetchLiveContext() {
+      try {
+        const res = await fetch('/api/context/live');
+        if (!res.ok) return;
+        const data = await res.json();
+
+        if (data.status === 'idle' || !data.capsule) {
+          document.getElementById('goal-text').textContent = "Brak aktywnego zapytania w sesji. Oczekuję na prompt.";
+          document.getElementById('capsule-view').textContent = "Brak skompilowanej kapsuły w buforze.";
+          return;
+        }
+
+        // Metrics
+        const chars = data.capsule_chars || (data.capsule ? data.capsule.length : 0);
+        const budget = data.budget_chars || 10000;
+        const pct = data.used_pct !== undefined ? data.used_pct : Math.round((chars / budget) * 1000) / 10;
+        const tokens = data.capsule_tokens_est || Math.round(chars / 4);
+        const budgetTokens = data.budget_tokens_est || Math.round(budget / 4);
+
+        document.getElementById('capsule-chars').textContent = chars.toLocaleString();
+        document.getElementById('budget-chars').textContent = budget.toLocaleString();
+        document.getElementById('capsule-tokens').textContent = tokens.toLocaleString();
+        document.getElementById('budget-tokens').textContent = budgetTokens.toLocaleString();
+        document.getElementById('pct-badge').textContent = pct + '%';
+        document.getElementById('progress-fill').style.width = Math.min(pct, 100) + '%';
+
+        // Badges & Scope
+        document.getElementById('scope-badge').textContent = data.scope || 'general';
+        document.getElementById('mode-badge').textContent = (data.mode || 'active').toUpperCase();
+        document.getElementById('complexity-badge').textContent = data.complexity || 'direct_fix';
+        document.getElementById('confidence-badge').textContent = (data.confidence || 1.00).toFixed(2);
+        document.getElementById('compile-ms').textContent = (data.compile_ms || 0.0).toFixed(1);
+        document.getElementById('l0-ms').textContent = (data.l0_ms || 0.0).toFixed(1);
+        document.getElementById('hook-ms').textContent = (data.hook_total_ms || 0.0).toFixed(1);
+        document.getElementById('obsidian-status').textContent = data.obsidian_status || 'brak notatki';
+        document.getElementById('updated-at').textContent = data.updated_at || new Date().toLocaleTimeString();
+
+        // Goal & Intent
+        document.getElementById('goal-text').textContent = data.goal_text || 'Zadanie bezpośrednie';
+        document.getElementById('intent-tag').textContent = data.intent_label || 'Zadanie';
+
+        // Raw Capsule View
+        rawCapsuleText = data.capsule || '';
+        document.getElementById('capsule-view').textContent = rawCapsuleText;
+
+      } catch (e) {
+        console.error("Błąd pobierania /api/context/live:", e);
+      }
+    }
+
+    function copyCapsule() {
+      if (!rawCapsuleText) return;
+      navigator.clipboard.writeText(rawCapsuleText).then(() => {
+        const btnText = document.getElementById('copy-text');
+        btnText.textContent = "Skopiowano!";
+        setTimeout(() => { btnText.textContent = "Kopiuj XML"; }, 2000);
+      });
+    }
+
+    // Auto poll every 1500ms
+    fetchLiveContext();
+    setInterval(fetchLiveContext, 1500);
+  </script>
+</body>
+</html>

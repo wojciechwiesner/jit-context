@@ -220,7 +220,37 @@ def pre_llm_call(ctx: Dict[str, Any]) -> Dict[str, Any]:
                 pass
         current_mode = current_mode or "active"
 
-        # Write fast atomic live status for CLI Status Bar
+        complexity_budget_map = {
+            "status": 5000,
+            "direct_fix": 10000,
+            "feature": 16000,
+            "refactoring": 25000
+        }
+        budget_chars = meta.get("budget") or complexity_budget_map.get(complexity, 10000)
+        capsule_chars = len(capsule)
+        used_pct = round((capsule_chars / budget_chars) * 100, 1) if budget_chars else 0.0
+        tokens_est = round(capsule_chars / 4)
+        budget_tokens_est = round(budget_chars / 4)
+
+        # Check Obsidian dossier status for clear reporting with SSOT timestamp
+        obsidian_status = "brak notatki"
+        try:
+            from l1.obsidian_sync import get_obsidian_dossier_info
+            dossier_info = get_obsidian_dossier_info(active_scope, str(active_cwd))
+            obsidian_status = dossier_info.get("status", "brak notatki")
+        except Exception:
+            pass
+
+        goal_match = re.search(r"• Goal:\s*(.+)", capsule)
+        intent_match = re.search(r"• Intent:\s*(.+)", capsule)
+        ws_matches = re.findall(r"• ([^\n\(]+) \((?:active module|written|read_ok)", capsule)
+
+        goal_text = goal_match.group(1).strip()[:85] if goal_match else ""
+        intent_raw = intent_match.group(1).strip() if intent_match else ""
+        intent_map = {"QUERY": "Pytanie / Analiza", "TASK": "Kodowanie / Zadanie", "FIX": "Naprawa błędu", "DIRECT_TASK": "Zadanie bezpośrednie"}
+        intent_label = intent_map.get(intent_raw, intent_raw)
+
+        # Write fast atomic live status for CLI Status Bar and Live Web Inspector
         try:
             live_payload = {
                 "mode": current_mode,
@@ -230,21 +260,26 @@ def pre_llm_call(ctx: Dict[str, Any]) -> Dict[str, Any]:
                 "compile_ms": round(compile_ms, 2),
                 "l0_ms": round(l0_ms, 2),
                 "hook_total_ms": round(hook_total_ms, 2),
-                "capsule_chars": len(capsule),
+                "capsule_chars": capsule_chars,
+                "budget_chars": budget_chars,
+                "used_pct": used_pct,
+                "capsule_tokens_est": tokens_est,
+                "budget_tokens_est": budget_tokens_est,
                 "compression_ratio": 91.0,
-                "ts": time.time()
+                "session_id": session_id,
+                "turn_id": turn_id,
+                "goal_text": goal_text,
+                "intent_label": intent_label,
+                "obsidian_status": obsidian_status,
+                "capsule": capsule,
+                "live_url": "http://127.0.0.1:8765/live",
+                "ts": time.time(),
+                "updated_at": time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
             }
             with open("/tmp/hermes-jit-live.json", "w", encoding="utf-8") as lf:
-                json.dump(live_payload, lf)
-        except Exception:
-            pass
-        
-        # Check Obsidian dossier status for clear reporting with SSOT timestamp
-        obsidian_status = "brak notatki"
-        try:
-            from l1.obsidian_sync import get_obsidian_dossier_info
-            dossier_info = get_obsidian_dossier_info(active_scope, str(active_cwd))
-            obsidian_status = dossier_info.get("status", "brak notatki")
+                json.dump(live_payload, lf, ensure_ascii=False, indent=2)
+            with open("/tmp/hermes-jit-capsule-live.xml", "w", encoding="utf-8") as xf:
+                xf.write(capsule)
         except Exception:
             pass
 
@@ -257,20 +292,11 @@ def pre_llm_call(ctx: Dict[str, Any]) -> Dict[str, Any]:
         c_bold = "\033[1m" if is_tty else ""
 
         if current_mode == "shadow":
-            print(f"⚡ {c_bold}[JIT Context: CZUWANIE (shadow)]{c_reset} Projekt: {active_scope} • {compile_ms:.1f}ms ({len(capsule)} zn)", file=sys.stderr, flush=True)
+            print(f"⚡ {c_bold}[JIT Context: CZUWANIE (shadow)]{c_reset} Projekt: {active_scope} • {compile_ms:.1f}ms ({capsule_chars} zn)", file=sys.stderr, flush=True)
             return {}
 
-        goal_match = re.search(r"• Goal:\s*(.+)", capsule)
-        intent_match = re.search(r"• Intent:\s*(.+)", capsule)
-        ws_matches = re.findall(r"• ([^\n\(]+) \((?:active module|written|read_ok)", capsule)
-
-        goal_text = goal_match.group(1).strip()[:85] if goal_match else ""
-        intent_raw = intent_match.group(1).strip() if intent_match else ""
-        intent_map = {"QUERY": "Pytanie / Analiza", "TASK": "Kodowanie / Zadanie", "FIX": "Naprawa błędu"}
-        intent_label = intent_map.get(intent_raw, intent_raw)
-
         status_lines = [
-            f"⚡ {c_bold}{c_green}[JIT Context: AKTYWNY]{c_reset} Projekt: {c_cyan}{active_scope}{c_reset} • {compile_ms:.1f}ms • {len(capsule)} zn (~90% mniej tokenów)"
+            f"⚡ {c_bold}{c_green}[JIT Context: AKTYWNY]{c_reset} Projekt: {c_cyan}{active_scope}{c_reset} • {compile_ms:.1f}ms • Kapsuła: {c_bold}{capsule_chars:,} / {budget_chars:,} zn ({used_pct}% użyte{c_reset}, ~{tokens_est} tok)"
         ]
         if goal_text:
             intent_suffix = f" [{intent_label}]" if intent_label else ""
@@ -284,6 +310,7 @@ def pre_llm_call(ctx: Dict[str, Any]) -> Dict[str, Any]:
             state_items.append(f"Pliki robocze: {', '.join(file_names)}{more}")
 
         status_lines.append(f"   • Stan: {' • '.join(state_items)}")
+        status_lines.append(f"   • Podgląd Live: {c_cyan}http://127.0.0.1:8765/live{c_reset}")
         try:
             from cli import _cprint
             _cprint("\n" + "\n".join(status_lines) + "\n")

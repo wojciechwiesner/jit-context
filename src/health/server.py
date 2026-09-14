@@ -729,6 +729,30 @@ class HealthHTTPHandler(http.server.BaseHTTPRequestHandler):
                 self.send_header("Content-Type", "application/json")
                 self.end_headers()
                 self.wfile.write(json.dumps(payload).encode("utf-8"))
+            elif self.path.startswith("/api/context/live"):
+                live_path = Path("/tmp/hermes-jit-live.json")
+                if live_path.exists():
+                    try:
+                        data = json.loads(live_path.read_text(encoding="utf-8"))
+                    except Exception as err:
+                        data = {"status": "error", "message": f"reading_live_file: {err}"}
+                else:
+                    data = {"status": "idle", "message": "No active turn yet"}
+                self.send_response(200)
+                self.send_header("Content-Type", "application/json; charset=utf-8")
+                self.send_header("Access-Control-Allow-Origin", "*")
+                self.end_headers()
+                self.wfile.write(json.dumps(data, ensure_ascii=False, indent=2).encode("utf-8"))
+            elif self.path in ["/live", "/context"]:
+                html_path = Path(__file__).parent / "live_context.html"
+                if html_path.exists():
+                    body = html_path.read_bytes()
+                else:
+                    body = b"<h1>Hermes JIT Context OS</h1><p>live_context.html not found</p>"
+                self.send_response(200)
+                self.send_header("Content-Type", "text/html; charset=utf-8")
+                self.end_headers()
+                self.wfile.write(body)
             elif self.path in ["/", "/dashboard"]:
                 html_path = Path(__file__).parent / "dashboard.html"
                 if html_path.exists():
