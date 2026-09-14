@@ -93,10 +93,10 @@ def _init_db_conn(conn: sqlite3.Connection) -> None:
     except Exception as e:
         print(f"[ona-context:db] Schema init error: {e}")
 
-def get_db(db_path: Optional[Path] = None, session_id: Optional[str] = None) -> sqlite3.Connection:
+def get_db(db_path: Optional[Path] = None, session_id: Optional[str] = None, project: Optional[str] = None) -> sqlite3.Connection:
     if session_id:
         from config import get_session_db_path
-        target_path = get_session_db_path(session_id)
+        target_path = get_session_db_path(session_id, project)
     else:
         target_path = db_path or DB_PATH
     target_path.parent.mkdir(parents=True, exist_ok=True)

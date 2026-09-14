@@ -82,7 +82,7 @@ def test_capsule_physical_file_persistence(tmp_path, monkeypatch):
     assert "context" in res
     assert "<ONA_CONTEXT" in res["context"]
     
-    capsule_file = get_session_capsule_path(sess_id)
+    capsule_file = get_session_capsule_path(sess_id, project="boocco")
     assert capsule_file.exists()
     
     with open(capsule_file, "r", encoding="utf-8") as f:

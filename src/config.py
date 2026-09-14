@@ -1,7 +1,9 @@
 """Configuration for JIT-Context Runtime & Epistemic Memory Engine."""
 
 import os
+import re
 from pathlib import Path
+from typing import Optional
 
 # Base directories with dynamic fallback
 HERMES_HOME = Path(os.environ.get("HERMES_HOME", Path.home() / ".hermes"))
@@ -15,24 +17,45 @@ LATEST_CONTEXT_SYMLINK = STATE_DIR / "latest_context.xml"
 
 import re
 
-def get_session_dir(session_id: str) -> Path:
-    """Return dedicated directory for session state isolation."""
+def get_session_dir(session_id: str, project: Optional[str] = None) -> Path:
+    """Return dedicated directory for session state isolation, partitioned by project/session_id."""
+    safe_project = re.sub(r'[^a-zA-Z0-9_\-]', '_', str(project or "general")).strip() or "general"
     safe_id = re.sub(r'[^a-zA-Z0-9_\-]', '_', str(session_id or "default"))
-    s_dir = SESSIONS_DIR / safe_id
+    s_dir = SESSIONS_DIR / safe_project / safe_id
     s_dir.mkdir(parents=True, exist_ok=True)
     return s_dir
 
-def get_session_db_path(session_id: str) -> Path:
+def get_session_db_path(session_id: str, project: Optional[str] = None) -> Path:
     """Return isolated SQLite DB path for this session."""
-    return get_session_dir(session_id) / "overlay.db"
+    safe_id = re.sub(r'[^a-zA-Z0-9_\-]', '_', str(session_id or "default"))
+    return get_session_dir(session_id, project) / f"overlay_{safe_id}.db"
 
-def get_session_capsule_path(session_id: str) -> Path:
+def get_session_capsule_path(session_id: str, project: Optional[str] = None) -> Path:
     """Return physical context XML file path for this session."""
-    return get_session_dir(session_id) / "context.xml"
+    safe_id = re.sub(r'[^a-zA-Z0-9_\-]', '_', str(session_id or "default"))
+    return get_session_dir(session_id, project) / f"ona_context_{safe_id}.xml"
 
-def get_session_meta_path(session_id: str) -> Path:
+def get_session_meta_path(session_id: str, project: Optional[str] = None) -> Path:
     """Return session metadata JSON file path."""
-    return get_session_dir(session_id) / "session.json"
+    safe_id = re.sub(r'[^a-zA-Z0-9_\-]', '_', str(session_id or "default"))
+    return get_session_dir(session_id, project) / f"session_{safe_id}.json"
+
+def resolve_project_workspace_dir(project_name: str) -> Optional[Path]:
+    """Find local workspace directory for a project if it exists."""
+    if not project_name or project_name in ("general", "unknown"):
+        return None
+    # Common workspace variations
+    raw = str(project_name).strip()
+    norm = re.sub(r'[^a-zA-Z0-9_\-]', '-', raw.lower())
+    for cand in [
+        WORKSPACE_DIR / raw,
+        WORKSPACE_DIR / norm,
+        WORKSPACE_DIR / raw.replace("-", "_"),
+        WORKSPACE_DIR / raw.replace("_", "-"),
+    ]:
+        if cand.exists() and cand.is_dir():
+            return cand
+    return None
 
 # Dynamic vault and workspace resolution
 def _resolve_default_vault() -> Path:

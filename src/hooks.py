@@ -253,7 +253,9 @@ def pre_llm_call(ctx: Dict[str, Any]) -> Dict[str, Any]:
         obsidian_status = "brak notatki"
         try:
             from l1.obsidian_sync import get_obsidian_dossier_info
-            dossier_info = get_obsidian_dossier_info(active_scope, str(active_cwd))
+            from config import resolve_project_workspace_dir
+            effective_cwd = Path(session_cwd) if session_cwd and Path(session_cwd).exists() else resolve_project_workspace_dir(active_scope)
+            dossier_info = get_obsidian_dossier_info(active_scope, str(effective_cwd) if effective_cwd else None)
             obsidian_status = dossier_info.get("status", "brak notatki")
         except Exception:
             pass
@@ -299,9 +301,19 @@ def pre_llm_call(ctx: Dict[str, Any]) -> Dict[str, Any]:
                 xf.write(capsule)
             
             # Isolated per-session sandbox write (1:1 Session Sandbox)
-            from config import get_session_capsule_path, get_session_meta_path, LATEST_CONTEXT_SYMLINK
-            capsule_path = get_session_capsule_path(session_id)
-            meta_path = get_session_meta_path(session_id)
+            from config import (
+                get_session_capsule_path,
+                get_session_meta_path,
+                get_session_dir,
+                resolve_project_workspace_dir,
+                LATEST_CONTEXT_SYMLINK,
+                SESSIONS_DIR
+            )
+            safe_id = re.sub(r'[^a-zA-Z0-9_\-]', '_', str(session_id or "default"))
+            
+            # 1. Central JIT Store: ~/.hermes/state/ona-context/sessions/{active_scope}/{session_id}/
+            capsule_path = get_session_capsule_path(session_id, project=active_scope)
+            meta_path = get_session_meta_path(session_id, project=active_scope)
             
             tmp_capsule = capsule_path.with_suffix(".tmp")
             with open(tmp_capsule, "w", encoding="utf-8") as cf:
@@ -313,12 +325,62 @@ def pre_llm_call(ctx: Dict[str, Any]) -> Dict[str, Any]:
                 json.dump(live_payload, mf, ensure_ascii=False, indent=2)
             tmp_meta.replace(meta_path)
             
+            # Project & global latest symlinks
             try:
+                scope_symlink = SESSIONS_DIR / active_scope / "latest_context.xml"
+                if scope_symlink.is_symlink() or scope_symlink.exists():
+                    scope_symlink.unlink()
+                scope_symlink.symlink_to(capsule_path)
                 if LATEST_CONTEXT_SYMLINK.is_symlink() or LATEST_CONTEXT_SYMLINK.exists():
                     LATEST_CONTEXT_SYMLINK.unlink()
                 LATEST_CONTEXT_SYMLINK.symlink_to(capsule_path)
             except Exception:
                 pass
+
+            # 2. Project Directory Sandbox: {project_ws}/.planning/sessions/{session_id}/
+            project_ws = resolve_project_workspace_dir(active_scope)
+            if project_ws and project_ws.exists():
+                try:
+                    proj_plan_dir = project_ws / ".planning"
+                    proj_sess_dir = proj_plan_dir / "sessions" / safe_id
+                    proj_sess_dir.mkdir(parents=True, exist_ok=True)
+                    
+                    # Ensure .planning/.gitignore ignores sessions/
+                    plan_ignore = proj_plan_dir / ".gitignore"
+                    existing_ignore = plan_ignore.read_text(encoding="utf-8") if plan_ignore.exists() else ""
+                    if "sessions/" not in existing_ignore:
+                        with open(plan_ignore, "a", encoding="utf-8") as gif:
+                            gif.write("\nsessions/\nlatest_context.xml\n")
+                            
+                    p_capsule_path = proj_sess_dir / f"ona_context_{safe_id}.xml"
+                    p_meta_path = proj_sess_dir / f"session_{safe_id}.json"
+                    
+                    with open(p_capsule_path, "w", encoding="utf-8") as pcf:
+                        pcf.write(capsule)
+                    with open(p_meta_path, "w", encoding="utf-8") as pmf:
+                        json.dump(live_payload, pmf, ensure_ascii=False, indent=2)
+                        
+                    # Project-level latest symlink
+                    p_symlink = proj_plan_dir / "latest_context.xml"
+                    if p_symlink.is_symlink() or p_symlink.exists():
+                        p_symlink.unlink()
+                    p_symlink.symlink_to(p_capsule_path)
+                except Exception as pe:
+                    print(f"[ona-context:proj_sandbox_err] {pe}")
+
+            # 3. High-level Obsidian SSOT Snapshot (zero self-poisoning, human-readable card)
+            try:
+                from l1.obsidian_sync import record_session_snapshot_to_obsidian
+                record_session_snapshot_to_obsidian(
+                    scope=active_scope,
+                    session_id=session_id,
+                    goal=goal_text or "",
+                    working_files=ws_matches if ws_matches else [],
+                    capsule_path=capsule_path,
+                    intent=intent_label or ""
+                )
+            except Exception as oe:
+                print(f"[ona-context:obsidian_snapshot_err] {oe}")
         except Exception:
             pass
 
@@ -331,11 +393,11 @@ def pre_llm_call(ctx: Dict[str, Any]) -> Dict[str, Any]:
         c_bold = "\033[1m" if is_tty else ""
 
         if current_mode == "shadow":
-            print(f"⚡ {c_bold}[JIT Context: CZUWANIE (shadow)]{c_reset} Projekt: {active_scope} • {compile_ms:.1f}ms ({capsule_chars} zn)", file=sys.stderr, flush=True)
+            print(f"⚡ {c_bold}[JIT Context: CZUWANIE (shadow)]{c_reset} Sesja: {session_id} • Projekt: {active_scope} • {compile_ms:.1f}ms ({capsule_chars} zn)", file=sys.stderr, flush=True)
             return {}
 
         status_lines = [
-            f"⚡ {c_bold}{c_green}[JIT Context: AKTYWNY]{c_reset} Projekt: {c_cyan}{active_scope}{c_reset} • {compile_ms:.1f}ms • Kapsuła: {c_bold}{capsule_chars:,} / {budget_chars:,} zn ({used_pct}% użyte{c_reset}, ~{tokens_est} tok)"
+            f"⚡ {c_bold}{c_green}[JIT Context: AKTYWNY]{c_reset} Sesja: {c_yellow}{session_id}{c_reset} • Projekt: {c_cyan}{active_scope}{c_reset} • {compile_ms:.1f}ms • Kapsuła: {c_bold}{capsule_chars:,} / {budget_chars:,} zn ({used_pct}% użyte{c_reset}, ~{tokens_est} tok)"
         ]
         if goal_text:
             intent_suffix = f" [{intent_label}]" if intent_label else ""

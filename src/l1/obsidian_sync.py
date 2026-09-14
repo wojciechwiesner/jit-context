@@ -15,18 +15,23 @@ import config
 
 def find_obsidian_project_dossier(scope: str) -> Optional[Path]:
     """Locate the canonical project dossier in Obsidian vault."""
-    if not scope or scope in ("general", "hermes", "default"):
+    if not scope or scope in ("general", "default"):
         return None
     
+    from l1.project_cache import normalize_project_name
+    norm_scope = normalize_project_name(scope)
     clean_scope = scope.lower().replace("_", "-")
     vault_dir = getattr(config, "VAULT_DIR", Path.home() / "Documents" / "Wojciech")
     projects_dir = getattr(config, "PROJECTS_DIR", vault_dir / "projects")
     
     candidates = [
+        projects_dir / f"{norm_scope}.md",
         projects_dir / f"{scope}.md",
         projects_dir / f"{clean_scope}.md",
+        vault_dir / "projects" / f"{norm_scope}.md",
         vault_dir / "projects" / f"{scope}.md",
         vault_dir / "projects" / f"{clean_scope}.md",
+        vault_dir / "context" / "projects" / f"{norm_scope}.md",
         vault_dir / "context" / "projects" / f"{scope}.md",
         vault_dir / "context" / "projects" / f"{clean_scope}.md",
     ]
@@ -169,4 +174,60 @@ def get_obsidian_dossier_info(scope: str, cwd: Optional[str] = None) -> dict:
         "is_stale": is_stale,
         "filename": dossier.name,
     }
+
+def record_session_snapshot_to_obsidian(
+    scope: str,
+    session_id: str,
+    goal: str = "",
+    working_files: Optional[list] = None,
+    capsule_path: Optional[Path] = None,
+    intent: str = ""
+) -> Tuple[bool, str]:
+    """Updates high-level project snapshot in Obsidian SSOT without epistemic self-poisoning."""
+    dossier = find_obsidian_project_dossier(scope)
+    if not dossier:
+        return False, f"No Obsidian dossier found for scope '{scope}'"
+    
+    try:
+        content = dossier.read_text(encoding="utf-8")
+        now_str = datetime.now().strftime("%Y-%m-%d %H:%M")
+        
+        files_str = ", ".join([Path(f).name for f in working_files[:5]]) if working_files else "—"
+        if working_files and len(working_files) > 5:
+            files_str += f" (+{len(working_files)-5})"
+            
+        capsule_uri = f"file://{capsule_path.resolve()}" if capsule_path and capsule_path.exists() else "—"
+        intent_str = f" [{intent}]" if intent else ""
+        clean_goal = goal.strip() if goal else "Bieżące zadanie deweloperskie"
+        
+        snapshot_block = (
+            f"## Ostatnia Sesja JIT\n"
+            f"- **Sesja:** `{session_id}` (`{now_str}`)\n"
+            f"- **Cel:** {clean_goal}{intent_str}\n"
+            f"- **Pliki robocze:** `{files_str}`\n"
+            f"- **Kapsuła JIT:** {capsule_uri}\n"
+        )
+        
+        if "## Ostatnia Sesja JIT" in content:
+            # Replace existing section up to next ## or EOF
+            pat = r"## Ostatnia Sesja JIT\n(?:- [^\n]*\n*)+"
+            content = re.sub(pat, snapshot_block, content)
+        else:
+            # Insert after the main project header/last sync lines
+            match = re.search(r"(- \*\*Ostatnia synchronizacja:\*\* [^\n]*\n*)", content)
+            if match:
+                idx = match.end()
+                content = content[:idx] + f"\n{snapshot_block}\n" + content[idx:]
+            else:
+                header_match = re.search(r"(#[^\n]*\n*)", content)
+                if header_match:
+                    idx = header_match.end()
+                    content = content[:idx] + f"\n{snapshot_block}\n" + content[idx:]
+                else:
+                    content = f"{snapshot_block}\n\n" + content
+                    
+        dossier.write_text(content, encoding="utf-8")
+        return True, f"Recorded JIT session snapshot to Obsidian {dossier.name}"
+    except Exception as e:
+        return False, f"Failed to record session snapshot to Obsidian: {e}"
 

@@ -9,10 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - **1:1 Session Isolation Sandbox (`src/config.py`, `src/l0/db.py`, `src/hooks.py`)**:
-  - Fully isolated per-session directories under `~/.hermes/state/ona-context/sessions/{session_id}/`.
-  - Dedicated `overlay.db` SQLite WAL per session, preventing cross-session lock contention and data mixing between CLI, cron, subagents, and Telegram forum topics.
-  - Physical per-session capsule snapshot `context.xml` and session metadata `session.json` written atomically on every turn.
-  - Global convenience symlink `~/.hermes/state/ona-context/latest_context.xml` pointing to the most recently updated session context.
+  - Partitioned per-session storage under `{project}/.planning/sessions/{session_id}/` in the project repository and central store `~/.hermes/state/ona-context/sessions/{project}/{session_id}/`.
+  - Dedicated `overlay_{session_id}.db` SQLite WAL and physical `ona_context_{session_id}.xml` snapshot written on every turn.
+  - Project-level symlink `{project}/.planning/latest_context.xml` and automated `.planning/.gitignore` protection.
+  - Obsidian SSOT Live Session Bridge (`src/l1/obsidian_sync.py`): automatic lean snapshot in `~/Documents/Wojciech/projects/{project}.md` (`## Ostatnia Sesja JIT`) with goal, active files, and capsule pointer, completely preventing epistemic self-poisoning.
   - Extended project aliases in `src/l1/scope.py` for `boocco` (`book.co`, `booc.co`, `boocco-web`).
   - Unit & regression test suite `src/tests/test_session_isolation.py` (30/30 tests passing).
 
