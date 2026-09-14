@@ -211,3 +211,15 @@ def test_cascade_codebase_map_discovers_app_directory(test_db, tmp_path):
     assert "app/api/routes.py" in capsule
 
 
+def test_synthetic_harness_skill_wrapping_extracts_genuine_instruction():
+    from hooks import is_synthetic_harness_message, extract_genuine_user_instruction
+    raw = (
+        '[IMPORTANT: The user has invoked the "jit-context-orchestration" skill, '
+        'indicating they want you to follow its instructions. The full skill content is loaded below.]\n\n'
+        '---\nname: jit-context-orchestration\n---\n\n'
+        'The user has provided the following instruction alongside the skill invocation: co sie dzieje'
+    )
+    assert is_synthetic_harness_message(raw) is True
+    assert extract_genuine_user_instruction(raw) == "co sie dzieje"
+
+

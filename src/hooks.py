@@ -57,6 +57,15 @@ def hot_reload_jit_modules() -> None:
     except Exception:
         pass
 
+def extract_genuine_user_instruction(text: str) -> str:
+    """Extract real human instruction if message is wrapped in a skill invocation or harness prefix."""
+    if not text:
+        return ""
+    m = re.search(r"The user has provided the following instruction alongside the skill invocation:\s*(.*)", text, re.DOTALL)
+    if m:
+        return m.group(1).strip()
+    return text
+
 def is_synthetic_harness_message(text: str) -> bool:
     """Detect internal Hermes harness prompts (curator, delegation, /btw, canon)."""
     if not text:
@@ -70,6 +79,7 @@ def is_synthetic_harness_message(text: str) -> bool:
         "ENGINEERING CANON (~",
         "<ONA_CONTEXT",
         "[ONA_CONTEXT",
+        "[IMPORTANT: The user has invoked the ",
     )
     return any(t.startswith(p) for p in prefixes)
 
@@ -93,6 +103,7 @@ def pre_llm_call(ctx: Dict[str, Any]) -> Dict[str, Any]:
             if isinstance(m, dict) and m.get("role") == "user":
                 user_message = m.get("content", "")
                 break
+    genuine_instruction = extract_genuine_user_instruction(user_message)
     is_synthetic = is_synthetic_harness_message(user_message)
     
     conn = get_db()
@@ -100,20 +111,38 @@ def pre_llm_call(ctx: Dict[str, Any]) -> Dict[str, Any]:
         # L0 Hot-Path: Ingest direct user message into SQLite WAL (<1ms)
         l0_start = time.time()
         if user_message:
-            append_event(
-                conn=conn,
-                session_id=session_id,
-                role="user",
-                content=user_message,
-                origin="harness_event" if is_synthetic else "direct_user",
-                turn_id=turn_id
-            )
+            if is_synthetic and genuine_instruction and genuine_instruction != user_message:
+                append_event(
+                    conn=conn,
+                    session_id=session_id,
+                    role="user",
+                    content=user_message,
+                    origin="harness_event",
+                    turn_id=turn_id
+                )
+                append_event(
+                    conn=conn,
+                    session_id=session_id,
+                    role="user",
+                    content=genuine_instruction,
+                    origin="direct_user",
+                    turn_id=f"{turn_id}_user"
+                )
+            else:
+                append_event(
+                    conn=conn,
+                    session_id=session_id,
+                    role="user",
+                    content=user_message,
+                    origin="harness_event" if is_synthetic else "direct_user",
+                    turn_id=turn_id
+                )
         l0_ms = (time.time() - l0_start) * 1000
         
         # Determine genuine user message for scope resolution and context compilation
         from l0.overlay import get_latest_direct_user_message, get_session_cwd
-        effective_user_message = user_message
-        if is_synthetic:
+        effective_user_message = genuine_instruction if (is_synthetic and genuine_instruction and genuine_instruction != user_message) else user_message
+        if is_synthetic and (not genuine_instruction or genuine_instruction == user_message):
             latest_real = get_latest_direct_user_message(conn, session_id)
             if latest_real:
                 effective_user_message = latest_real
@@ -255,7 +284,11 @@ def pre_llm_call(ctx: Dict[str, Any]) -> Dict[str, Any]:
             state_items.append(f"Pliki robocze: {', '.join(file_names)}{more}")
 
         status_lines.append(f"   • Stan: {' • '.join(state_items)}")
-        print("\n".join(status_lines), file=sys.stderr, flush=True)
+        try:
+            from cli import _cprint
+            _cprint("\n" + "\n".join(status_lines) + "\n")
+        except Exception:
+            print("\n".join(status_lines), file=sys.stderr, flush=True)
         return {"context": capsule}
     except Exception as e:
         print(f"[ona-context:error] pre_llm failed open: {e}")
