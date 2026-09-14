@@ -7,8 +7,32 @@ from pathlib import Path
 HERMES_HOME = Path(os.environ.get("HERMES_HOME", Path.home() / ".hermes"))
 STATE_DIR = Path(os.environ.get("JIT_STATE_DIR", HERMES_HOME / "state" / "ona-context"))
 STATE_DIR.mkdir(parents=True, exist_ok=True)
+SESSIONS_DIR = STATE_DIR / "sessions"
+SESSIONS_DIR.mkdir(parents=True, exist_ok=True)
 
 DB_PATH = Path(os.environ.get("JIT_DB_PATH", STATE_DIR / "session_overlay.db"))
+LATEST_CONTEXT_SYMLINK = STATE_DIR / "latest_context.xml"
+
+import re
+
+def get_session_dir(session_id: str) -> Path:
+    """Return dedicated directory for session state isolation."""
+    safe_id = re.sub(r'[^a-zA-Z0-9_\-]', '_', str(session_id or "default"))
+    s_dir = SESSIONS_DIR / safe_id
+    s_dir.mkdir(parents=True, exist_ok=True)
+    return s_dir
+
+def get_session_db_path(session_id: str) -> Path:
+    """Return isolated SQLite DB path for this session."""
+    return get_session_dir(session_id) / "overlay.db"
+
+def get_session_capsule_path(session_id: str) -> Path:
+    """Return physical context XML file path for this session."""
+    return get_session_dir(session_id) / "context.xml"
+
+def get_session_meta_path(session_id: str) -> Path:
+    """Return session metadata JSON file path."""
+    return get_session_dir(session_id) / "session.json"
 
 # Dynamic vault and workspace resolution
 def _resolve_default_vault() -> Path:

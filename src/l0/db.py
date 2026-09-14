@@ -78,9 +78,29 @@ CREATE TABLE IF NOT EXISTS provider_state (
 );
 """
 
-def get_db(db_path: Optional[Path] = None) -> sqlite3.Connection:
-    target_path = db_path or DB_PATH
+def _init_db_conn(conn: sqlite3.Connection) -> None:
+    try:
+        conn.executescript(SCHEMA_SQL)
+        try:
+            conn.execute("ALTER TABLE sessions ADD COLUMN last_cwd TEXT;")
+        except Exception:
+            pass # Already exists
+        try:
+            from telemetry.db_schema import init_telemetry_schema
+            init_telemetry_schema(conn)
+        except Exception as e:
+            pass
+    except Exception as e:
+        print(f"[ona-context:db] Schema init error: {e}")
+
+def get_db(db_path: Optional[Path] = None, session_id: Optional[str] = None) -> sqlite3.Connection:
+    if session_id:
+        from config import get_session_db_path
+        target_path = get_session_db_path(session_id)
+    else:
+        target_path = db_path or DB_PATH
     target_path.parent.mkdir(parents=True, exist_ok=True)
+    needs_init = not target_path.exists()
     conn = sqlite3.connect(str(target_path), timeout=0.05)
     conn.row_factory = sqlite3.Row
     
@@ -91,21 +111,15 @@ def get_db(db_path: Optional[Path] = None) -> sqlite3.Connection:
     conn.execute("PRAGMA temp_store=MEMORY;")
     conn.execute("PRAGMA busy_timeout=50;")
     
+    if needs_init:
+        with conn:
+            _init_db_conn(conn)
     return conn
 
 def init_db(db_path: Optional[Path] = None) -> None:
     conn = get_db(db_path)
     try:
         with conn:
-            conn.executescript(SCHEMA_SQL)
-            try:
-                conn.execute("ALTER TABLE sessions ADD COLUMN last_cwd TEXT;")
-            except Exception:
-                pass # Already exists
-            try:
-                from telemetry.db_schema import init_telemetry_schema
-                init_telemetry_schema(conn)
-            except Exception as e:
-                print(f"[ona-context:db] Telemetry schema init: {e}")
+            _init_db_conn(conn)
     finally:
         conn.close()

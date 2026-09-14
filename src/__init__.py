@@ -10,15 +10,26 @@ _PLUGIN_ROOT = str(Path(__file__).resolve().parent)
 if _PLUGIN_ROOT not in sys.path:
     sys.path.insert(0, _PLUGIN_ROOT)
 
-from .hooks import (
-    api_request_error,
-    post_api_request,
-    post_llm,
-    post_tool_call,
-    pre_api_request,
-    pre_llm,
-    session_start,
-)
+try:
+    from .hooks import (
+        api_request_error,
+        post_api_request,
+        post_llm,
+        post_tool_call,
+        pre_api_request,
+        pre_llm,
+        session_start,
+    )
+except ImportError:
+    from hooks import (
+        api_request_error,
+        post_api_request,
+        post_llm,
+        post_tool_call,
+        pre_api_request,
+        pre_llm,
+        session_start,
+    )
 
 
 def _hook_callback(handler, *, aliases=None):

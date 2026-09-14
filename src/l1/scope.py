@@ -20,6 +20,17 @@ KNOWN_PROJECTS = {
     "synthapse", "hermes-jit-context-os", "jit-context", "jit", "aipraca"
 }
 
+def match_project_in_text(p: str, text: str) -> bool:
+    """Match project name including Polish inflections and variations."""
+    if p in ("jit", "jit-context", "hermes-jit-context-os"):
+        return bool(re.search(r'\b(?:jit|jita|jicie|jitem|jitu|jit-context|hermes-jit)\b', text))
+    if p == "hermes":
+        return bool(re.search(r'\b(?:hermes|hermesa|hermesowi|hermesem|hermesie)\b', text))
+    if p == "boocco":
+        return bool(re.search(r'\b(?:boocc[oauiy]\w*|book\.co|booc\.co|boocco-web)\b', text))
+    pat = r'\b' + re.escape(p) + r'(?:a|u|ie|em|owi|ów|e|ach|y|i|owej|owym|owych|owy)?\b'
+    return bool(re.search(pat, text))
+
 def resolve_scope(
     message: str,
     current_active_scope: str,
@@ -31,7 +42,10 @@ def resolve_scope(
     Returns:
       (active_scope, retrieval_scopes, next_candidate_scope, next_candidate_turns)
     """
-    text_lower = message.lower()
+    # Strip nested/quoted <ONA_CONTEXT> blocks to prevent scope pollution from historical logs
+    unquoted = re.sub(r'<ONA_CONTEXT.*?</ONA_CONTEXT>', '', message, flags=re.DOTALL)
+    effective_text = unquoted if unquoted.strip() else message
+    text_lower = effective_text.lower()
     
     # 1. Check explicit command (immediate switch)
     for pat in EXPLICIT_SCOPE_PATTERNS:
@@ -54,14 +68,18 @@ def resolve_scope(
         retrieval = [current_active_scope] + [s for s in sorted(cross_scopes) if s != current_active_scope]
         return current_active_scope, retrieval, None, 0
 
-    # 3. Check sustained candidate mention (requires 2 consecutive turns to switch active_scope)
+    # 3. Check sustained candidate mention (requires 2 consecutive turns to switch active_scope between projects, or immediate switch from general/unknown)
     detected_candidate = None
     for p in KNOWN_PROJECTS:
-        if p in text_lower and p != current_active_scope:
+        if match_project_in_text(p, text_lower) and p != current_active_scope:
             detected_candidate = p
             break
             
     if detected_candidate:
+        # If current scope is not a known project (e.g. general, unknown, or arbitrary dir), switch IMMEDIATELY
+        if current_active_scope in ("general", "unknown", "") or current_active_scope not in KNOWN_PROJECTS:
+            return detected_candidate, [detected_candidate], None, 0
+            
         if pending_candidate_scope == detected_candidate:
             new_turns = candidate_turns_count + 1
             if new_turns >= 2:

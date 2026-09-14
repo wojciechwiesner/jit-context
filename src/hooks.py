@@ -61,6 +61,10 @@ def extract_genuine_user_instruction(text: str) -> str:
     """Extract real human instruction if message is wrapped in a skill invocation or harness prefix."""
     if not text:
         return ""
+    # Strip nested/quoted <ONA_CONTEXT ...> blocks to avoid self-poisoning
+    clean = re.sub(r'<ONA_CONTEXT.*?</ONA_CONTEXT>', '', text, flags=re.DOTALL).strip()
+    if clean:
+        text = clean
     m = re.search(r"The user has provided the following instruction alongside the skill invocation:\s*(.*)", text, re.DOTALL)
     if m:
         return m.group(1).strip()
@@ -106,7 +110,7 @@ def pre_llm_call(ctx: Dict[str, Any]) -> Dict[str, Any]:
     genuine_instruction = extract_genuine_user_instruction(user_message)
     is_synthetic = is_synthetic_harness_message(user_message)
     
-    conn = get_db()
+    conn = get_db(session_id=session_id)
     try:
         # L0 Hot-Path: Ingest direct user message into SQLite WAL (<1ms)
         l0_start = time.time()
@@ -150,10 +154,20 @@ def pre_llm_call(ctx: Dict[str, Any]) -> Dict[str, Any]:
         # L1 Scope resolution (<1ms, tracks session_cwd from terminal tool execution)
         l1_start = time.time()
         session_cwd = get_session_cwd(conn, session_id)
-        active_cwd = Path(session_cwd) if session_cwd and Path(session_cwd).exists() else Path.cwd()
-        cwd_name = active_cwd.name
-        default_scope = cwd_name if cwd_name not in ["wojciechwiesner", "Projects", "active"] else "hermes"
-        active_scope, retrieval_scopes, _, _ = resolve_scope(effective_user_message, default_scope)
+        if session_cwd and Path(session_cwd).exists():
+            cwd_name = Path(session_cwd).name
+            default_scope = cwd_name if cwd_name not in ["wojciechwiesner", "Projects", "active"] else "general"
+        else:
+            # DO NOT fall back to process Path.cwd() to prevent cross-session context bleeding!
+            session_cwd = None
+            default_scope = "general"
+        
+        # Invariant: Preserve active session scope across turns unless switched!
+        session_obj = ensure_session(conn, session_id, default_scope=default_scope)
+        current_scope = session_obj.get("active_scope") or default_scope
+        base_scope = current_scope if current_scope not in ("general", "unknown", "") else default_scope
+        
+        active_scope, retrieval_scopes, _, _ = resolve_scope(effective_user_message, base_scope)
         l1_ms = (time.time() - l1_start) * 1000
         
         # Context compilation with L2 circuit breaker
@@ -162,7 +176,10 @@ def pre_llm_call(ctx: Dict[str, Any]) -> Dict[str, Any]:
             conn=conn,
             session_id=session_id,
             user_message=effective_user_message,
-            transcript_messages=ctx.get("messages", [])
+            transcript_messages=ctx.get("messages", []),
+            active_scope=active_scope,
+            default_scope=default_scope,
+            session_cwd=session_cwd
         )
         if isinstance(compile_res, tuple):
             capsule, meta = compile_res
@@ -280,6 +297,28 @@ def pre_llm_call(ctx: Dict[str, Any]) -> Dict[str, Any]:
                 json.dump(live_payload, lf, ensure_ascii=False, indent=2)
             with open("/tmp/hermes-jit-capsule-live.xml", "w", encoding="utf-8") as xf:
                 xf.write(capsule)
+            
+            # Isolated per-session sandbox write (1:1 Session Sandbox)
+            from config import get_session_capsule_path, get_session_meta_path, LATEST_CONTEXT_SYMLINK
+            capsule_path = get_session_capsule_path(session_id)
+            meta_path = get_session_meta_path(session_id)
+            
+            tmp_capsule = capsule_path.with_suffix(".tmp")
+            with open(tmp_capsule, "w", encoding="utf-8") as cf:
+                cf.write(capsule)
+            tmp_capsule.replace(capsule_path)
+            
+            tmp_meta = meta_path.with_suffix(".tmp")
+            with open(tmp_meta, "w", encoding="utf-8") as mf:
+                json.dump(live_payload, mf, ensure_ascii=False, indent=2)
+            tmp_meta.replace(meta_path)
+            
+            try:
+                if LATEST_CONTEXT_SYMLINK.is_symlink() or LATEST_CONTEXT_SYMLINK.exists():
+                    LATEST_CONTEXT_SYMLINK.unlink()
+                LATEST_CONTEXT_SYMLINK.symlink_to(capsule_path)
+            except Exception:
+                pass
         except Exception:
             pass
 
@@ -335,7 +374,7 @@ def pre_api_request(ctx: Dict[str, Any]) -> None:
     approx_tokens = ctx.get("approx_input_tokens", 0)
     retry_count = ctx.get("retry_count", 0)
     
-    conn = get_db()
+    conn = get_db(session_id=session_id)
     try:
         record_llm_start(
             conn=conn,
@@ -357,6 +396,7 @@ def pre_api_request(ctx: Dict[str, Any]) -> None:
 def post_api_request(ctx: Dict[str, Any]) -> None:
     """Post-API request hook: Records actual LLM tokens and cache hit statistics."""
     api_request_id = ctx.get("api_request_id", "")
+    session_id = ctx.get("session_id", "default")
     duration_ms = ctx.get("duration_ms", 0.0)
     response_model = ctx.get("response_model") or ctx.get("model")
     usage = ctx.get("usage", {})
@@ -368,7 +408,7 @@ def post_api_request(ctx: Dict[str, Any]) -> None:
     cache_read_tokens = usage.get("cache_read_tokens", 0) or usage.get("cached_tokens", 0)
     cache_write_tokens = usage.get("cache_write_tokens", 0)
     
-    conn = get_db()
+    conn = get_db(session_id=session_id)
     try:
         record_llm_success(
             conn=conn,
@@ -390,10 +430,11 @@ def post_api_request(ctx: Dict[str, Any]) -> None:
 def api_request_error(ctx: Dict[str, Any]) -> None:
     """API error hook: Records LLM failure and fallback tracking."""
     api_request_id = ctx.get("api_request_id", "")
+    session_id = ctx.get("session_id", "default")
     error_message = str(ctx.get("error", "Unknown API error"))
     status_code = ctx.get("status_code", 500)
     
-    conn = get_db()
+    conn = get_db(session_id=session_id)
     try:
         record_llm_error(
             conn=conn,
@@ -416,7 +457,7 @@ def post_tool_call(ctx: Dict[str, Any]) -> None:
     tool_input = ctx.get("tool_input", {})
     tool_output = ctx.get("tool_output", "")
     
-    conn = get_db()
+    conn = get_db(session_id=session_id)
     try:
         origin, fact_kind, fact_key, fact_value = parse_tool_execution(tool_name, tool_input, tool_output)
         content_preview = str(tool_output)[:400]

@@ -5,6 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.6] - 2026-09-14
+
+### Added
+- **1:1 Session Isolation Sandbox (`src/config.py`, `src/l0/db.py`, `src/hooks.py`)**:
+  - Fully isolated per-session directories under `~/.hermes/state/ona-context/sessions/{session_id}/`.
+  - Dedicated `overlay.db` SQLite WAL per session, preventing cross-session lock contention and data mixing between CLI, cron, subagents, and Telegram forum topics.
+  - Physical per-session capsule snapshot `context.xml` and session metadata `session.json` written atomically on every turn.
+  - Global convenience symlink `~/.hermes/state/ona-context/latest_context.xml` pointing to the most recently updated session context.
+  - Extended project aliases in `src/l1/scope.py` for `boocco` (`book.co`, `booc.co`, `boocco-web`).
+  - Unit & regression test suite `src/tests/test_session_isolation.py` (30/30 tests passing).
+
+### Fixed
+- **Cross-Session Context Bleeding (Process CWD Leak)**:
+  - Eliminated fallback to process-level `Path.cwd()`, ensuring fresh sessions without registered CWD default to `general` instead of inheriting the gateway daemon's working directory.
+- **Nested Capsule Self-Poisoning**:
+  - Sanitized input prompts to ignore quoted `<ONA_CONTEXT>` blocks from previous session logs or test briefs, preventing foreign project scope hijacking.
+
 ## [0.2.5] - 2026-09-08
 
 ### Added
