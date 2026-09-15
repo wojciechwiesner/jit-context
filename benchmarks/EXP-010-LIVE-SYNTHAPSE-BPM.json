@@ -1,0 +1,56 @@
+{
+  "exp_id": "EXP-010-LIVE-SYNTHAPSE-BPM",
+  "timestamp": "2026-09-08T21:00:00Z",
+  "task": "Add dynamic BPM modulation (setBpm with force override, nudgeBpm) to Synthapse Web Audio codebase",
+  "target_file": "src/dsp/sessionTempo.ts",
+  "test_file": "tests/sessionTempo.test.ts",
+  "repo": "/Users/wojciechwiesner/Projects/active/synthapse",
+  "verification_command": "./node_modules/.bin/vitest run",
+  "baseline_tests_count": 206,
+  "results": {
+    "qwen_jit": {
+      "model": "Local Qwen 3.8 9B (Metal M2 Pro)",
+      "runtime": "JIT Context OS (AST Capsule <1.5k tok, Episodic WAL)",
+      "turns": 3,
+      "passed": true,
+      "tests_passed": "206/206 (100%)",
+      "wall_time_s": 157.93,
+      "total_tokens_generated": 3084,
+      "status": "PASS",
+      "notes": "Turn 1 applied initial BPM clamp and events; Turn 2 self-corrected anchor timing; Turn 3 passed all 206 tests cleanly without human intervention."
+    },
+    "qwen_no_jit": {
+      "model": "Local Qwen 3.8 9B (Metal M2 Pro)",
+      "runtime": "Standard Conversational History (Chat Accumulation)",
+      "turns": 1,
+      "passed": false,
+      "tests_passed": "0/206 (0%)",
+      "wall_time_s": ">300s (TIMEOUT)",
+      "total_tokens_generated": 1938,
+      "status": "TIMEOUT_FAIL",
+      "notes": "Turn 1 hallucinated external 'EventEmitter' dependency; on Turn 2 prompt exploded to >7.5k tokens, causing severe attention degradation and Metal processing timeout (>300s)."
+    },
+    "gemini_jit": {
+      "model": "Gemini 2.5 Flash",
+      "runtime": "JIT Context OS (AST Capsule <1.5k tok)",
+      "turns": 3,
+      "passed": false,
+      "tests_passed": "0/206 (0%)",
+      "wall_time_s": 31.49,
+      "total_tokens_generated": 575,
+      "status": "FAIL",
+      "notes": "Fast inference, but truncated full class implementation into partial stubs across multiple turns."
+    },
+    "gemini_no_jit": {
+      "model": "Gemini 2.5 Flash",
+      "runtime": "Standard Conversational History (Chat Accumulation)",
+      "turns": 3,
+      "passed": false,
+      "tests_passed": "0/206 (0%)",
+      "wall_time_s": 52.55,
+      "total_tokens_generated": 485,
+      "status": "FAIL",
+      "notes": "Total attention drift; conversational chat accumulation caused model to reply with polite natural language meta-commentary instead of emitting raw file code blocks."
+    }
+  }
+}

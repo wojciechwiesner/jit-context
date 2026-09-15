@@ -15,7 +15,10 @@ Scans the target codebase to extract:
 import os
 import sys
 import json
+import re
 import argparse
+import subprocess
+from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Any, Optional
 
@@ -26,7 +29,8 @@ OBSIDIAN_KNOWHOW_DIR = OBSIDIAN_VAULT / "knowhow"
 class ProjectScanner:
     def __init__(self, target_dir: Path):
         self.target_dir = target_dir.resolve()
-        self.name = self.target_dir.name
+        raw_name = self.target_dir.name
+        self.name = re.sub(r"-v\d+(\.\d+)*$", "", raw_name)
 
     def detect_stack(self) -> Dict[str, Any]:
         stack = {
@@ -220,8 +224,30 @@ def run_init(target_path: Path, tier: str = "standard", goal: Optional[str] = No
     OBSIDIAN_PROJECTS_DIR.mkdir(parents=True, exist_ok=True)
     obsidian_file = OBSIDIAN_PROJECTS_DIR / f"{scanner.name}.md"
 
+    commit_sha = ""
+    commit_msg = ""
+    branch_name = ""
+    try:
+        r_sha = subprocess.run(["git", "rev-parse", "--short", "HEAD"], cwd=scanner.target_dir, capture_output=True, text=True, timeout=3)
+        if r_sha.returncode == 0:
+            commit_sha = r_sha.stdout.strip()
+        r_msg = subprocess.run(["git", "log", "-1", "--format=%s"], cwd=scanner.target_dir, capture_output=True, text=True, timeout=3)
+        if r_msg.returncode == 0:
+            commit_msg = r_msg.stdout.strip()
+        r_br = subprocess.run(["git", "rev-parse", "--abbrev-ref", "HEAD"], cwd=scanner.target_dir, capture_output=True, text=True, timeout=3)
+        if r_br.returncode == 0:
+            branch_name = r_br.stdout.strip()
+    except Exception:
+        pass
+
+    now_str = datetime.now().strftime("%Y-%m-%d %H:%M")
+
     doc_lines = [
         f"# Project Dossier: {scanner.name}",
+        "",
+        f"- **Ostatni Commit:** `{commit_sha}` {commit_msg}" if commit_sha else "- **Ostatni Commit:** `initial`",
+        f"- **Ostatnia synchronizacja:** `{now_str}`",
+        f"- **Git Branch:** `{branch_name or 'main'}`",
         "",
         "## Overview & Meta",
         f"- **Repository Path**: `{scanner.target_dir}`",
@@ -295,6 +321,34 @@ def run_init(target_path: Path, tier: str = "standard", goal: Optional[str] = No
 - [ ] Phase 2: Runtime Verification & Deployment
 """
         state_file.write_text(state_content, encoding="utf-8")
+
+    # 3. Operator Scratchpad .planning/THOUGHTS.md if missing
+    thoughts_file = planning_dir / "THOUGHTS.md"
+    if not thoughts_file.exists():
+        thoughts_template = Path.home() / "Documents/Wojciech/templates/sota-starter/THOUGHTS_TEMPLATE.md"
+        if thoughts_template.exists():
+            t_content = thoughts_template.read_text(encoding="utf-8").replace("{{DATE}}", datetime.now().strftime("%Y-%m-%d"))
+        else:
+            t_content = f"# Operator Thoughts & Advisory Scratchpad (Wojciech)\n\n> To jest prywatny scratchpad operatora projektu.\n\n---\n\n## [{datetime.now().strftime('%Y-%m-%d')}] Przemyslenia & Wątki do rozważenia\n- [ ] Luźny pomysł lub uwaga architektoniczna...\n"
+        thoughts_file.write_text(t_content, encoding="utf-8")
+
+    # 4. Architecture Diagram .planning/ARCHITECTURE.mmd if missing
+    arch_file = planning_dir / "ARCHITECTURE.mmd"
+    if not arch_file.exists():
+        arch_template = Path.home() / "Documents/Wojciech/templates/sota-starter/ARCHITECTURE_TEMPLATE.mmd"
+        if arch_template.exists():
+            a_content = arch_template.read_text(encoding="utf-8")
+        else:
+            a_content = "graph TD\n    App[\"Application\"]\n"
+        arch_file.write_text(a_content, encoding="utf-8")
+
+    # 5. Visual Cockpit .planning/state.html
+    builder_script = Path.home() / "Documents/Wojciech/templates/sota-starter/build_state_template.js"
+    if builder_script.exists():
+        try:
+            subprocess.run(["node", str(builder_script), str(target_path)], capture_output=True, timeout=5)
+        except Exception:
+            pass
 
     return {
         "status": "success",

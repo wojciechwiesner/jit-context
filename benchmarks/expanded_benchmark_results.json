@@ -1,0 +1,68 @@
+[
+  {
+    "name": "xAI Grok 4.6 (llm.borg.tools)",
+    "provider": "xAI / Gateway",
+    "type": "Cloud API",
+    "t1": "4/4",
+    "t2": "4/4",
+    "t3": "2/2",
+    "raw_pts": "10/10",
+    "score100": 100.0,
+    "duration": "61.91s"
+  },
+  {
+    "name": "Google Gemini 2.5 Flash",
+    "provider": "Google Cloud",
+    "type": "Cloud API",
+    "t1": "3/4",
+    "t2": "4/4",
+    "t3": "2/2",
+    "raw_pts": "9/10",
+    "score100": 90.0,
+    "duration": "22.04s"
+  },
+  {
+    "name": "Local Qwen 3.8 9B (Metal M2 Pro)",
+    "provider": "Local Edge (Ollama)",
+    "type": "Local On-Device",
+    "t1": "4/4",
+    "t2": "0/4",
+    "t3": "0/2",
+    "raw_pts": "4/10",
+    "score100": 40.0,
+    "duration": "152.16s"
+  },
+  {
+    "name": "Google Gemma 4 31B Free",
+    "provider": "Google (OpenRouter)",
+    "type": "Free Cloud",
+    "t1": "ERR (HTTP Error 429: Too Many )",
+    "t2": "ERR (HTTP Error 429: Too Many )",
+    "t3": "ERR (HTTP Error 429: Too Many )",
+    "raw_pts": "0/10",
+    "score100": 0.0,
+    "duration": "0.4s"
+  },
+  {
+    "name": "NVIDIA Nemotron Super 120B Free",
+    "provider": "NVIDIA (OpenRouter)",
+    "type": "Free Cloud",
+    "t1": "4/4",
+    "t2": "4/4",
+    "t3": "2/2",
+    "raw_pts": "10/10",
+    "score100": 100.0,
+    "duration": "67.34s"
+  },
+  {
+    "name": "Local Qwen 2.5 Coder 7B",
+    "provider": "Local Edge (Ollama)",
+    "type": "Local On-Device",
+    "t1": "4/4",
+    "t2": "4/4",
+    "t3": "2/2",
+    "raw_pts": "10/10",
+    "score100": 100.0,
+    "duration": "24.62s"
+  }
+]

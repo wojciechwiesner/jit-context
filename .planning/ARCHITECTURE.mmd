@@ -1,0 +1,32 @@
+graph TD
+    subgraph L0 ["L0: Hot-Path (<3ms)"]
+        Overlay["Session Overlay (SQLite WAL)"]
+        ToolEv["Tool Evidence & Recent Fence"]
+        Epistemic["Epistemic Weights (User=1.0, Asst=0.0)"]
+        Overlay --> ToolEv
+        Overlay --> Epistemic
+    end
+
+    subgraph L1 ["L1: Scope & AST Working Set"]
+        ScopeHyst["Scope Hysteresis & Working Set AST"]
+        ObsidianBridge["Obsidian SSOT Live Sync"]
+        ProjectCache["Project Cache & Symbols"]
+    end
+
+    subgraph L2 ["L2: Deep-Path Cascade"]
+        Distiller["Cascade Distiller (Classifier + Verbatim + Assembler)"]
+        Broker["Borg Broker / Mem-Agent Client"]
+        Circuit["Circuit Breaker (600ms fail-open)"]
+        Distiller --> Broker
+        Broker --> Circuit
+    end
+
+    subgraph Telemetry ["Observatory (:8765)"]
+        Doctor["Invariants Checker (I1-I10)"]
+        ExpSuites["Empirical Experiment Suites (EXP-001..010)"]
+    end
+
+    L0 <--> L1
+    L1 <--> L2
+    L0 --> Telemetry
+    L2 --> Telemetry

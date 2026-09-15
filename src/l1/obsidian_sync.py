@@ -78,7 +78,7 @@ def sync_obsidian_on_commit(scope: str, cwd: str, commit_sha: str = "", commit_m
             if "- **Ostatnia synchronizacja:**" in content:
                 content = re.sub(r"-\s+\*\*Ostatnia synchronizacja:\*\*.*", sync_line, content)
         else:
-            header_match = re.search(r"(#\s+Projekt:[^\n]*\n)", content)
+            header_match = re.search(r"(#\s+(?:Projekt|Project Dossier):[^\n]*\n)", content)
             if header_match:
                 idx = header_match.end()
                 content = content[:idx] + f"{commit_entry}\n" + content[idx:]

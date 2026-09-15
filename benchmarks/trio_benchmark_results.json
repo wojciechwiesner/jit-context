@@ -1,0 +1,122 @@
+[
+  {
+    "id": "qwen_with_jit",
+    "name": "Local Qwen 3.8 9B + JIT",
+    "is_jit": true,
+    "task_1": {
+      "pass": false,
+      "score": "0/4",
+      "error": "timed out"
+    },
+    "task_2": {
+      "pass": false,
+      "score": "0/4",
+      "error": "timed out"
+    },
+    "overall_pass": "0/2",
+    "total_latency_s": 90.02,
+    "prompt_tokens": 0
+  },
+  {
+    "id": "qwen_no_jit",
+    "name": "Local Qwen 3.8 9B (No JIT)",
+    "is_jit": false,
+    "task_1": {
+      "pass": false,
+      "score": "0/4",
+      "error": "timed out"
+    },
+    "task_2": {
+      "pass": false,
+      "score": "0/4",
+      "error": "timed out"
+    },
+    "overall_pass": "0/2",
+    "total_latency_s": 90.02,
+    "prompt_tokens": 0
+  },
+  {
+    "id": "gemini_with_jit",
+    "name": "Gemini Flash + JIT",
+    "is_jit": true,
+    "task_1": {
+      "pass": false,
+      "score": "0/4",
+      "invariants": {
+        "sort_keys": false,
+        "reset_counts": false,
+        "seq_monotonic": false,
+        "rollback": false
+      }
+    },
+    "task_2": {
+      "pass": false,
+      "score": "1/4",
+      "checks": {
+        "normalization": false,
+        "trigonometry": false,
+        "rounding": false,
+        "no_numpy": true
+      }
+    },
+    "overall_pass": "0/2",
+    "total_latency_s": 18.52,
+    "prompt_tokens": 437
+  },
+  {
+    "id": "gemini_no_jit",
+    "name": "Gemini Flash (No JIT)",
+    "is_jit": false,
+    "task_1": {
+      "pass": false,
+      "score": "0/4",
+      "invariants": {
+        "sort_keys": false,
+        "reset_counts": false,
+        "seq_monotonic": false,
+        "rollback": false
+      }
+    },
+    "task_2": {
+      "pass": false,
+      "score": "2/4",
+      "checks": {
+        "normalization": true,
+        "trigonometry": false,
+        "rounding": false,
+        "no_numpy": true
+      }
+    },
+    "overall_pass": "0/2",
+    "total_latency_s": 20.06,
+    "prompt_tokens": 387
+  },
+  {
+    "id": "grok_with_jit",
+    "name": "Grok 4.6 + JIT",
+    "is_jit": true,
+    "task_1": {
+      "pass": true,
+      "score": "4/4",
+      "invariants": {
+        "sort_keys": true,
+        "reset_counts": true,
+        "seq_monotonic": true,
+        "rollback": true
+      }
+    },
+    "task_2": {
+      "pass": true,
+      "score": "4/4",
+      "checks": {
+        "normalization": true,
+        "trigonometry": true,
+        "rounding": true,
+        "no_numpy": true
+      }
+    },
+    "overall_pass": "2/2",
+    "total_latency_s": 39.93,
+    "prompt_tokens": 3701
+  }
+]

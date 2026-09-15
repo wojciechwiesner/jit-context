@@ -346,6 +346,20 @@
     </div>
   </header>
 
+  <!-- Session Selector Bar -->
+  <div style="display: flex; align-items: center; justify-content: space-between; background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 12px 18px; margin-bottom: 24px; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);">
+    <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+      <span style="font-weight: 600; color: var(--text-muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em;">Aktywna Sesja:</span>
+      <select id="session-select" onchange="onSessionChange(this.value)" style="background: rgba(0, 0, 0, 0.4); color: var(--text-main); border: 1px solid var(--border); border-radius: 6px; padding: 6px 12px; font-family: 'JetBrains Mono', monospace; font-size: 12px; cursor: pointer; outline: none; max-width: 520px;">
+        <option value="">⚡ Ostatni aktywny turn (/live - global)</option>
+      </select>
+    </div>
+    <div style="display: flex; align-items: center; gap: 10px;">
+      <span id="session-sync-badge" class="badge badge-emerald">LIVE</span>
+      <span id="session-target-display" style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--cyan);">—</span>
+    </div>
+  </div>
+
   <!-- Metric Cards -->
   <section class="grid-cards">
     <!-- Card 1: Capsule Budget & Usage -->
@@ -452,12 +466,66 @@
 
   <script>
     let rawCapsuleText = "";
+    let selectedSession = new URLSearchParams(window.location.search).get('session') || '';
+    let selectedProject = new URLSearchParams(window.location.search).get('project') || '';
+    const knownSessions = new Set();
+
+    function onSessionChange(val) {
+      selectedSession = val;
+      const url = new URL(window.location);
+      if (selectedSession) {
+        url.searchParams.set('session', selectedSession);
+      } else {
+        url.searchParams.delete('session');
+      }
+      window.history.replaceState({}, '', url);
+      fetchLiveContext();
+    }
 
     async function fetchLiveContext() {
       try {
-        const res = await fetch('/api/context/live');
+        let apiUrl = '/api/context/live';
+        const params = new URLSearchParams();
+        if (selectedSession) params.append('session', selectedSession);
+        if (selectedProject) params.append('project', selectedProject);
+        const qs = params.toString();
+        if (qs) apiUrl += '?' + qs;
+
+        const res = await fetch(apiUrl);
         if (!res.ok) return;
         const data = await res.json();
+
+        // Populate available sessions dropdown
+        if (data.available_sessions && Array.isArray(data.available_sessions)) {
+          const select = document.getElementById('session-select');
+          data.available_sessions.forEach(s => {
+            if (!knownSessions.has(s.session_id)) {
+              knownSessions.add(s.session_id);
+              const opt = document.createElement('option');
+              opt.value = s.session_id;
+              const dateStr = s.updated_at ? s.updated_at.slice(11, 16) : '';
+              const goalPreview = s.goal_text ? ` • "${s.goal_text.slice(0, 32)}..."` : '';
+              opt.textContent = `[${s.project}] ${s.session_id} (${dateStr}${goalPreview})`;
+              select.appendChild(opt);
+            }
+          });
+          if (selectedSession) {
+            select.value = selectedSession;
+          }
+        }
+
+        const disp = document.getElementById('session-target-display');
+        const syncBadge = document.getElementById('session-sync-badge');
+        if (data.session_id) {
+          disp.textContent = `Sesja: ${data.session_id} • ${data.scope || 'general'}`;
+          if (selectedSession && selectedSession === data.session_id) {
+            syncBadge.textContent = "SESJA ZABLOKOWANA";
+            syncBadge.className = "badge badge-purple";
+          } else {
+            syncBadge.textContent = "GLOBAL LIVE";
+            syncBadge.className = "badge badge-emerald";
+          }
+        }
 
         if (data.status === 'idle' || !data.capsule) {
           document.getElementById('goal-text').textContent = "Brak aktywnego zapytania w sesji. Oczekuję na prompt.";

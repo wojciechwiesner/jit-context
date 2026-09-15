@@ -1,8 +1,10 @@
 """Context OS Observatory & Health Server for Hermes JIT Context OS (127.0.0.1:8765)."""
 
 import os
+import re
 import json
 import time
+import urllib.parse
 import sqlite3
 import http.server
 import socketserver
@@ -591,7 +593,10 @@ class HealthHTTPHandler(http.server.BaseHTTPRequestHandler):
 
     def do_GET(self):
         try:
-            if self.path.startswith("/health"):
+            parsed_url = urllib.parse.urlparse(self.path)
+            clean_path = parsed_url.path
+
+            if clean_path.startswith("/health"):
                 conn = get_db()
                 try:
                     deep = "deep" in self.path
@@ -602,7 +607,7 @@ class HealthHTTPHandler(http.server.BaseHTTPRequestHandler):
                     self.wfile.write(json.dumps(report).encode("utf-8"))
                 finally:
                     conn.close()
-            elif self.path.startswith("/api/experiments"):
+            elif clean_path.startswith("/api/experiments"):
                 from health.experiment_runner import run_paired_experiment_exp001
                 from health.experiment_suites import (
                     run_exp002_multi_task_suite,
@@ -717,7 +722,7 @@ class HealthHTTPHandler(http.server.BaseHTTPRequestHandler):
                 self.send_header("Content-Type", "application/json")
                 self.end_headers()
                 self.wfile.write(json.dumps(summary).encode("utf-8"))
-            elif self.path.startswith("/api/metrics"):
+            elif clean_path.startswith("/api/metrics"):
                 mode = "session"
                 if "mode=24h" in self.path:
                     mode = "24h"
@@ -729,21 +734,79 @@ class HealthHTTPHandler(http.server.BaseHTTPRequestHandler):
                 self.send_header("Content-Type", "application/json")
                 self.end_headers()
                 self.wfile.write(json.dumps(payload).encode("utf-8"))
-            elif self.path.startswith("/api/context/live"):
-                live_path = Path("/tmp/hermes-jit-live.json")
-                if live_path.exists():
-                    try:
-                        data = json.loads(live_path.read_text(encoding="utf-8"))
-                    except Exception as err:
-                        data = {"status": "error", "message": f"reading_live_file: {err}"}
-                else:
-                    data = {"status": "idle", "message": "No active turn yet"}
+            elif clean_path.startswith("/api/context/live") or clean_path.startswith("/api/context/session"):
+                parsed = urllib.parse.urlparse(self.path)
+                params = urllib.parse.parse_qs(parsed.query)
+                req_session = params.get("session", [None])[0]
+                req_project = params.get("project", [None])[0]
+
+                data = None
+                from config import SESSIONS_DIR
+
+                # 1. If explicit session requested, resolve from SESSIONS_DIR
+                if req_session and req_session not in ("latest", ""):
+                    clean_sess = re.sub(r'[^a-zA-Z0-9_\-]', '_', str(req_session))
+                    if req_project:
+                        clean_proj = re.sub(r'[^a-zA-Z0-9_\-]', '_', str(req_project)).strip()
+                        cand = SESSIONS_DIR / clean_proj / clean_sess / f"session_{clean_sess}.json"
+                        if cand.exists():
+                            try:
+                                data = json.loads(cand.read_text(encoding="utf-8"))
+                            except Exception:
+                                pass
+                    if not data:
+                        for cand in SESSIONS_DIR.glob(f"*/{clean_sess}/session_{clean_sess}.json"):
+                            if cand.exists():
+                                try:
+                                    data = json.loads(cand.read_text(encoding="utf-8"))
+                                    break
+                                except Exception:
+                                    pass
+
+                # 2. Fallback to /tmp/hermes-jit-live.json if no specific session found
+                if not data:
+                    live_path = Path("/tmp/hermes-jit-live.json")
+                    if live_path.exists():
+                        try:
+                            data = json.loads(live_path.read_text(encoding="utf-8"))
+                        except Exception as err:
+                            data = {"status": "error", "message": f"reading_live_file: {err}"}
+                    else:
+                        data = {"status": "idle", "message": "No active turn yet"}
+
+                # 3. Discover available recent sessions for dropdown switcher
+                avail_sessions = []
+                try:
+                    meta_files = sorted(
+                        SESSIONS_DIR.glob("*/*/session_*.json"),
+                        key=lambda p: p.stat().st_mtime,
+                        reverse=True
+                    )[:30]
+                    for mf in meta_files:
+                        try:
+                            sdata = json.loads(mf.read_text(encoding="utf-8"))
+                            avail_sessions.append({
+                                "session_id": sdata.get("session_id") or mf.parent.name,
+                                "project": sdata.get("scope") or mf.parent.parent.name,
+                                "updated_at": sdata.get("updated_at") or "",
+                                "goal_text": (sdata.get("goal_text") or "")[:60],
+                                "used_pct": sdata.get("used_pct", 0.0),
+                                "capsule_tokens_est": sdata.get("capsule_tokens_est", 0)
+                            })
+                        except Exception:
+                            pass
+                except Exception:
+                    pass
+
+                if isinstance(data, dict):
+                    data["available_sessions"] = avail_sessions
+
                 self.send_response(200)
                 self.send_header("Content-Type", "application/json; charset=utf-8")
                 self.send_header("Access-Control-Allow-Origin", "*")
                 self.end_headers()
                 self.wfile.write(json.dumps(data, ensure_ascii=False, indent=2).encode("utf-8"))
-            elif self.path in ["/live", "/context"]:
+            elif clean_path in ["/live", "/context"]:
                 html_path = Path(__file__).parent / "live_context.html"
                 if html_path.exists():
                     body = html_path.read_bytes()
@@ -753,7 +816,7 @@ class HealthHTTPHandler(http.server.BaseHTTPRequestHandler):
                 self.send_header("Content-Type", "text/html; charset=utf-8")
                 self.end_headers()
                 self.wfile.write(body)
-            elif self.path in ["/", "/dashboard"]:
+            elif clean_path in ["/", "/dashboard"]:
                 html_path = Path(__file__).parent / "dashboard.html"
                 if html_path.exists():
                     body = html_path.read_bytes()

@@ -269,6 +269,7 @@ def pre_llm_call(ctx: Dict[str, Any]) -> Dict[str, Any]:
         intent_map = {"QUERY": "Pytanie / Analiza", "TASK": "Kodowanie / Zadanie", "FIX": "Naprawa błędu", "DIRECT_TASK": "Zadanie bezpośrednie"}
         intent_label = intent_map.get(intent_raw, intent_raw)
 
+        live_url = f"http://127.0.0.1:8765/live?session={session_id}" if session_id and session_id != "default" else "http://127.0.0.1:8765/live"
         # Write fast atomic live status for CLI Status Bar and Live Web Inspector
         try:
             live_payload = {
@@ -291,7 +292,7 @@ def pre_llm_call(ctx: Dict[str, Any]) -> Dict[str, Any]:
                 "intent_label": intent_label,
                 "obsidian_status": obsidian_status,
                 "capsule": capsule,
-                "live_url": "http://127.0.0.1:8765/live",
+                "live_url": live_url,
                 "ts": time.time(),
                 "updated_at": time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
             }
@@ -411,7 +412,7 @@ def pre_llm_call(ctx: Dict[str, Any]) -> Dict[str, Any]:
             state_items.append(f"Pliki robocze: {', '.join(file_names)}{more}")
 
         status_lines.append(f"   • Stan: {' • '.join(state_items)}")
-        status_lines.append(f"   • Podgląd Live: {c_cyan}http://127.0.0.1:8765/live{c_reset}")
+        status_lines.append(f"   • Podgląd Live: {c_cyan}{live_url}{c_reset}")
         try:
             from cli import _cprint
             _cprint("\n" + "\n".join(status_lines) + "\n")

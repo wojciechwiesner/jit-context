@@ -5,9 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.2.6] - 2026-09-14
+## [0.2.6] - 2026-09-15
 
 ### Added
+- **Per-Session URL Routing & Session Switcher in Live Observatory (`/live?session={session_id}`)**:
+  - Live preview URL now dynamically binds to the active session (`/live?session={session_id}`), locking the view to that session even if background cron jobs or parallel workers execute turns.
+  - Interactive session switcher dropdown in `live_context.html` allowing one-click navigation across recent sessions from all project scopes.
+  - CLI status banner updated to output exact per-session live preview links.
 - **1:1 Session Isolation Sandbox (`src/config.py`, `src/l0/db.py`, `src/hooks.py`)**:
   - Partitioned per-session storage under `{project}/.planning/sessions/{session_id}/` in the project repository and central store `~/.hermes/state/ona-context/sessions/{project}/{session_id}/`.
   - Dedicated `overlay_{session_id}.db` SQLite WAL and physical `ona_context_{session_id}.xml` snapshot written on every turn.
