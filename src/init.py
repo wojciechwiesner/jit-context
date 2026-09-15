@@ -150,8 +150,13 @@ def fetch_and_synthesize_deep_knowledge(target_dir: Path, stack: Dict[str, Any],
     matched_knowhow = []
     if knowhow_dir.exists():
         try:
+            proj_raw = target_dir.name
+            proj_parts = [p.lower() for p in re.split(r'[^a-zA-Z0-9]+', proj_raw) if len(p) > 2 and not p.startswith('v0') and not p.startswith('v1') and not p.startswith('v2')]
             for f in knowhow_dir.rglob("*.md"):
                 fname = f.name.lower()
+                for part in proj_parts:
+                    if part in fname:
+                        matched_knowhow.append(str(f))
                 for lang in stack.get("languages", []):
                     if lang.lower() in fname:
                         matched_knowhow.append(str(f))
