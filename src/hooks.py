@@ -93,23 +93,16 @@ def on_session_start(ctx: Dict[str, Any]) -> None:
 
 def pre_llm_call(ctx: Dict[str, Any]) -> Dict[str, Any]:
     """Pre-LLM hook: Compile lean context capsule (<1,500 tokens) just-in-time."""
-    current_mode = os.environ.get("ONA_CONTEXT_MODE")
+    current_mode = None
+    try:
+        from config import MODE_FILE
+        if MODE_FILE.exists():
+            with open(MODE_FILE, "r", encoding="utf-8") as mf:
+                current_mode = json.load(mf).get("mode")
+    except Exception:
+        pass
     if not current_mode:
-        try:
-            mode_file = Path.home() / ".hermes" / "state" / "ona-context" / "mode.json"
-            if mode_file.exists():
-                with open(mode_file, "r", encoding="utf-8") as mf:
-                    current_mode = json.load(mf).get("mode")
-        except Exception:
-            pass
-    if not current_mode:
-        try:
-            p = "/tmp/hermes-jit-live.json"
-            if os.path.exists(p):
-                with open(p, "r", encoding="utf-8") as lf:
-                    current_mode = json.load(lf).get("mode")
-        except Exception:
-            pass
+        current_mode = os.environ.get("ONA_CONTEXT_MODE")
     current_mode = (current_mode or ONA_CONTEXT_MODE).lower()
     if current_mode in ("disabled", "off", "0"):
         return {}

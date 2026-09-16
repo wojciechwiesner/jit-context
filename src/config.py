@@ -9,6 +9,7 @@ from typing import Optional
 HERMES_HOME = Path(os.environ.get("HERMES_HOME", Path.home() / ".hermes"))
 STATE_DIR = Path(os.environ.get("JIT_STATE_DIR", HERMES_HOME / "state" / "ona-context"))
 STATE_DIR.mkdir(parents=True, exist_ok=True)
+MODE_FILE = STATE_DIR / "mode.json"
 SESSIONS_DIR = STATE_DIR / "sessions"
 SESSIONS_DIR.mkdir(parents=True, exist_ok=True)
 
