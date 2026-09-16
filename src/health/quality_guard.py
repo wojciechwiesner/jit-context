@@ -162,7 +162,12 @@ def audit_session_quality(
             score -= 0.15
     score = max(0.0, round(score, 2))
 
-    status = "healthy" if score >= 0.85 else ("warning" if score >= 0.55 else "degraded")
+    if not anomalies:
+        status = "healthy"
+    elif score >= 0.6:
+        status = "warning"
+    else:
+        status = "degraded"
 
     return {
         "status": status,
