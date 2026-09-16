@@ -17,10 +17,19 @@ CROSS_PROJECT_TRIGGERS = [
     r"\b(?:jak w|z projektu|jak robili[sś]my w|por[oó]wnaj z)\s+([a-zA-Z0-9_\-]+)\b"
 ]
 
+LEGAL_COMPLIANCE_TRIGGERS = [
+    r"\b(?:art\.?|artyku[łl]|paragraf|§|ustaw[ayie]|kodeks|pke|rodo|gdpr|retencj[ai]|compliance|zgodno[sś][cć] prawna|regulamin|prawo telekomunikacyjne|tajemnica telekomunikacyjna)\b",
+    r"\b(?:ksef|faktur[ay] vat|faktur[ay] ksef|vat|jpk|white[- ]?list|bia[łl]a lista|split[- ]?payment)\b"
+]
+
 def should_trigger_deep_retrieval(message: str) -> Tuple[bool, Optional[str]]:
     """Returns (should_trigger, reason)."""
     text_lower = message.lower()
     
+    for pat in LEGAL_COMPLIANCE_TRIGGERS:
+        if re.search(pat, text_lower):
+            return True, "legal_compliance_contract"
+            
     for pat in EXPLICIT_MEMORY_TRIGGERS:
         if re.search(pat, text_lower):
             return True, "explicit_memory_query"

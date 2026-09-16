@@ -475,7 +475,11 @@ def distill_context_cascade(
     resolved_scope = active_scope
 
     # Fast check: if input is already clean and short (< 1500 chars), bypass LLM
-    if len(raw_combined) < 1500 and "████" not in raw_combined:
+    # However, if deep retrieval / legal compliance triggers are detected, do NOT bypass LLM distillation!
+    from l2.triggers import should_trigger_deep_retrieval
+    has_deep_trigger, _ = should_trigger_deep_retrieval(raw_combined)
+
+    if len(raw_combined) < 1500 and "████" not in raw_combined and not has_deep_trigger:
         # Fast path: user_intent is strictly latest_user_intent (direct user)
         # Fast deterministic prompt enhancement
         d_targets = [str(w.get("path")) for w in working_set if isinstance(w, dict) and w.get("path")] if working_set else []

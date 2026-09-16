@@ -223,3 +223,21 @@ def test_synthetic_harness_skill_wrapping_extracts_genuine_instruction():
     assert extract_genuine_user_instruction(raw) == "co sie dzieje"
 
 
+def test_legal_compliance_trigger_activates_l2_deep_retrieval():
+    from l2.triggers import should_trigger_deep_retrieval
+    
+    # Negative test
+    should_deep, reason = should_trigger_deep_retrieval("zrob prosty refactor klasy")
+    assert should_deep is False
+    assert reason is None
+    
+    # Positive tests: PKE, RODO, KSeF
+    should_deep_pke, reason_pke = should_trigger_deep_retrieval("czy art 398 PKE wymaga hashowania numerow?")
+    assert should_deep_pke is True
+    assert reason_pke == "legal_compliance_contract"
+    
+    should_deep_rodo, reason_rodo = should_trigger_deep_retrieval("sprawdz retencje danych wg RODO")
+    assert should_deep_rodo is True
+    assert reason_rodo == "legal_compliance_contract"
+
+
