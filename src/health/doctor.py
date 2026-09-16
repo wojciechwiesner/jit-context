@@ -126,7 +126,7 @@ def run_doctor() -> bool:
     try:
         conn = get_db()
         inv_eval = evaluate_all_invariants(conn)
-        failed_invs = [k for k, v in inv_eval.items() if v != "pass"]
+        failed_invs = [k for k, v in inv_eval.items() if (getattr(v, 'value', v) or '').lower() != "pass"]
         if not failed_invs:
             results["Invariants I1–I10"] = ("PASS", "10/10 Invariants PASS")
         else:

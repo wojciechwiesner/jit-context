@@ -380,6 +380,7 @@ def main():
     subparsers.add_parser("off", help="Disable JIT context injection")
     subparsers.add_parser("on", help="Enable JIT context injection")
     subparsers.add_parser("status", help="Show JIT context status")
+    subparsers.add_parser("doctor", help="Run system health and invariant diagnostics")
 
     # Allow running directly as 'jit <path>' without subcommand
     parser.add_argument("direct_path", nargs="?", default=None, help=argparse.SUPPRESS)
@@ -440,6 +441,15 @@ def main():
         print(f"• Mode config: {mode_file}")
         print("=" * 60)
         return
+
+    if cmd == "doctor":
+        try:
+            from health.doctor import run_doctor
+            success = run_doctor()
+            sys.exit(0 if success else 1)
+        except Exception as e:
+            print(f"Błąd uruchamiania doctor: {e}", file=sys.stderr)
+            sys.exit(1)
 
     target_path = "."
     tier = "standard"
