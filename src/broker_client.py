@@ -67,7 +67,7 @@ class BorgContextBrokerClient:
         session_id: str,
         current_user_message: str,
         requested_scope: Optional[str] = None,
-        timeout_per_provider: float = 0.6  # 600ms per provider deadline
+        timeout_per_provider: float = 2.0  # 2000ms (2s) per provider deadline
     ) -> Dict[str, Any]:
         """
         Kaskada L0 -> L1 -> L2 z twardym limitem czasowym i Invariantem I6 (Zero-Block Degradation).

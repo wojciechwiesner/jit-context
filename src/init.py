@@ -377,12 +377,69 @@ def main():
     init_parser.add_argument("--tier", choices=["simple", "standard", "deep", "xhigh"], default="standard", help="Initialization depth")
     init_parser.add_argument("--goal", type=str, default=None, help="Explicit project goal")
 
+    subparsers.add_parser("off", help="Disable JIT context injection")
+    subparsers.add_parser("on", help="Enable JIT context injection")
+    subparsers.add_parser("status", help="Show JIT context status")
+
     # Allow running directly as 'jit <path>' without subcommand
     parser.add_argument("direct_path", nargs="?", default=None, help=argparse.SUPPRESS)
     parser.add_argument("--tier", choices=["simple", "standard", "deep", "xhigh"], default="standard", help=argparse.SUPPRESS)
     parser.add_argument("--goal", type=str, default=None, help=argparse.SUPPRESS)
     
     args, unknown = parser.parse_known_args()
+
+    mode_file = Path.home() / ".hermes" / "state" / "ona-context" / "mode.json"
+    live_file = Path("/tmp/hermes-jit-live.json")
+
+    cmd = args.command or args.direct_path
+    if cmd == "off":
+        mode_file.parent.mkdir(parents=True, exist_ok=True)
+        mode_file.write_text(json.dumps({"mode": "off", "updated_at": datetime.now().isoformat()}, indent=2), encoding="utf-8")
+        try:
+            live_data = json.loads(live_file.read_text(encoding="utf-8")) if live_file.exists() else {}
+        except Exception:
+            live_data = {}
+        live_data["mode"] = "off"
+        live_file.write_text(json.dumps(live_data, indent=2), encoding="utf-8")
+        print("=" * 60)
+        print("🛑 JIT CONTEXT OS — WYŁĄCZONY (OFF)")
+        print("=" * 60)
+        print("• Status: off (brak wstrzykiwania kapsuły kontekstu <ONA_CONTEXT>)")
+        print("• Aby włączyć ponownie: jit on")
+        print("=" * 60)
+        return
+
+    if cmd == "on":
+        mode_file.parent.mkdir(parents=True, exist_ok=True)
+        mode_file.write_text(json.dumps({"mode": "active", "updated_at": datetime.now().isoformat()}, indent=2), encoding="utf-8")
+        try:
+            live_data = json.loads(live_file.read_text(encoding="utf-8")) if live_file.exists() else {}
+        except Exception:
+            live_data = {}
+        live_data["mode"] = "active"
+        live_file.write_text(json.dumps(live_data, indent=2), encoding="utf-8")
+        print("=" * 60)
+        print("⚡ JIT CONTEXT OS — AKTYWNY (ACTIVE)")
+        print("=" * 60)
+        print("• Status: active (automatyczne wstrzykiwanie kapsuły kontekstu JIT)")
+        print("• Aby wyłączyć: jit off")
+        print("=" * 60)
+        return
+
+    if cmd == "status":
+        current_mode = "active"
+        if mode_file.exists():
+            try:
+                current_mode = json.loads(mode_file.read_text(encoding="utf-8")).get("mode", "active")
+            except Exception:
+                pass
+        print("=" * 60)
+        print(f"⚡ JIT CONTEXT OS — STATUS: {current_mode.upper()}")
+        print("=" * 60)
+        print(f"• Tryb: {current_mode}")
+        print(f"• Mode config: {mode_file}")
+        print("=" * 60)
+        return
 
     target_path = "."
     tier = "standard"

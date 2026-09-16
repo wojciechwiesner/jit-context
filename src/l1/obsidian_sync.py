@@ -101,6 +101,16 @@ def sync_obsidian_on_commit(scope: str, cwd: str, commit_sha: str = "", commit_m
 
 def check_obsidian_staleness(scope: str, cwd: str) -> Optional[str]:
     """Checks if the Obsidian dossier is desynchronized with local git HEAD."""
+    if not cwd or not Path(cwd).exists():
+        return None
+
+    cwd_path = Path(cwd).resolve()
+    # Guard against comparing different repos: verify cwd corresponds to scope
+    norm_scope = scope.lower().replace("_", "-")
+    norm_cwd = cwd_path.name.lower().replace("_", "-")
+    if norm_cwd != norm_scope and norm_scope not in norm_cwd and norm_cwd not in norm_scope:
+        return None
+
     dossier = find_obsidian_project_dossier(scope)
     if not dossier:
         return f"Brak notatki w Obsidianie (~/Documents/Wojciech/projects/{scope}.md). Utwórz dossier projektu!"

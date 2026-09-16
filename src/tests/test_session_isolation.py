@@ -70,6 +70,7 @@ def test_capsule_physical_file_persistence(tmp_path, monkeypatch):
     """Verify pre_llm_call writes physical context.xml and session.json."""
     monkeypatch.setattr("config.SESSIONS_DIR", tmp_path / "sessions")
     monkeypatch.setattr("config.LATEST_CONTEXT_SYMLINK", tmp_path / "latest_context.xml")
+    monkeypatch.setenv("ONA_CONTEXT_MODE", "active")
     
     sess_id = "test_run_persist_999"
     ctx = {

@@ -17,8 +17,22 @@ KNOWN_PROJECTS = {
     "boocco", "invoiceflow", "faktury", "onboarding_flow", "masteros",
     "thesaiver", "lifos", "hermes", "borg", "uniproos", "uniproworks",
     "whatsapp_center", "videosy", "twojastara", "dwa_kroki",
-    "synthapse", "hermes-jit-context-os", "jit-context", "jit", "aipraca"
+    "synthapse", "hermes-jit-context-os", "jit-context", "jit", "aipraca",
+    "luna_salon", "luna", "luna-salon"
 }
+
+def get_known_projects() -> set:
+    from pathlib import Path
+    projects = set(KNOWN_PROJECTS)
+    try:
+        active_dir = Path.home() / "Projects" / "active"
+        if active_dir.exists():
+            for d in active_dir.iterdir():
+                if d.is_dir() and not d.name.startswith("."):
+                    projects.add(d.name)
+    except Exception:
+        pass
+    return projects
 
 def match_project_in_text(p: str, text: str) -> bool:
     """Match project name including Polish inflections and variations."""
@@ -28,6 +42,8 @@ def match_project_in_text(p: str, text: str) -> bool:
         return bool(re.search(r'\b(?:hermes|hermesa|hermesowi|hermesem|hermesie)\b', text))
     if p == "boocco":
         return bool(re.search(r'\b(?:boocc[oauiy]\w*|book\.co|booc\.co|boocco-web)\b', text))
+    if p in ("luna", "luna_salon", "luna-salon"):
+        return bool(re.search(r'\b(?:luna|luny|lunie|luną|luna_salon)\b', text))
     pat = r'\b' + re.escape(p) + r'(?:a|u|ie|em|owi|ów|e|ach|y|i|owej|owym|owych|owy)?\b'
     return bool(re.search(pat, text))
 
@@ -70,14 +86,15 @@ def resolve_scope(
 
     # 3. Check sustained candidate mention (requires 2 consecutive turns to switch active_scope between projects, or immediate switch from general/unknown)
     detected_candidate = None
-    for p in KNOWN_PROJECTS:
+    all_known = get_known_projects()
+    for p in all_known:
         if match_project_in_text(p, text_lower) and p != current_active_scope:
             detected_candidate = p
             break
             
     if detected_candidate:
         # If current scope is not a known project (e.g. general, unknown, or arbitrary dir), switch IMMEDIATELY
-        if current_active_scope in ("general", "unknown", "") or current_active_scope not in KNOWN_PROJECTS:
+        if current_active_scope in ("general", "unknown", "") or current_active_scope not in all_known:
             return detected_candidate, [detected_candidate], None, 0
             
         if pending_candidate_scope == detected_candidate:

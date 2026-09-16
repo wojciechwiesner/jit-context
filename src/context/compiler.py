@@ -222,6 +222,14 @@ def compile_context(
         active_invariants.append(
             "CASCADE INVARIANT (Schema Cascade): DB model mutations require corresponding migration files and API schema synchronization."
         )
+    if any(k in combined_signal for k in ("oblicz", "calculate", "permutacj", "collatz", "math", "symulacj", "obliczeniow", "algorithm", "trapped", "levenshtein")):
+        active_invariants.append(
+            "COMPUTE INVARIANT (Tool-First Epistemics): Execute deterministic multi-step math/simulations via interpreter tools instead of manual simulation in thought tokens."
+        )
+    if any(k in combined_signal for k in ("kod", "napisz", "refaktor", "implement", "bug", "fix", "funkcj", "endpoint", "test")):
+        active_invariants.append(
+            "AGENTIC CODING INVARIANT: LoB locality > excessive abstraction, SRP <300 lines, surgical patch over full rewrites, Bit-fals runtime proof required."
+        )
 
     if session_cwd and len(active_invariants) < 4:
         try:

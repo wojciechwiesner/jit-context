@@ -84,7 +84,7 @@ WORKSPACE_DIR = _resolve_default_workspace()
 # Performance & Timeouts
 L0_MAX_LATENCY_MS = 3.0
 L1_MAX_LATENCY_MS = 10.0
-L2_DEADLINE_MS = 600.0
+L2_DEADLINE_MS = 2000.0
 
 # Circuit Breaker settings
 CB_CONSECUTIVE_FAILURES_THRESHOLD = 3

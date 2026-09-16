@@ -93,7 +93,24 @@ def on_session_start(ctx: Dict[str, Any]) -> None:
 
 def pre_llm_call(ctx: Dict[str, Any]) -> Dict[str, Any]:
     """Pre-LLM hook: Compile lean context capsule (<1,500 tokens) just-in-time."""
-    current_mode = os.environ.get("ONA_CONTEXT_MODE", ONA_CONTEXT_MODE).lower()
+    current_mode = os.environ.get("ONA_CONTEXT_MODE")
+    if not current_mode:
+        try:
+            mode_file = Path.home() / ".hermes" / "state" / "ona-context" / "mode.json"
+            if mode_file.exists():
+                with open(mode_file, "r", encoding="utf-8") as mf:
+                    current_mode = json.load(mf).get("mode")
+        except Exception:
+            pass
+    if not current_mode:
+        try:
+            p = "/tmp/hermes-jit-live.json"
+            if os.path.exists(p):
+                with open(p, "r", encoding="utf-8") as lf:
+                    current_mode = json.load(lf).get("mode")
+        except Exception:
+            pass
+    current_mode = (current_mode or ONA_CONTEXT_MODE).lower()
     if current_mode in ("disabled", "off", "0"):
         return {}
 
@@ -205,17 +222,6 @@ def pre_llm_call(ctx: Dict[str, Any]) -> Dict[str, Any]:
                 stale_alert = check_obsidian_staleness(active_scope, str(active_path))
                 if stale_alert:
                     capsule += f"\n<OBSIDIAN_SYNC_ALERT: {stale_alert}>\n"
-
-        # Real-Time Model Quality Guard Autocheck
-        from health.quality_guard import audit_session_quality, format_quality_alert
-        quality_audit = audit_session_quality(conn, session_id)
-        if quality_audit.get("status") != "healthy":
-            q_alert = format_quality_alert(quality_audit)
-            if q_alert:
-                capsule += f"\n{q_alert}\n"
-                status_color = "\033[31m" if quality_audit.get("status") == "degraded" else "\033[33m"
-                q_status = (quality_audit.get("status") or "unknown").upper()
-                print(f"⚡ {status_color}[JIT Quality Guard: {q_status}]\033[0m: Wykryto anomalie zachowania modelu (Score: {quality_audit.get('score')}/1.0)", file=sys.stderr, flush=True)
 
         hook_total_ms = (time.time() - start_time) * 1000
         
