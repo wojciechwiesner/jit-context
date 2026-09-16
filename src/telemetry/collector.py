@@ -59,6 +59,7 @@ def record_turn_telemetry(
     avoided_tokens = max(0, haystack_tokens - capsule_tokens)
     compression = round((1.0 - (capsule_tokens / haystack_tokens)) * 100, 1) if haystack_tokens else 0.0
     
+    is_l2 = 1 if l2_ms > 400 else 0
     conn.execute(
         """
         INSERT INTO turn_telemetry (
@@ -67,8 +68,9 @@ def record_turn_telemetry(
             active_scope, retrieval_scopes_json,
             l0_ms, l1_ms, l2_ms, compile_ms, hook_total_ms,
             capsule_hash, capsule_chars, capsule_tokens_est,
-            haystack_chars_est, haystack_tokens_est, jit_tokens_avoided_est, compression_ratio
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            haystack_chars_est, haystack_tokens_est, jit_tokens_avoided_est, compression_ratio,
+            l2_triggered
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ON CONFLICT(session_id, turn_id) DO UPDATE SET
             l0_ms = excluded.l0_ms,
             l1_ms = excluded.l1_ms,
@@ -78,7 +80,8 @@ def record_turn_telemetry(
             capsule_hash = excluded.capsule_hash,
             capsule_chars = excluded.capsule_chars,
             capsule_tokens_est = excluded.capsule_tokens_est,
-            jit_tokens_avoided_est = excluded.jit_tokens_avoided_est
+            jit_tokens_avoided_est = excluded.jit_tokens_avoided_est,
+            l2_triggered = excluded.l2_triggered
         """,
         (
             session_id, turn_id, now, mode,
@@ -86,7 +89,8 @@ def record_turn_telemetry(
             active_scope, json.dumps(retrieval_scopes),
             l0_ms, l1_ms, l2_ms, compile_ms, hook_total_ms,
             capsule_hash, capsule_chars, capsule_tokens,
-            haystack_chars, haystack_tokens, avoided_tokens, compression
+            haystack_chars, haystack_tokens, avoided_tokens, compression,
+            is_l2
         )
     )
     conn.commit()
