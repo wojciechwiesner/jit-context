@@ -206,6 +206,17 @@ def pre_llm_call(ctx: Dict[str, Any]) -> Dict[str, Any]:
                 if stale_alert:
                     capsule += f"\n<OBSIDIAN_SYNC_ALERT: {stale_alert}>\n"
 
+        # Real-Time Model Quality Guard Autocheck
+        from health.quality_guard import audit_session_quality, format_quality_alert
+        quality_audit = audit_session_quality(conn, session_id)
+        if quality_audit.get("status") != "healthy":
+            q_alert = format_quality_alert(quality_audit)
+            if q_alert:
+                capsule += f"\n{q_alert}\n"
+                status_color = "\033[31m" if quality_audit.get("status") == "degraded" else "\033[33m"
+                q_status = (quality_audit.get("status") or "unknown").upper()
+                print(f"⚡ {status_color}[JIT Quality Guard: {q_status}]\033[0m: Wykryto anomalie zachowania modelu (Score: {quality_audit.get('score')}/1.0)", file=sys.stderr, flush=True)
+
         hook_total_ms = (time.time() - start_time) * 1000
         
         # Record Turn Telemetry
