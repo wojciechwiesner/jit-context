@@ -212,6 +212,33 @@ python3 src/telemetry/observatory.py
 
 ---
 
+## Quickstart: Model Context Protocol (MCP) Integration
+
+JIT-Context exposes a native MCP server over standard stdio JSON-RPC 2.0, allowing seamless integration with **Claude Code**, **OpenCode**, and **Cursor**.
+
+### 1. Claude Code
+```bash
+claude mcp add jit-context python3 src/mcp_server.py
+```
+
+### 2. OpenCode
+Add to `~/.opencode/config.json`:
+```json
+{
+  "mcpServers": {
+    "jit-context": {
+      "command": "python3",
+      "args": ["path/to/jit-context/src/mcp_server.py"]
+    }
+  }
+}
+```
+
+### 3. Hermes Agent
+Native plugin integration via `plugins/context_engine/jit` (PR #110874).
+
+---
+
 ## Academic Citation
 
 If you reference **JIT-Context** in research, benchmarks, or agent runtimes, please cite:
