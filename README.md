@@ -88,7 +88,11 @@ Paired evaluation on a commercial generative Web Audio instrument running full V
 ---
 
 ### 3. SWE-bench-style fixture battle (10 isolated tasks, not full checkouts)
-The harness builds small multi-file trees from inline strings plus decoy files. It is not a run on full Django, Astropy, Flask, Requests, Sympy, or pytest checkouts. The agent log does not record whether the JEV path made a live OpenRouter call or fell back to heuristic ranking. A separate scoring replay (`benchmarks/results/swe_10_live_jev_evidence.json`) hit `typesafe/jev-1.13-20260917` with HTTP 200 and `fallback_count: 0`, but that replay is not the agent loop.
+The harness builds small multi-file trees from inline strings plus decoy files. It is not a run on full Django, Astropy, Flask, Requests, Sympy, or pytest checkouts.
+
+Live JEV evidence from the agent loop, not a post-hoc replay, is `benchmarks/results/swe_10_jev_live_agent_loop.json` (2026-09-23). Each of the 10 fixture tasks records `typesafe/jev-1.13-20260917`, HTTP 200, usage, and `fallback_count: 0`. That file is not a same-session comparison against haystack, and it is not a full SWE-bench score.
+
+The older table below is a separate run. Its `jit_z_jev` column did not record live versus fallback, so it is not an independently verified live JEV result:
 
 | Metric | 1. Haystack Baseline | 2. JIT (Heuristic Tokens) | 3. JIT + JEV Decision Engine | JEV Net Advantage |
 | :--- | :---: | :---: | :---: | :--- |

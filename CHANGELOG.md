@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.11] - 2026-09-23
+
+### Fixed
+- The SWE fixture agent loop now records per-task JEV telemetry: resolved model, HTTP status, usage, and fallback_count. A live call and a heuristic fallback are separate labels.
+- Committed `benchmarks/results/swe_10_jev_live_agent_loop.json` from a fresh `jit_z_jev` run. All 10 fixture tasks used `typesafe/jev-1.13-20260917`, HTTP 200, fallback_count 0. This file is not a full SWE-bench score and is not a same-session comparison against the haystack run.
+
 ## [0.2.10] - 2026-09-23
 
 ### Fixed

@@ -1,0 +1,296 @@
+{
+  "method": "SWE-bench-style isolated fixtures built from inline strings plus decoy files. Not full repository checkouts.",
+  "separation": "jit_z_jev rows are live only when jev.ranking_method is live_jev and fallback_count is 0. heuristic_only and heuristic_fallback rows are not live JEV measurements.",
+  "jev_rollup": {
+    "jit_z_jev": {
+      "tasks": 10,
+      "live_jev_tasks": 10,
+      "fallback_tasks": 0,
+      "fallback_count": 0
+    }
+  },
+  "summary": {
+    "jit_z_jev": {
+      "passed": 10,
+      "pass_rate": "10/10 (100%)",
+      "total_time_s": 165.5,
+      "avg_turns": 5.3,
+      "total_tokens": 69796,
+      "discovery_ops": 25
+    }
+  },
+  "details": {
+    "jit_z_jev": [
+      {
+        "task_id": "django__django-11099",
+        "mode": "jit_z_jev",
+        "status": "PASS",
+        "passed": true,
+        "turns": 4,
+        "wall_time_s": 10.37,
+        "tokens": 4819,
+        "discovery_ops": 1,
+        "error": null,
+        "jev": {
+          "ranking_method": "live_jev",
+          "model": "typesafe/jev-1.13-20260917",
+          "remote_call_success": true,
+          "fallback_used": false,
+          "fallback_count": 0,
+          "http_status": 200,
+          "latency_ms": 515.63,
+          "usage": {
+            "input_tokens": 718,
+            "output_tokens": 76,
+            "cost": 3.0156e-05
+          },
+          "answers_count": 4,
+          "error": null
+        }
+      },
+      {
+        "task_id": "django__django-11848",
+        "mode": "jit_z_jev",
+        "status": "PASS",
+        "passed": true,
+        "turns": 8,
+        "wall_time_s": 52.91,
+        "tokens": 21440,
+        "discovery_ops": 6,
+        "error": "API/Parse Error: Expecting value: line 1 column 1 (char 0)",
+        "jev": {
+          "ranking_method": "live_jev",
+          "model": "typesafe/jev-1.13-20260917",
+          "remote_call_success": true,
+          "fallback_used": false,
+          "fallback_count": 0,
+          "http_status": 200,
+          "latency_ms": 411.26,
+          "usage": {
+            "input_tokens": 652,
+            "output_tokens": 58,
+            "cost": 2.7384e-05
+          },
+          "answers_count": 3,
+          "error": null
+        }
+      },
+      {
+        "task_id": "django__django-14382",
+        "mode": "jit_z_jev",
+        "status": "PASS",
+        "passed": true,
+        "turns": 5,
+        "wall_time_s": 10.94,
+        "tokens": 6302,
+        "discovery_ops": 2,
+        "error": null,
+        "jev": {
+          "ranking_method": "live_jev",
+          "model": "typesafe/jev-1.13-20260917",
+          "remote_call_success": true,
+          "fallback_used": false,
+          "fallback_count": 0,
+          "http_status": 200,
+          "latency_ms": 596.85,
+          "usage": {
+            "input_tokens": 611,
+            "output_tokens": 58,
+            "cost": 2.5662e-05
+          },
+          "answers_count": 3,
+          "error": null
+        }
+      },
+      {
+        "task_id": "django__django-15400",
+        "mode": "jit_z_jev",
+        "status": "PASS",
+        "passed": true,
+        "turns": 7,
+        "wall_time_s": 13.28,
+        "tokens": 6821,
+        "discovery_ops": 4,
+        "error": null,
+        "jev": {
+          "ranking_method": "live_jev",
+          "model": "typesafe/jev-1.13-20260917",
+          "remote_call_success": true,
+          "fallback_used": false,
+          "fallback_count": 0,
+          "http_status": 200,
+          "latency_ms": 638.64,
+          "usage": {
+            "input_tokens": 653,
+            "output_tokens": 58,
+            "cost": 2.7426e-05
+          },
+          "answers_count": 3,
+          "error": null
+        }
+      },
+      {
+        "task_id": "astropy__astropy-14995",
+        "mode": "jit_z_jev",
+        "status": "PASS",
+        "passed": true,
+        "turns": 4,
+        "wall_time_s": 6.59,
+        "tokens": 3940,
+        "discovery_ops": 2,
+        "error": null,
+        "jev": {
+          "ranking_method": "live_jev",
+          "model": "typesafe/jev-1.13-20260917",
+          "remote_call_success": true,
+          "fallback_used": false,
+          "fallback_count": 0,
+          "http_status": 200,
+          "latency_ms": 358.36,
+          "usage": {
+            "input_tokens": 616,
+            "output_tokens": 58,
+            "cost": 2.5872e-05
+          },
+          "answers_count": 3,
+          "error": null
+        }
+      },
+      {
+        "task_id": "pallets__flask-4045",
+        "mode": "jit_z_jev",
+        "status": "PASS",
+        "passed": true,
+        "turns": 5,
+        "wall_time_s": 10.71,
+        "tokens": 4704,
+        "discovery_ops": 2,
+        "error": null,
+        "jev": {
+          "ranking_method": "live_jev",
+          "model": "typesafe/jev-1.13-20260917",
+          "remote_call_success": true,
+          "fallback_used": false,
+          "fallback_count": 0,
+          "http_status": 200,
+          "latency_ms": 515.07,
+          "usage": {
+            "input_tokens": 549,
+            "output_tokens": 58,
+            "cost": 2.3058e-05
+          },
+          "answers_count": 3,
+          "error": null
+        }
+      },
+      {
+        "task_id": "requests__requests-2148",
+        "mode": "jit_z_jev",
+        "status": "PASS",
+        "passed": true,
+        "turns": 5,
+        "wall_time_s": 20.11,
+        "tokens": 4449,
+        "discovery_ops": 2,
+        "error": null,
+        "jev": {
+          "ranking_method": "live_jev",
+          "model": "typesafe/jev-1.13-20260917",
+          "remote_call_success": true,
+          "fallback_used": false,
+          "fallback_count": 0,
+          "http_status": 200,
+          "latency_ms": 461.61,
+          "usage": {
+            "input_tokens": 615,
+            "output_tokens": 76,
+            "cost": 2.583e-05
+          },
+          "answers_count": 4,
+          "error": null
+        }
+      },
+      {
+        "task_id": "django__django-11583",
+        "mode": "jit_z_jev",
+        "status": "PASS",
+        "passed": true,
+        "turns": 5,
+        "wall_time_s": 19.26,
+        "tokens": 4638,
+        "discovery_ops": 2,
+        "error": null,
+        "jev": {
+          "ranking_method": "live_jev",
+          "model": "typesafe/jev-1.13-20260917",
+          "remote_call_success": true,
+          "fallback_used": false,
+          "fallback_count": 0,
+          "http_status": 200,
+          "latency_ms": 632.08,
+          "usage": {
+            "input_tokens": 586,
+            "output_tokens": 58,
+            "cost": 2.4612e-05
+          },
+          "answers_count": 3,
+          "error": null
+        }
+      },
+      {
+        "task_id": "pytest-dev__pytest-5221",
+        "mode": "jit_z_jev",
+        "status": "PASS",
+        "passed": true,
+        "turns": 6,
+        "wall_time_s": 12.8,
+        "tokens": 9134,
+        "discovery_ops": 3,
+        "error": null,
+        "jev": {
+          "ranking_method": "live_jev",
+          "model": "typesafe/jev-1.13-20260917",
+          "remote_call_success": true,
+          "fallback_used": false,
+          "fallback_count": 0,
+          "http_status": 200,
+          "latency_ms": 479.49,
+          "usage": {
+            "input_tokens": 631,
+            "output_tokens": 76,
+            "cost": 2.6502e-05
+          },
+          "answers_count": 4,
+          "error": null
+        }
+      },
+      {
+        "task_id": "sympy__sympy-18057",
+        "mode": "jit_z_jev",
+        "status": "PASS",
+        "passed": true,
+        "turns": 4,
+        "wall_time_s": 8.53,
+        "tokens": 3549,
+        "discovery_ops": 1,
+        "error": null,
+        "jev": {
+          "ranking_method": "live_jev",
+          "model": "typesafe/jev-1.13-20260917",
+          "remote_call_success": true,
+          "fallback_used": false,
+          "fallback_count": 0,
+          "http_status": 200,
+          "latency_ms": 437.19,
+          "usage": {
+            "input_tokens": 575,
+            "output_tokens": 58,
+            "cost": 2.415e-05
+          },
+          "answers_count": 3,
+          "error": null
+        }
+      }
+    ]
+  }
+}

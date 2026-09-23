@@ -40,9 +40,15 @@ ENV_PATH = Path.home() / ".hermes" / ".env"
 GOOGLE_API_KEY = None
 if ENV_PATH.exists():
     for line in ENV_PATH.read_text().splitlines():
-        if line.startswith("GOOGLE_API_KEY="):
-            GOOGLE_API_KEY = line.split("=", 1)[1].strip().strip('"').strip("'")
-            break
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, value = line.split("=", 1)
+        key = key.strip()
+        value = value.strip().strip('"').strip("'")
+        if key == "GOOGLE_API_KEY":
+            GOOGLE_API_KEY = value
+        if key == "JEV_OPENROUTER_KEY" and value and not os.environ.get(key):
+            os.environ[key] = value
 
 if not GOOGLE_API_KEY:
     print("ERROR: GOOGLE_API_KEY not found in ~/.hermes/.env", file=sys.stderr)
@@ -509,15 +515,33 @@ def verify_baseline_failure(base_dir: Path, test_file: str) -> bool:
 # -------------------------------------------------------------------------
 # JIT Context Capsule Builder
 # -------------------------------------------------------------------------
+def _heuristic_rank(query: str, candidates: List[Dict[str, str]]) -> List[Dict[str, str]]:
+    q_tokens = set(w.lower() for w in query.split() if len(w) > 2)
+    return sorted(candidates, key=lambda item: -token_overlap_score(item["value"], q_tokens))
+
+
+def empty_jev_evidence(ranking_method: str) -> Dict[str, Any]:
+    return {
+        "ranking_method": ranking_method,
+        "model": None,
+        "remote_call_success": False,
+        "fallback_used": ranking_method == "heuristic_fallback",
+        "fallback_count": 1 if ranking_method == "heuristic_fallback" else 0,
+        "http_status": None,
+        "latency_ms": None,
+        "usage": {},
+        "answers_count": 0,
+        "error": None,
+    }
+
+
 def build_jit_capsule(
     repo_dir: Path,
     task: Dict[str, Any],
     use_jev: bool = False
-) -> str:
-    """Builds Lean JIT Context Capsule (<ONA_CONTEXT>) with or without JEV reranking."""
+) -> Tuple[str, Dict[str, Any]]:
+    """Build a lean capsule. JEV path records live-call telemetry or an explicit fallback."""
     query = f"{task['title']} {task['description']}"
-    
-    # List candidate files in repo
     candidates = []
     for rel_path in task["files"].keys():
         if rel_path.startswith("tests/"):
@@ -526,23 +550,38 @@ def build_jit_capsule(
         content_preview = p.read_text()[:300].replace("\n", " ")
         candidates.append({"key": rel_path, "value": f"{rel_path}: {content_preview}"})
 
-    jev_scores = {}
+    jev_scores: Dict[str, float] = {}
     if use_jev:
         scorer = get_jev_scorer()
-        if scorer.is_available():
-            try:
-                # Live OpenRouter /api/alpha/decisions scoring
-                jev_scores = scorer.score_remote(query, candidates)
-            except Exception:
-                jev_scores = {}
-        reranked = scorer.rerank_hybrid(query, candidates)
+        detail = scorer.score_remote_detailed(query, candidates)
+        live = bool(detail.get("remote_call_success")) and not bool(detail.get("fallback_used"))
+        evidence = {
+            "ranking_method": "live_jev" if live else "heuristic_fallback",
+            "model": detail.get("model"),
+            "remote_call_success": bool(detail.get("remote_call_success")),
+            "fallback_used": not live,
+            "fallback_count": 0 if live else 1,
+            "http_status": detail.get("http_status"),
+            "latency_ms": detail.get("latency_ms"),
+            "usage": detail.get("usage") or {},
+            "answers_count": detail.get("answers_count") or 0,
+            "error": detail.get("error"),
+        }
+        if live:
+            jev_scores = detail.get("scores") or {}
+            q_tokens = set(w.lower() for w in query.split() if len(w) > 2)
+            reranked = sorted(
+                candidates,
+                key=lambda item: (
+                    -float(jev_scores.get(item["key"], 0.0)),
+                    -token_overlap_score(item["value"], q_tokens),
+                ),
+            )
+        else:
+            reranked = _heuristic_rank(query, candidates)
     else:
-        # Standard token overlap (Deterministic ranking)
-        q_tokens = set(w.lower() for w in query.split() if len(w) > 2)
-        def _tok_sort(item):
-            t_score = token_overlap_score(item["value"], q_tokens)
-            return -t_score
-        reranked = sorted(candidates, key=_tok_sort)
+        evidence = empty_jev_evidence("heuristic_only")
+        reranked = _heuristic_rank(query, candidates)
 
     top_file = reranked[0]["key"] if reranked else task["target_file"]
     target_path = repo_dir / top_file
@@ -569,7 +608,7 @@ def build_jit_capsule(
       {{"tool": "patch", "path": "{top_file}", "old_string": "exact unique text", "new_string": "replacement text"}}
       OR use tool calls: search_files, read_file, patch, run_tests, done.
 </ONA_CONTEXT>"""
-    return capsule
+    return capsule, evidence
 
 
 # -------------------------------------------------------------------------
@@ -610,6 +649,7 @@ Respond ONLY with a single JSON object corresponding to your tool call.
 """
 
     initial_user_msg = ""
+    jev_evidence = empty_jev_evidence("not_applicable")
     if mode == "bez_jit":
         initial_user_msg = f"""Problem Statement:
 {task['title']}
@@ -618,7 +658,7 @@ Respond ONLY with a single JSON object corresponding to your tool call.
 Solve this bug in the repository. Start by investigating or modifying the relevant files."""
 
     elif mode == "jit_bez_jev":
-        capsule = build_jit_capsule(task_dir, task, use_jev=False)
+        capsule, jev_evidence = build_jit_capsule(task_dir, task, use_jev=False)
         initial_user_msg = f"""{capsule}
 
 Problem Statement:
@@ -628,7 +668,7 @@ Problem Statement:
 Solve this bug using the surgical patch tool. The target file and working set are provided in the capsule above."""
 
     elif mode == "jit_z_jev":
-        capsule = build_jit_capsule(task_dir, task, use_jev=True)
+        capsule, jev_evidence = build_jit_capsule(task_dir, task, use_jev=True)
         initial_user_msg = f"""{capsule}
 
 Problem Statement:
@@ -776,15 +816,16 @@ Solve this bug using the surgical patch tool. The target file and working set ar
         "wall_time_s": wall_time,
         "tokens": total_tokens,
         "discovery_ops": discovery_ops,
-        "error": last_error
+        "error": last_error,
+        "jev": jev_evidence,
     }
 
 
 # -------------------------------------------------------------------------
 # Main Execution Runner
 # -------------------------------------------------------------------------
-def main():
-    modes = ["bez_jit", "jit_bez_jev", "jit_z_jev"]
+def main(modes: List[str] | None = None, out_path: Path | None = None):
+    modes = modes or ["bez_jit", "jit_bez_jev", "jit_z_jev"]
     mode_labels = {
         "bez_jit": "1. BEZ JIT (Raw Baseline)",
         "jit_bez_jev": "2. Z JIT (BEZ JEV - Heuristic Token)",
@@ -801,7 +842,7 @@ def main():
     print("• Model:               Gemini 3.8 Flash (temperature: 0.0)")
     print("• JEV Engine:          ~typesafe/jev-latest via OpenRouter (/api/alpha/decisions)")
     print("• Verification:        Physical pytest execution on disk (exit code == 0)")
-    print("• Tasks:               10 Real SWE Python bugs with decoy files")
+    print("• Tasks:               10 isolated SWE-bench-style fixtures, not full checkouts")
     print("=" * 70)
 
     all_results = {m: [] for m in modes}
@@ -854,10 +895,33 @@ def main():
     print("=" * 75)
 
     # Save output artifacts
-    out_file = Path("/tmp/swe_agent_10_comparison_results.json")
-    out_file.write_text(json.dumps({"summary": summary_stats, "details": all_results}, indent=2))
+    out_file = out_path or Path("/tmp/swe_agent_10_comparison_results.json")
+    jev_rollup = {}
+    for m, rows in all_results.items():
+        live = sum(1 for r in rows if (r.get("jev") or {}).get("ranking_method") == "live_jev" and (r.get("jev") or {}).get("fallback_count") == 0)
+        fallback = sum(1 for r in rows if (r.get("jev") or {}).get("fallback_count"))
+        jev_rollup[m] = {
+            "tasks": len(rows),
+            "live_jev_tasks": live,
+            "fallback_tasks": fallback,
+            "fallback_count": fallback,
+        }
+    payload = {
+        "method": "SWE-bench-style isolated fixtures built from inline strings plus decoy files. Not full repository checkouts.",
+        "separation": "jit_z_jev rows are live only when jev.ranking_method is live_jev and fallback_count is 0. heuristic_only and heuristic_fallback rows are not live JEV measurements.",
+        "jev_rollup": jev_rollup,
+        "summary": summary_stats,
+        "details": all_results,
+    }
+    out_file.parent.mkdir(parents=True, exist_ok=True)
+    out_file.write_text(json.dumps(payload, indent=2))
     print(f"\n[Artifact saved to: {out_file}]")
 
 
 if __name__ == "__main__":
-    main()
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--modes", default="jit_z_jev", help="Comma-separated: bez_jit,jit_bez_jev,jit_z_jev")
+    parser.add_argument("--out", default=str(ROOT_DIR / "benchmarks/results/swe_10_jev_live_agent_loop.json"))
+    args = parser.parse_args()
+    main([m.strip() for m in args.modes.split(",") if m.strip()], Path(args.out))
