@@ -17,7 +17,7 @@ Align published JIT Context guarantees with verified runtime behavior.
 - [x] G5.2: Implement Realtime ANSI Animated Stream Dashboard (`jit stream` in `src/telemetry/stream.py`): Live metrics for Tokens Reduced (-98.2%), Time/Latency (8.4ms), Active Model, Token/s (142 tok/s), and real-time SQLite WAL ticker.
 - [x] G5.3: Epistemic Conscience Architecture v0.2.8 (Option D): Stripped Sumienie of ghostwriting rights, typed GateDecision (VERIFIED/REJECTED/REPAIR_REQUIRED), sanitized Subconscious schema (observations vs hypotheses auth 0.0), multimodal file ingestion (.docx, .xlsx colors, .pptx, .pdf, .mp3, images), verified GAIA file tasks PASS, 11/11 Invariants PASS.
 - [x] G5.4: TypeSafe JEV System 1 Decision Engine v0.2.9: Integrated TypeSafe JEV (~typesafe/jev-latest, $0.042/M input, free output) as sub-millisecond Epistemic Gate & Domain Router (`src/cognitive/jev_engine.py`, `src/context/domain_router.py`). Invariant I6 Fail-Open Circuit Breaker. 10-task SWE-bench Battle: -31.3% turns (4.6 vs 6.7), -52.6% blind discovery ops (18 vs 38), fastest runtime 133.9s. Live on theones.io/benchmark/ and documented in blog.
-- [ ] G6: Evidence-linked release and separately approved canary.
+- [x] G6: Evidence-linked release v0.2.11 published on GitHub with latest tag, Zenodo DOI concept and version linkage.
 
 ## Historical Milestone (not verified as complete)
 Hermes JIT Context OS v0.2 with Dynamic LLM Distillation and Multimodal Ingestion
