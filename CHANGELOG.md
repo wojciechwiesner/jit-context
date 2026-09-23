@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.10] - 2026-09-23
+
+### Fixed
+- Relabeled the 10-task harness as SWE-bench-style isolated fixtures, not full Django/Astropy/Flask/Requests/Sympy/pytest checkouts.
+- Separated the Synthapse 2.44x / -59% paired run from the fixture battle. The committed Gemini fixture log is 11.3% shorter wall clock (150.9s to 133.9s), -31.3% turns, -52.6% discovery ops, and 9/10 on the path labeled JIT+JEV.
+- Stated that the agent loop does not record live JEV versus heuristic fallback. The live scoring replay is a separate artifact.
+
 ## [0.2.9] - 2026-09-23
 
 ### Added & SOTA

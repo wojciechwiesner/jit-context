@@ -10,7 +10,7 @@ Methodology & Scope Note:
   complete with production decoy trees (not full 500MB Django/Astropy/etc. git checkouts).
 
 Verification:
-  - 10 real SWE-bench style Python tasks with decoy files.
+  - 10 isolated SWE-bench-style Python fixtures with decoy files, not full repository checkouts.
   - Hard baseline check: Pytest MUST fail before any agent action.
   - Multi-turn agent loop with real tool calls: search_files, read_file, patch, run_tests, done.
   - Post-run verification: Pytest exit code == 0 on disk.
