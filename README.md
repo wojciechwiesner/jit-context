@@ -7,9 +7,10 @@
 <p align="center">
   <a href="https://doi.org/10.5281/zenodo.22649542"><img src="https://zenodo.org/badge/DOI/10.5281/zenodo.22649542.svg" alt="DOI"></a>
   <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License: MIT"></a>
-  <a href="https://github.com/wojciechwiesner/jit-context"><img src="https://img.shields.io/badge/Tests-52%2F52%20PASS-success" alt="Tests"></a>
-  <a href="https://theones.io/benchmark/"><img src="https://img.shields.io/badge/JEV%20Engine--31%25%20Turns-purple" alt="JEV Engine"></a>
-  <a href="https://github.com/wojciechwiesner/jit-context"><img src="https://img.shields.io/badge/Speedup-2.44x%20Faster-orange" alt="Speedup"></a>
+  <a href="https://theones.io/benchmark/"><img src="https://img.shields.io/badge/Benchmark%20Hub-Live%20Telemetry-blue?logo=googlechrome&logoColor=white" alt="Benchmark Hub"></a>
+  <a href="https://theones.io/blog/jit-jev-context-the-first-production-agent-runtime"><img src="https://img.shields.io/badge/Architecture-Deep%20Dive-purple" alt="Deep Dive"></a>
+  <a href="https://theones.io/benchmark/"><img src="https://img.shields.io/badge/JEV%20Engine--31.3%25%20Turns-emerald" alt="JEV Engine"></a>
+  <a href="https://github.com/wojciechwiesner/jit-context"><img src="https://img.shields.io/badge/Delivery-2.44x%20Faster-orange" alt="Speedup"></a>
   <a href="https://github.com/wojciechwiesner/jit-context"><img src="https://img.shields.io/badge/Token%20Reduction--99%25-green" alt="Tokens"></a>
 </p>
 
@@ -98,7 +99,10 @@ Integration of TypeSafe's JEV model ($0.042/M tokens, output free, ~100-200ms la
 | **Decision Cost** | $0.00 | $0.00 | **< $0.001** | Sub-cent inference cost |
 | **Fault Tolerance (I6)** | N/A | Heuristic only | **100% Fail-Open** | Circuit Breaker & Zero Crashes |
 
-*Live Interactive Benchmark:* [theones.io/benchmark/](https://theones.io/benchmark/) (Tab 5) | *Technical Deep-Dive:* [theones.io/blog/jit-jev-context-the-first-production-agent-runtime](https://theones.io/blog/jit-jev-context-the-first-production-agent-runtime)
+> 📊 **Explore the Live Telemetry & Architecture:**
+> * **Interactive Benchmark Hub:** [theones.io/benchmark/](https://theones.io/benchmark/) *(Turn-by-turn logs, SWE-bench 300 Docker passes, GAIA, and JEV Battle)*
+> * **Architectural Deep-Dive:** [theones.io/blog/jit-jev-context-the-first-production-agent-runtime](https://theones.io/blog/jit-jev-context-the-first-production-agent-runtime) *(System 1 routing, Fail-Open Circuit-Breaker, and telemetry)*
+
 
 ---
 
@@ -266,7 +270,7 @@ If you reference **JIT-Context** in research, benchmarks, or agent runtimes, ple
   title        = {JIT-Context: An Epistemic Context Runtime for AI Agents},
   year         = 2026,
   publisher    = {Zenodo},
-  version      = {v0.2.5},
+  version      = {v0.3.0},
   doi          = {10.5281/zenodo.22649542},
   url          = {https://doi.org/10.5281/zenodo.22649542}
 }
