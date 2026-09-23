@@ -1,15 +1,20 @@
 #!/usr/bin/env python3
 """
-Empirical SWE Agent Benchmark on Local Modified Model:
-  Model: qwen3.8:jit (Ollama @ 127.0.0.1:11434)
+SWE-bench-style Fixtures Multi-Turn Agent Benchmark: Local Qwen 3.8 (9.2B Metal M2 Pro)
+  Model: qwen3.8:jit (Ollama @ 127.0.0.1:11434, Metal M2 Pro)
   Modes:
     1. BEZ JIT (Raw baseline without capsule)
-    2. Z JIT Context OS (AST working set + JEV/JIT guidance)
+    2. Z JIT (BEZ JEV - Heuristic Token Ranking)
+    3. Z JIT + JEV (Live JEV Probabilistic Scoring via OpenRouter)
+
+Methodology & Scope Note:
+  Tasks are constructed as isolated multi-file reproduction fixtures modeled after SWE-bench instances,
+  complete with production decoy trees (not full 500MB Django/Astropy/etc. git checkouts).
 
 Verification:
   - Physical pytest execution on disk (exit code == 0).
   - Multi-turn autonomous tool loop: search_files, read_file, patch, run_tests, done.
-  - Zero fake/cheating: genuine model generations and physical file modifications.
+  - Zero projections: 100% genuine model generations and physical file modifications.
 """
 
 import os

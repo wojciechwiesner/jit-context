@@ -1,15 +1,19 @@
 #!/usr/bin/env python3
 """
-Comparative SWE Agent Benchmark (10 Real Tasks):
+SWE-bench-style Fixtures Multi-Turn Agent Benchmark (10 Isolated Tasks with Decoy Trees):
   Mode A: BEZ JIT (Raw baseline without capsule)
   Mode B: Z JIT (BEZ JEV) (JIT Context OS with deterministic token ranking)
-  Mode C: Z JIT + JEV (JIT Context OS with JEV probabilistic decision scoring via OpenRouter)
+  Mode C: Z JIT + JEV (JIT Context OS with live JEV probabilistic decision scoring via OpenRouter)
+
+Methodology & Scope Note:
+  Tasks are constructed as isolated multi-file reproduction fixtures modeled after SWE-bench instances,
+  complete with production decoy trees (not full 500MB Django/Astropy/etc. git checkouts).
 
 Verification:
   - 10 real SWE-bench style Python tasks with decoy files.
   - Hard baseline check: Pytest MUST fail before any agent action.
   - Multi-turn agent loop with real tool calls: search_files, read_file, patch, run_tests, done.
-  - Post-run verification: Pytest exit code == 0.
+  - Post-run verification: Pytest exit code == 0 on disk.
   - Zero projections, 100% empirical runtime measurements.
 """
 

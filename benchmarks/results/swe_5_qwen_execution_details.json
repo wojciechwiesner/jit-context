@@ -1,0 +1,201 @@
+{
+  "summary": {
+    "bez_jit": {
+      "passed": 4,
+      "pass_rate": "4/5 (80%)",
+      "total_time_s": 134.9,
+      "avg_turns": 4.8,
+      "total_tokens": 2114,
+      "discovery_ops": 13
+    },
+    "jit_bez_jev": {
+      "passed": 4,
+      "pass_rate": "4/5 (80%)",
+      "total_time_s": 164.2,
+      "avg_turns": 3.8,
+      "total_tokens": 2759,
+      "discovery_ops": 4
+    },
+    "jit_z_jev": {
+      "passed": 5,
+      "pass_rate": "5/5 (100%)",
+      "total_time_s": 132.8,
+      "avg_turns": 3.2,
+      "total_tokens": 2097,
+      "discovery_ops": 2
+    }
+  },
+  "details": {
+    "bez_jit": [
+      {
+        "task_id": "django__django-11099",
+        "mode": "bez_jit",
+        "status": "FAIL",
+        "passed": false,
+        "turns": 7,
+        "wall_time_s": 47.7,
+        "tokens": 719,
+        "discovery_ops": 4,
+        "error": null
+      },
+      {
+        "task_id": "django__django-15400",
+        "mode": "bez_jit",
+        "status": "PASS",
+        "passed": true,
+        "turns": 4,
+        "wall_time_s": 21.14,
+        "tokens": 343,
+        "discovery_ops": 2,
+        "error": null
+      },
+      {
+        "task_id": "pallets__flask-4045",
+        "mode": "bez_jit",
+        "status": "PASS",
+        "passed": true,
+        "turns": 4,
+        "wall_time_s": 20.75,
+        "tokens": 331,
+        "discovery_ops": 2,
+        "error": null
+      },
+      {
+        "task_id": "requests__requests-2148",
+        "mode": "bez_jit",
+        "status": "PASS",
+        "passed": true,
+        "turns": 4,
+        "wall_time_s": 19.59,
+        "tokens": 313,
+        "discovery_ops": 2,
+        "error": null
+      },
+      {
+        "task_id": "sympy__sympy-18057",
+        "mode": "bez_jit",
+        "status": "PASS",
+        "passed": true,
+        "turns": 5,
+        "wall_time_s": 25.73,
+        "tokens": 408,
+        "discovery_ops": 3,
+        "error": null
+      }
+    ],
+    "jit_bez_jev": [
+      {
+        "task_id": "django__django-11099",
+        "mode": "jit_bez_jev",
+        "status": "FAIL",
+        "passed": false,
+        "turns": 7,
+        "wall_time_s": 70.25,
+        "tokens": 1317,
+        "discovery_ops": 1,
+        "error": "JSON Parse Error: Expecting value: line 1 column 78 (char 77)"
+      },
+      {
+        "task_id": "django__django-15400",
+        "mode": "jit_bez_jev",
+        "status": "PASS",
+        "passed": true,
+        "turns": 2,
+        "wall_time_s": 21.88,
+        "tokens": 350,
+        "discovery_ops": 0,
+        "error": null
+      },
+      {
+        "task_id": "pallets__flask-4045",
+        "mode": "jit_bez_jev",
+        "status": "PASS",
+        "passed": true,
+        "turns": 4,
+        "wall_time_s": 30.02,
+        "tokens": 482,
+        "discovery_ops": 1,
+        "error": null
+      },
+      {
+        "task_id": "requests__requests-2148",
+        "mode": "jit_bez_jev",
+        "status": "PASS",
+        "passed": true,
+        "turns": 4,
+        "wall_time_s": 21.35,
+        "tokens": 324,
+        "discovery_ops": 2,
+        "error": null
+      },
+      {
+        "task_id": "sympy__sympy-18057",
+        "mode": "jit_bez_jev",
+        "status": "PASS",
+        "passed": true,
+        "turns": 2,
+        "wall_time_s": 20.67,
+        "tokens": 286,
+        "discovery_ops": 0,
+        "error": null
+      }
+    ],
+    "jit_z_jev": [
+      {
+        "task_id": "django__django-11099",
+        "mode": "jit_z_jev",
+        "status": "PASS",
+        "passed": true,
+        "turns": 6,
+        "wall_time_s": 43.62,
+        "tokens": 708,
+        "discovery_ops": 1,
+        "error": null
+      },
+      {
+        "task_id": "django__django-15400",
+        "mode": "jit_z_jev",
+        "status": "PASS",
+        "passed": true,
+        "turns": 2,
+        "wall_time_s": 23.0,
+        "tokens": 375,
+        "discovery_ops": 0,
+        "error": null
+      },
+      {
+        "task_id": "pallets__flask-4045",
+        "mode": "jit_z_jev",
+        "status": "PASS",
+        "passed": true,
+        "turns": 4,
+        "wall_time_s": 29.47,
+        "tokens": 482,
+        "discovery_ops": 1,
+        "error": null
+      },
+      {
+        "task_id": "requests__requests-2148",
+        "mode": "jit_z_jev",
+        "status": "PASS",
+        "passed": true,
+        "turns": 2,
+        "wall_time_s": 17.18,
+        "tokens": 238,
+        "discovery_ops": 0,
+        "error": null
+      },
+      {
+        "task_id": "sympy__sympy-18057",
+        "mode": "jit_z_jev",
+        "status": "PASS",
+        "passed": true,
+        "turns": 2,
+        "wall_time_s": 19.53,
+        "tokens": 294,
+        "discovery_ops": 0,
+        "error": null
+      }
+    ]
+  }
+}

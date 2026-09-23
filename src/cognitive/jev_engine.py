@@ -220,6 +220,133 @@ class JevDecisionScorer:
             self._breaker.record_failure(is_fatal_auth=False)
             return {}
 
+    def score_remote_detailed(
+        self, query: str, candidates: List[Dict[str, str]]
+    ) -> Dict[str, Any]:
+        """Perform remote HTTP call to OpenRouter Decisions API returning full verifiable telemetry."""
+        t0 = time.time()
+        if not self.api_key:
+            return {
+                "model": self.model,
+                "scores": {},
+                "remote_call_success": False,
+                "fallback_used": True,
+                "http_status": 0,
+                "latency_ms": 0.0,
+                "usage": {},
+                "error": "No JEV API key configured (JEV_OPENROUTER_KEY missing)",
+            }
+
+        if not self._breaker.allow_request():
+            return {
+                "model": self.model,
+                "scores": {},
+                "remote_call_success": False,
+                "fallback_used": True,
+                "http_status": 0,
+                "latency_ms": 0.0,
+                "usage": {},
+                "error": "Circuit breaker open / cooling down",
+            }
+
+        sliced = candidates[: self.max_facts]
+        if not sliced:
+            return {
+                "model": self.model,
+                "scores": {},
+                "remote_call_success": True,
+                "fallback_used": False,
+                "http_status": 200,
+                "latency_ms": 0.0,
+                "usage": {},
+                "error": None,
+            }
+
+        questions = {}
+        for i, c in enumerate(sliced):
+            k = str(c.get("key", f"item_{i}"))
+            val = str(c.get("value", c.get("text", "")))[:200]
+            questions[f"q_{i}"] = {
+                "type": "noul",
+                "instructions": f"Fact [{k}: {val}] is relevant for: {query[:150]}",
+            }
+
+        payload = {
+            "model": self.model,
+            "state": {"query": query[:300], "task": "evaluate candidate relevance"},
+            "questions": questions,
+        }
+
+        try:
+            req = urllib.request.Request(
+                DECISIONS_URL,
+                data=json.dumps(payload).encode("utf-8"),
+                headers={
+                    "Authorization": f"Bearer {self.api_key}",
+                    "Content-Type": "application/json",
+                    "User-Agent": "hermes-jit-context-os/0.2.0 (JevBridge)",
+                },
+                method="POST",
+            )
+            with urllib.request.urlopen(req, timeout=self.timeout_s) as resp:
+                status_code = resp.status
+                body = resp.read().decode("utf-8")
+                data = json.loads(body)
+
+            latency_ms = round((time.time() - t0) * 1000, 2)
+            raw_scores = {}
+            for i, c in enumerate(sliced):
+                qid = f"q_{i}"
+                k = str(c.get("key", f"item_{i}"))
+                ans = data.get("answers", {}).get(qid, {})
+                p = 0.0
+                if isinstance(ans, dict):
+                    p = float(ans.get("noul", ans.get("probability", ans.get("p", ans.get("score", 0.0)))))
+                elif isinstance(ans, (int, float)):
+                    p = float(ans)
+                raw_scores[k] = p
+
+            self._breaker.record_success()
+            self._store_cache(query, raw_scores)
+            return {
+                "model": data.get("model", self.model),
+                "scores": raw_scores,
+                "remote_call_success": True,
+                "fallback_used": False,
+                "http_status": status_code,
+                "latency_ms": latency_ms,
+                "usage": data.get("usage", {}),
+                "answers_count": len(raw_scores),
+                "error": None,
+            }
+        except urllib.error.HTTPError as e:
+            latency_ms = round((time.time() - t0) * 1000, 2)
+            is_fatal = e.code in (401, 403)
+            self._breaker.record_failure(is_fatal_auth=is_fatal)
+            return {
+                "model": self.model,
+                "scores": {},
+                "remote_call_success": False,
+                "fallback_used": True,
+                "http_status": e.code,
+                "latency_ms": latency_ms,
+                "usage": {},
+                "error": f"HTTP {e.code}: {e.reason}",
+            }
+        except Exception as e:
+            latency_ms = round((time.time() - t0) * 1000, 2)
+            self._breaker.record_failure(is_fatal_auth=False)
+            return {
+                "model": self.model,
+                "scores": {},
+                "remote_call_success": False,
+                "fallback_used": True,
+                "http_status": 0,
+                "latency_ms": latency_ms,
+                "usage": {},
+                "error": str(e),
+            }
+
     def rerank_hybrid(
         self, query: str, candidates: List[Dict[str, str]]
     ) -> List[Dict[str, str]]:

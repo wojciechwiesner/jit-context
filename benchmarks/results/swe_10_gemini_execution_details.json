@@ -1,0 +1,366 @@
+{
+  "summary": {
+    "bez_jit": {
+      "passed": 10,
+      "pass_rate": "10/10 (100%)",
+      "total_time_s": 150.9,
+      "avg_turns": 6.7,
+      "total_tokens": 48594,
+      "discovery_ops": 38
+    },
+    "jit_bez_jev": {
+      "passed": 10,
+      "pass_rate": "10/10 (100%)",
+      "total_time_s": 139.3,
+      "avg_turns": 5.6,
+      "total_tokens": 64978,
+      "discovery_ops": 28
+    },
+    "jit_z_jev": {
+      "passed": 9,
+      "pass_rate": "9/10 (90%)",
+      "total_time_s": 133.9,
+      "avg_turns": 4.6,
+      "total_tokens": 61483,
+      "discovery_ops": 18
+    }
+  },
+  "details": {
+    "bez_jit": [
+      {
+        "task_id": "django__django-11099",
+        "mode": "bez_jit",
+        "status": "PASS",
+        "passed": true,
+        "turns": 6,
+        "wall_time_s": 25.31,
+        "tokens": 4563,
+        "discovery_ops": 3,
+        "error": null
+      },
+      {
+        "task_id": "django__django-11848",
+        "mode": "bez_jit",
+        "status": "PASS",
+        "passed": true,
+        "turns": 8,
+        "wall_time_s": 12.92,
+        "tokens": 6976,
+        "discovery_ops": 6,
+        "error": null
+      },
+      {
+        "task_id": "django__django-14382",
+        "mode": "bez_jit",
+        "status": "PASS",
+        "passed": true,
+        "turns": 7,
+        "wall_time_s": 12.37,
+        "tokens": 4167,
+        "discovery_ops": 4,
+        "error": null
+      },
+      {
+        "task_id": "django__django-15400",
+        "mode": "bez_jit",
+        "status": "PASS",
+        "passed": true,
+        "turns": 6,
+        "wall_time_s": 10.54,
+        "tokens": 4766,
+        "discovery_ops": 3,
+        "error": "API/Parse Error: Invalid control character at: line 1 column 63 (char 62)"
+      },
+      {
+        "task_id": "astropy__astropy-14995",
+        "mode": "bez_jit",
+        "status": "PASS",
+        "passed": true,
+        "turns": 6,
+        "wall_time_s": 8.21,
+        "tokens": 4311,
+        "discovery_ops": 3,
+        "error": null
+      },
+      {
+        "task_id": "pallets__flask-4045",
+        "mode": "bez_jit",
+        "status": "PASS",
+        "passed": true,
+        "turns": 8,
+        "wall_time_s": 16.5,
+        "tokens": 6625,
+        "discovery_ops": 5,
+        "error": "API/Parse Error: Invalid control character at: line 1 column 59 (char 58)"
+      },
+      {
+        "task_id": "requests__requests-2148",
+        "mode": "bez_jit",
+        "status": "PASS",
+        "passed": true,
+        "turns": 7,
+        "wall_time_s": 35.95,
+        "tokens": 4094,
+        "discovery_ops": 4,
+        "error": null
+      },
+      {
+        "task_id": "django__django-11583",
+        "mode": "bez_jit",
+        "status": "PASS",
+        "passed": true,
+        "turns": 6,
+        "wall_time_s": 11.54,
+        "tokens": 3858,
+        "discovery_ops": 3,
+        "error": null
+      },
+      {
+        "task_id": "pytest-dev__pytest-5221",
+        "mode": "bez_jit",
+        "status": "PASS",
+        "passed": true,
+        "turns": 6,
+        "wall_time_s": 8.41,
+        "tokens": 5076,
+        "discovery_ops": 3,
+        "error": null
+      },
+      {
+        "task_id": "sympy__sympy-18057",
+        "mode": "bez_jit",
+        "status": "PASS",
+        "passed": true,
+        "turns": 7,
+        "wall_time_s": 9.15,
+        "tokens": 4158,
+        "discovery_ops": 4,
+        "error": null
+      }
+    ],
+    "jit_bez_jev": [
+      {
+        "task_id": "django__django-11099",
+        "mode": "jit_bez_jev",
+        "status": "PASS",
+        "passed": true,
+        "turns": 4,
+        "wall_time_s": 9.19,
+        "tokens": 4686,
+        "discovery_ops": 1,
+        "error": null
+      },
+      {
+        "task_id": "django__django-11848",
+        "mode": "jit_bez_jev",
+        "status": "PASS",
+        "passed": true,
+        "turns": 6,
+        "wall_time_s": 22.24,
+        "tokens": 11064,
+        "discovery_ops": 3,
+        "error": "API/Parse Error: Invalid control character at: line 1 column 84 (char 83)"
+      },
+      {
+        "task_id": "django__django-14382",
+        "mode": "jit_bez_jev",
+        "status": "PASS",
+        "passed": true,
+        "turns": 6,
+        "wall_time_s": 7.95,
+        "tokens": 5234,
+        "discovery_ops": 3,
+        "error": null
+      },
+      {
+        "task_id": "django__django-15400",
+        "mode": "jit_bez_jev",
+        "status": "PASS",
+        "passed": true,
+        "turns": 8,
+        "wall_time_s": 13.56,
+        "tokens": 7384,
+        "discovery_ops": 5,
+        "error": null
+      },
+      {
+        "task_id": "astropy__astropy-14995",
+        "mode": "jit_bez_jev",
+        "status": "PASS",
+        "passed": true,
+        "turns": 4,
+        "wall_time_s": 5.91,
+        "tokens": 3822,
+        "discovery_ops": 2,
+        "error": null
+      },
+      {
+        "task_id": "pallets__flask-4045",
+        "mode": "jit_bez_jev",
+        "status": "PASS",
+        "passed": true,
+        "turns": 5,
+        "wall_time_s": 7.18,
+        "tokens": 4722,
+        "discovery_ops": 2,
+        "error": null
+      },
+      {
+        "task_id": "requests__requests-2148",
+        "mode": "jit_bez_jev",
+        "status": "PASS",
+        "passed": true,
+        "turns": 6,
+        "wall_time_s": 18.02,
+        "tokens": 4807,
+        "discovery_ops": 3,
+        "error": null
+      },
+      {
+        "task_id": "django__django-11583",
+        "mode": "jit_bez_jev",
+        "status": "PASS",
+        "passed": true,
+        "turns": 4,
+        "wall_time_s": 6.27,
+        "tokens": 3572,
+        "discovery_ops": 1,
+        "error": null
+      },
+      {
+        "task_id": "pytest-dev__pytest-5221",
+        "mode": "jit_bez_jev",
+        "status": "PASS",
+        "passed": true,
+        "turns": 8,
+        "wall_time_s": 40.55,
+        "tokens": 14982,
+        "discovery_ops": 6,
+        "error": null
+      },
+      {
+        "task_id": "sympy__sympy-18057",
+        "mode": "jit_bez_jev",
+        "status": "PASS",
+        "passed": true,
+        "turns": 5,
+        "wall_time_s": 8.47,
+        "tokens": 4705,
+        "discovery_ops": 2,
+        "error": null
+      }
+    ],
+    "jit_z_jev": [
+      {
+        "task_id": "django__django-11099",
+        "mode": "jit_z_jev",
+        "status": "PASS",
+        "passed": true,
+        "turns": 4,
+        "wall_time_s": 6.54,
+        "tokens": 4745,
+        "discovery_ops": 1,
+        "error": null
+      },
+      {
+        "task_id": "django__django-11848",
+        "mode": "jit_z_jev",
+        "status": "PASS",
+        "passed": true,
+        "turns": 7,
+        "wall_time_s": 34.64,
+        "tokens": 16017,
+        "discovery_ops": 4,
+        "error": "API/Parse Error: Expecting value: line 1 column 1 (char 0)"
+      },
+      {
+        "task_id": "django__django-14382",
+        "mode": "jit_z_jev",
+        "status": "PASS",
+        "passed": true,
+        "turns": 4,
+        "wall_time_s": 6.08,
+        "tokens": 4441,
+        "discovery_ops": 1,
+        "error": null
+      },
+      {
+        "task_id": "django__django-15400",
+        "mode": "jit_z_jev",
+        "status": "PASS",
+        "passed": true,
+        "turns": 5,
+        "wall_time_s": 12.0,
+        "tokens": 4766,
+        "discovery_ops": 2,
+        "error": null
+      },
+      {
+        "task_id": "astropy__astropy-14995",
+        "mode": "jit_z_jev",
+        "status": "PASS",
+        "passed": true,
+        "turns": 4,
+        "wall_time_s": 7.6,
+        "tokens": 3970,
+        "discovery_ops": 2,
+        "error": null
+      },
+      {
+        "task_id": "pallets__flask-4045",
+        "mode": "jit_z_jev",
+        "status": "FAIL",
+        "passed": false,
+        "turns": 4,
+        "wall_time_s": 21.09,
+        "tokens": 6762,
+        "discovery_ops": 2,
+        "error": "API/Parse Error: Invalid control character at: line 1 column 107 (char 106)"
+      },
+      {
+        "task_id": "requests__requests-2148",
+        "mode": "jit_z_jev",
+        "status": "PASS",
+        "passed": true,
+        "turns": 4,
+        "wall_time_s": 15.53,
+        "tokens": 3810,
+        "discovery_ops": 1,
+        "error": null
+      },
+      {
+        "task_id": "django__django-11583",
+        "mode": "jit_z_jev",
+        "status": "PASS",
+        "passed": true,
+        "turns": 4,
+        "wall_time_s": 7.53,
+        "tokens": 3690,
+        "discovery_ops": 1,
+        "error": null
+      },
+      {
+        "task_id": "pytest-dev__pytest-5221",
+        "mode": "jit_z_jev",
+        "status": "PASS",
+        "passed": true,
+        "turns": 6,
+        "wall_time_s": 16.79,
+        "tokens": 9831,
+        "discovery_ops": 3,
+        "error": null
+      },
+      {
+        "task_id": "sympy__sympy-18057",
+        "mode": "jit_z_jev",
+        "status": "PASS",
+        "passed": true,
+        "turns": 4,
+        "wall_time_s": 6.11,
+        "tokens": 3451,
+        "discovery_ops": 1,
+        "error": null
+      }
+    ]
+  }
+}

@@ -1,0 +1,152 @@
+{
+  "benchmark": "Local Edge SWE-bench-style Fixtures Multi-Turn Battle",
+  "methodology_note": "Constructed from isolated SWE-bench reproduction multi-file fixtures with production decoy trees. Evaluated on local Apple Silicon M2 Pro using qwen3.8:jit with physical pytest verification on disk.",
+  "evaluated_at": "2026-09-23 09:58:15 UTC",
+  "jev_service": {
+    "provider": "OpenRouter Decisions API",
+    "endpoint": "https://openrouter.ai/api/alpha/decisions",
+    "requested_model": "~typesafe/jev-latest",
+    "resolved_model": "typesafe/jev-1.13-20260917"
+  },
+  "tasks": [
+    {
+      "task_index": 1,
+      "task_id": "django__django-11099",
+      "target_file": "django/contrib/auth/validators.py",
+      "query_sample": "django__django-11099: ASCIIUsernameValidator and UnicodeUsernameValidator use regex r'^[\\w.@+-]+$'. In Python regex, $ m",
+      "candidates_evaluated": 5,
+      "live_call_evidence": {
+        "remote_call_success": true,
+        "fallback_used": false,
+        "http_status": 200,
+        "resolved_model": "typesafe/jev-1.13-20260917",
+        "latency_ms": 406.2,
+        "usage": {
+          "input_tokens": 846,
+          "output_tokens": 94,
+          "cost": 3.5532e-05
+        },
+        "answers_count": 5,
+        "scores": {
+          "django/contrib/auth/validators.py": 0.69,
+          "django/contrib/auth/models.py": 0.08,
+          "django/contrib/auth/forms.py": 0.1,
+          "django/core/validators.py": 0.07,
+          "tests/test_validators.py": 0.83
+        }
+      }
+    },
+    {
+      "task_index": 2,
+      "task_id": "django__django-15400",
+      "target_file": "django/utils/functional.py",
+      "query_sample": "django__django-15400: SimpleLazyObject is missing __radd__. When an operand is on the left side (e.g. 10 + lazy), Python",
+      "candidates_evaluated": 4,
+      "live_call_evidence": {
+        "remote_call_success": true,
+        "fallback_used": false,
+        "http_status": 200,
+        "resolved_model": "typesafe/jev-1.13-20260917",
+        "latency_ms": 505.92,
+        "usage": {
+          "input_tokens": 777,
+          "output_tokens": 76,
+          "cost": 3.2634e-05
+        },
+        "answers_count": 4,
+        "scores": {
+          "django/utils/functional.py": 0.85,
+          "django/utils/datastructures.py": 0.04,
+          "django/utils/decorators.py": 0.04,
+          "tests/test_functional.py": 0.94
+        }
+      }
+    },
+    {
+      "task_index": 3,
+      "task_id": "pallets__flask-4045",
+      "target_file": "flask/blueprints.py",
+      "query_sample": "pallets__flask-4045: Creating a Blueprint with a dot '.' in its name breaks nested endpoint routing. In Blueprint.__init",
+      "candidates_evaluated": 4,
+      "live_call_evidence": {
+        "remote_call_success": true,
+        "fallback_used": false,
+        "http_status": 200,
+        "resolved_model": "typesafe/jev-1.13-20260917",
+        "latency_ms": 427.14,
+        "usage": {
+          "input_tokens": 692,
+          "output_tokens": 76,
+          "cost": 2.9064e-05
+        },
+        "answers_count": 4,
+        "scores": {
+          "flask/blueprints.py": 0.77,
+          "flask/app.py": 0.15,
+          "flask/scaffold.py": 0.1,
+          "tests/test_blueprints.py": 0.92
+        }
+      }
+    },
+    {
+      "task_index": 4,
+      "task_id": "requests__requests-2148",
+      "target_file": "requests/models.py",
+      "query_sample": "requests__requests-2148: When socket.error occurs during stream reading in Response.iter_content, requests should catch ",
+      "candidates_evaluated": 5,
+      "live_call_evidence": {
+        "remote_call_success": true,
+        "fallback_used": false,
+        "http_status": 200,
+        "resolved_model": "typesafe/jev-1.13-20260917",
+        "latency_ms": 463.03,
+        "usage": {
+          "input_tokens": 702,
+          "output_tokens": 94,
+          "cost": 2.9484e-05
+        },
+        "answers_count": 5,
+        "scores": {
+          "requests/__init__.py": 0.18,
+          "requests/models.py": 0.82,
+          "requests/sessions.py": 0.05,
+          "requests/adapters.py": 0.07,
+          "tests/test_models.py": 0.87
+        }
+      }
+    },
+    {
+      "task_index": 5,
+      "task_id": "sympy__sympy-18057",
+      "target_file": "sympy/core/relational.py",
+      "query_sample": "sympy__sympy-18057: Comparing an Expr instance with None using Equality(a, b) raises AttributeError because None has no ",
+      "candidates_evaluated": 4,
+      "live_call_evidence": {
+        "remote_call_success": true,
+        "fallback_used": false,
+        "http_status": 200,
+        "resolved_model": "typesafe/jev-1.13-20260917",
+        "latency_ms": 373.55,
+        "usage": {
+          "input_tokens": 698,
+          "output_tokens": 76,
+          "cost": 2.9316e-05
+        },
+        "answers_count": 4,
+        "scores": {
+          "sympy/core/relational.py": 0.7,
+          "sympy/core/expr.py": 0.14,
+          "sympy/core/basic.py": 0.27,
+          "tests/test_relational.py": 0.94
+        }
+      }
+    }
+  ],
+  "summary": {
+    "total_tasks": 5,
+    "live_calls_succeeded": 5,
+    "fallback_count": 0,
+    "fallback_rate_pct": 0.0,
+    "all_live_calls_verified": true
+  }
+}
