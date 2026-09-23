@@ -682,6 +682,8 @@ Solve this bug using the surgical patch tool. The target file and working set ar
     ]
 
     total_tokens = 0
+    prompt_tokens = 0
+    candidate_tokens = 0
     discovery_ops = 0
     task_passed = False
     last_error = None
@@ -714,6 +716,8 @@ Solve this bug using the surgical patch tool. The target file and working set ar
                     text = data["candidates"][0]["content"]["parts"][0]["text"]
                     usage = data.get("usageMetadata", {})
                     total_tokens += usage.get("totalTokenCount", 0)
+                    prompt_tokens += usage.get("promptTokenCount", 0)
+                    candidate_tokens += usage.get("candidatesTokenCount", 0)
                     tool_call = json.loads(text)
                     break
             except Exception as e:
@@ -815,6 +819,8 @@ Solve this bug using the surgical patch tool. The target file and working set ar
         "turns": turn,
         "wall_time_s": wall_time,
         "tokens": total_tokens,
+        "prompt_tokens": prompt_tokens,
+        "candidate_tokens": candidate_tokens,
         "discovery_ops": discovery_ops,
         "error": last_error,
         "jev": jev_evidence,
@@ -880,15 +886,23 @@ def main(modes: List[str] | None = None, out_path: Path | None = None):
         total_time = round(sum(r["wall_time_s"] for r in res_list), 1)
         avg_turns = round(sum(r["turns"] for r in res_list) / len(res_list), 1)
         total_tokens = sum(r["tokens"] for r in res_list)
+        total_prompt = sum(r.get("prompt_tokens", 0) for r in res_list)
+        total_candidate = sum(r.get("candidate_tokens", 0) for r in res_list)
+        total_turns = sum(r["turns"] for r in res_list)
         total_disc = sum(r["discovery_ops"] for r in res_list)
-
+        jev_cost = round(sum(((r.get("jev") or {}).get("usage") or {}).get("cost") or 0 for r in res_list), 6)
+        avg_time_per_turn = round(total_time / total_turns, 2) if total_turns else 0
         summary_stats[m] = {
             "passed": passed_count,
             "pass_rate": pass_rate,
             "total_time_s": total_time,
             "avg_turns": avg_turns,
+            "avg_time_per_turn_s": avg_time_per_turn,
             "total_tokens": total_tokens,
-            "discovery_ops": total_disc
+            "prompt_tokens": total_prompt,
+            "candidate_tokens": total_candidate,
+            "discovery_ops": total_disc,
+            "jev_cost_usd": jev_cost,
         }
         print(f"{mode_labels[m]:<38} | {pass_rate:<10} | {total_time:>8}s | {avg_turns:>9} | {total_tokens:>8} | {total_disc:>8}")
 

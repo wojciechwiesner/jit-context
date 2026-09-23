@@ -7,3 +7,6 @@ __pycache__/
 *.db
 *.db-wal
 *.db-shm
+*.egg-info/
+state.html
+uv.lock

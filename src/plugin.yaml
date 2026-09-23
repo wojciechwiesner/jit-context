@@ -1,5 +1,5 @@
 name: ona-context
-version: 0.2.6
+version: 0.2.11
 description: Hermes JIT Context OS & Borg Context Broker (L0 SQLite WAL + L1 Project Cache + Invariants I1-I10)
 author: Wojciech Wiesner (wojciech@theones.io)
 enabled: true
