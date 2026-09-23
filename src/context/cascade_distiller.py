@@ -232,10 +232,10 @@ def validate_classifier_output(
 
 def call_llm_classifier(
     raw_text: str,
-    timeout: float = 6.0,
+    timeout: float = 1.5,
     trusted_scope: str = "general"
 ) -> Optional[Dict[str, Any]]:
-    """Calls Gemini Flash using direct GOOGLE_API_KEY with local Ollama fallback, strictly validated."""
+    """Calls Gemini Flash using direct GOOGLE_API_KEY with local Ollama fallback, strictly validated (max 1.5s deadline)."""
     prefiltered = fast_deterministic_prefilter(raw_text[:6000])
 
     # Tier 1: Cloud SOTA via Google Gemini Flash
@@ -266,10 +266,11 @@ def call_llm_classifier(
         except Exception:
             pass
 
-    # Tier 2: Local Offline Fallback via Ollama (qwen2.5-coder:7b)
+    # Tier 2: Local Offline Fallback via Ollama (single fast probe, max 1.0s)
+    local_model = os.environ.get("JIT_LOCAL_MODEL", "qwen3.8:jit")
     try:
         ollama_payload = {
-            "model": "qwen2.5-coder:7b",
+            "model": local_model,
             "prompt": f"{CLASSIFIER_PROMPT}\n\nINPUT TO CLASSIFY:\n{prefiltered}",
             "format": "json",
             "stream": False,
@@ -278,13 +279,15 @@ def call_llm_classifier(
                 "num_predict": 400
             }
         }
-        r_ol = requests.post("http://localhost:11434/api/generate", json=ollama_payload, timeout=timeout)
+        r_ol = requests.post("http://localhost:11434/api/generate", json=ollama_payload, timeout=1.0)
         if r_ol.status_code == 200:
             content = r_ol.json().get("response", "")
             cleaned = re.sub(r"^```(?:json)?\s*", "", content.strip(), flags=re.MULTILINE)
             cleaned = re.sub(r"\s*```$", "", cleaned.strip(), flags=re.MULTILINE)
             parsed = json.loads(cleaned)
-            return validate_classifier_output(parsed, raw_source_text=raw_text, trusted_scope=trusted_scope)
+            val = validate_classifier_output(parsed, raw_source_text=raw_text, trusted_scope=trusted_scope)
+            if val:
+                return val
     except Exception:
         pass
 
@@ -493,11 +496,22 @@ def distill_context_cascade(
         d_crit = f"{dev_runtime.get('verify_cmd', 'pytest')} passes with exit code 0" if dev_runtime and dev_runtime.get('verify_cmd') else None
         d_spec = f"Execute '{latest_user_intent}' focusing on {', '.join(d_targets[:3])}." if d_targets else None
 
+        # Calibrated fast-path complexity (avoid hardcoding 'direct_fix' on deep/exploratory tasks)
+        u_low = latest_user_intent.lower()
+        if working_set:
+            fast_complexity = "feature"
+        elif re.search(r"\b(zbuduj|architektur|refactor|badani|wideo|analiz|silnik|engine|benchmark|porównaj|wyciągnij|drzew[ao])\b", u_low):
+            fast_complexity = "feature"
+        elif intent == "QUERY" and not re.search(r"\b(napraw|fix|bug|patch)\b", u_low):
+            fast_complexity = "status"
+        else:
+            fast_complexity = "direct_fix"
+
         capsule, budget = assemble_elastic_capsule(
             active_scope=resolved_scope,
             epoch=epoch,
             confidence=1.00,
-            complexity="feature" if working_set else "direct_fix",
+            complexity=fast_complexity,
             user_intent=latest_user_intent,
             prior_statements=priors,
             verified_facts=verified_facts,
@@ -518,7 +532,7 @@ def distill_context_cascade(
             "distilled": False,
             "duration_ms": round((time.time() - start_time) * 1000, 2),
             "confidence": 1.00,
-            "complexity": "feature" if working_set else "direct_fix",
+            "complexity": fast_complexity,
             "budget": budget
         }
 

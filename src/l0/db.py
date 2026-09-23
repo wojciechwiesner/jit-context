@@ -76,6 +76,20 @@ CREATE TABLE IF NOT EXISTS provider_state (
     last_success TEXT,
     latency_ema REAL NOT NULL DEFAULT 0.0
 );
+
+CREATE TABLE IF NOT EXISTS experience_events (
+    experience_id TEXT PRIMARY KEY,
+    task_signature TEXT NOT NULL,
+    intent TEXT NOT NULL,
+    modalities TEXT NOT NULL,
+    strategy TEXT NOT NULL,
+    tool_sequence TEXT NOT NULL,
+    evidence_refs TEXT NOT NULL,
+    outcome TEXT NOT NULL, -- 'VERIFIED', 'FAILED'
+    experience_hash TEXT NOT NULL,
+    created_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_exp_sig ON experience_events(task_signature);
 """
 
 def _init_db_conn(conn: sqlite3.Connection) -> None:

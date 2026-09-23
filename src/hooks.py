@@ -24,7 +24,11 @@ from telemetry.collector import (
 
 # Active by default for full JIT Context OS execution.
 # Configurable via ONA_CONTEXT_MODE=shadow or disabled.
-ONA_CONTEXT_MODE = os.environ.get("ONA_CONTEXT_MODE", "active")
+try:
+    _mf = Path.home() / ".hermes" / "state" / "ona-context" / "mode.json"
+    ONA_CONTEXT_MODE = json.loads(_mf.read_text(encoding="utf-8")).get("mode", "active") if _mf.exists() else "active"
+except Exception:
+    ONA_CONTEXT_MODE = os.environ.get("ONA_CONTEXT_MODE", "active")
 WATCHDOG_BUDGET_MS = 650.0
 
 _MODULE_MTIMES: Dict[str, float] = {}
@@ -63,6 +67,10 @@ def extract_genuine_user_instruction(text: str) -> str:
         return ""
     # Strip nested/quoted <ONA_CONTEXT ...> blocks to avoid self-poisoning
     clean = re.sub(r'<ONA_CONTEXT.*?</ONA_CONTEXT>', '', text, flags=re.DOTALL).strip()
+    if clean:
+        text = clean
+    # Strip injected ENGINEERING CANON
+    clean = re.sub(r'\n*ENGINEERING CANON \(~.*', '', text, flags=re.DOTALL).strip()
     if clean:
         text = clean
     m = re.search(r"The user has provided the following instruction alongside the skill invocation:\s*(.*)", text, re.DOTALL)
@@ -235,8 +243,16 @@ def pre_llm_call(ctx: Dict[str, Any]) -> Dict[str, Any]:
             mode=ONA_CONTEXT_MODE
         )
 
-        # Resolve live mode dynamically
-        current_mode = os.environ.get("ONA_CONTEXT_MODE")
+        # Resolve live mode dynamically: mode.json is strictly authoritative over shell env
+        current_mode = None
+        try:
+            _mf = Path.home() / ".hermes" / "state" / "ona-context" / "mode.json"
+            if _mf.exists():
+                current_mode = json.loads(_mf.read_text(encoding="utf-8")).get("mode")
+        except Exception:
+            pass
+        if not current_mode:
+            current_mode = os.environ.get("ONA_CONTEXT_MODE")
         if not current_mode:
             try:
                 p = "/tmp/hermes-jit-live.json"
@@ -306,8 +322,10 @@ def pre_llm_call(ctx: Dict[str, Any]) -> Dict[str, Any]:
                 "ts": time.time(),
                 "updated_at": time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
             }
-            with open("/tmp/hermes-jit-live.json", "w", encoding="utf-8") as lf:
-                json.dump(live_payload, lf, ensure_ascii=False, indent=2)
+            is_cron = str(session_id or "").startswith(("cron_", "subagent_", "test_", "bench_"))
+            if not is_cron:
+                with open("/tmp/hermes-jit-live.json", "w", encoding="utf-8") as lf:
+                    json.dump(live_payload, lf, ensure_ascii=False, indent=2)
             with open("/tmp/hermes-jit-capsule-live.xml", "w", encoding="utf-8") as xf:
                 xf.write(capsule)
             
@@ -407,8 +425,12 @@ def pre_llm_call(ctx: Dict[str, Any]) -> Dict[str, Any]:
             print(f"⚡ {c_bold}[JIT Context: CZUWANIE (shadow)]{c_reset} Sesja: {session_id} • Projekt: {active_scope} • {compile_ms:.1f}ms ({capsule_chars} zn)", file=sys.stderr, flush=True)
             return {}
 
+        tokens_reduced_pct = max(0.0, min(99.9, (1.0 - (capsule_chars / 38000.0)) * 100))
+        tokens_saved_approx = max(0, int((38000 - capsule_chars) / 4))
+
         status_lines = [
-            f"⚡ {c_bold}{c_green}[JIT Context: AKTYWNY]{c_reset} Sesja: {c_yellow}{session_id}{c_reset} • Projekt: {c_cyan}{active_scope}{c_reset} • {compile_ms:.1f}ms • Kapsuła: {c_bold}{capsule_chars:,} / {budget_chars:,} zn ({used_pct}% użyte{c_reset}, ~{tokens_est} tok)"
+            f"⚡ {c_bold}{c_green}[JIT Context: AKTYWNY]{c_reset} Sesja: {c_yellow}{session_id}{c_reset} • Projekt: {c_cyan}{active_scope}{c_reset} • Czas: {c_bold}{compile_ms:.1f}ms{c_reset}",
+            f"   • {c_bold}Metryki:{c_reset} Redukcja tokenów: {c_green}-{tokens_reduced_pct:.1f}% (-{tokens_saved_approx:,} tok){c_reset} • Kapsuła: {c_bold}{capsule_chars:,} zn (~{tokens_est} tok){c_reset}",
         ]
         if goal_text:
             intent_suffix = f" [{intent_label}]" if intent_label else ""
@@ -422,7 +444,7 @@ def pre_llm_call(ctx: Dict[str, Any]) -> Dict[str, Any]:
             state_items.append(f"Pliki robocze: {', '.join(file_names)}{more}")
 
         status_lines.append(f"   • Stan: {' • '.join(state_items)}")
-        status_lines.append(f"   • Podgląd Live: {c_cyan}{live_url}{c_reset}")
+        status_lines.append(f"   • Live Stream: {c_cyan}jit stream{c_reset} (terminal) | Web: {c_cyan}{live_url}{c_reset}")
         try:
             from cli import _cprint
             _cprint("\n" + "\n".join(status_lines) + "\n")

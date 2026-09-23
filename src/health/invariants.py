@@ -249,8 +249,43 @@ def check_i10_no_canon_promotion() -> InvariantStatus:
         return InvariantStatus.FAIL
 
 
+def check_i11_no_epistemically_equivalent_retry() -> InvariantStatus:
+    """I11: No Epistemically Equivalent Retry (Invariant against duplicate loops without new evidence/tool/strategy)."""
+    try:
+        from l0.epistemics import validate_retry_attempt, EpistemicRejectionType
+        prior = [{
+            "tool": "web_search",
+            "query": "Moon perigee",
+            "evidence_hash": "hash_123",
+            "status": EpistemicRejectionType.MISSING_EVIDENCE.value
+        }]
+        # Identical attempt should fail
+        dup = {
+            "tool": "web_search",
+            "query": "Moon perigee",
+            "evidence_hash": "hash_123"
+        }
+        allowed, reason = validate_retry_attempt(prior, dup)
+        if allowed or "Invariant I11 Violation" not in (reason or ""):
+            return InvariantStatus.FAIL
+
+        # Differentiated attempt should pass
+        diff = {
+            "tool": "python_exec",
+            "code": "print(356400)",
+            "evidence_hash": "hash_456"
+        }
+        allowed_diff, _ = validate_retry_attempt(prior, diff)
+        if not allowed_diff:
+            return InvariantStatus.FAIL
+
+        return InvariantStatus.PASS
+    except Exception:
+        return InvariantStatus.FAIL
+
+
 def evaluate_all_invariants(conn: sqlite3.Connection) -> Dict[str, InvariantStatus]:
-    """Evaluate all invariants I1..I10 and return dictionary of InvariantStatus values."""
+    """Evaluate all invariants I1..I11 and return dictionary of InvariantStatus values."""
     return {
         "I1": check_i1_direct_user_wins(conn),
         "I2": check_i2_ryow(conn),
@@ -262,4 +297,5 @@ def evaluate_all_invariants(conn: sqlite3.Connection) -> Dict[str, InvariantStat
         "I8": check_i8_independent_provenance(),
         "I9": check_i9_memory_cannot_authorize(),
         "I10": check_i10_no_canon_promotion(),
+        "I11": check_i11_no_epistemically_equivalent_retry(),
     }

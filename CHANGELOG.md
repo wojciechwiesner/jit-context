@@ -5,6 +5,54 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.9] - 2026-09-23
+
+### Added & SOTA
+- **TypeSafe JEV Decision Engine (`src/cognitive/jev_engine.py`)**:
+  - Integrated TypeSafe JEV (~typesafe/jev-latest, $0.042/M input, free output, 70-200ms) as a System 1 Epistemic Context Gate.
+  - Sub-millisecond prefetch and cache read (<0.05ms) in daemon threads, eliminating latency on the agent hot-path.
+  - Implemented CircuitBreaker with Invariant I6 (Fail-Open) falling back to deterministic token overlap on timeouts or rate-limits with zero agent crashes.
+- **Domain & Tool Source Router (`src/context/domain_router.py`)**:
+  - Deterministic routing of user intents to specific subsystems and toolsets without recursive `find`/`grep` filesystem crawls.
+- **SWE-bench 10-Task Battle & Empirical Telemetry**:
+  - Achieved -31.3% reduction in multi-turn cycles (4.6 vs 6.7 avg turns) and -52.6% cut in blind discovery operations (18 vs 38 ops) across Django, Astropy, Flask, Requests, Sympy, and Pytest.
+  - Published interactive Tab 5 to [theones.io/benchmark/](https://theones.io/benchmark/) and architectural deep dive on [theones.io/blog/](https://theones.io/blog/jit-jev-context-the-first-production-agent-runtime).
+
+## [0.2.8] - 2026-09-18
+
+### Added & Fixed (Epistemic Conscience Architecture)
+- **Option D: Deterministic Conscience Gate (`benchmarks/run_gaia_full_cognitive_system.py`)**:
+  - Completely stripped Sumienie of LLM answer ghostwriting/rewriting rights.
+  - Implemented typed `GateDecision` (`VERIFIED`, `REJECTED`, `REPAIR_REQUIRED`, `UNDECIDABLE`).
+  - Hard gate automatically rejects unhandled tool exceptions and confessed model inabilities.
+  - Normalizer limited to deterministic unit conversions without altering semantic payload.
+- **Subconscious Schema Sanitation (`run_subconscious_extraction`)**:
+  - Replaced ambiguous `core_facts` with literal `observations` (authority 0.9) and speculative `hypotheses` (authority 0.0).
+  - Eliminates self-poisoning where parametric hallucinations masquerade as facts.
+- **Multimodal & Multiformat File Ingestion Pipeline**:
+  - Native parsing for `.docx` (tables/text), `.xlsx` (cell data + fill color codes), `.pptx` (slides), `.pdf`, `.mp3` (audio transcription), and `.png` (vision grounding).
+  - Downloaded and grounded all 11 GAIA Level 1 validation files to `/tmp/gaia/files/`.
+- **Comprehensive Provenance Metadata**:
+  - Injected `run_id`, `attempt_id`, `git_commit`, `jit_version`, `worker_model`, `conscience_version` into all benchmark artifacts.
+
+## [0.2.7] - 2026-09-18
+
+### Added
+- **Invariant I11: No Epistemically Equivalent Retry (`src/l0/epistemics.py`, `src/health/invariants.py`)**:
+  - Implemented typed epistemic rejections (`MISSING_EVIDENCE`, `FORMAT_MISMATCH`, `CONTRADICTED`, `INVARIANT_VIOLATION`, `STALE_EVIDENCE`, `UNDECIDABLE`).
+  - Prohibits duplicate retries with identical tools, inputs, or evidence states without new information, killing agent loops at the runtime boundary.
+  - Doctor diagnostic updated to verify all 11 Invariants (`Invariants I1–I11: 11/11 PASS`).
+- **Structured Evidence Objects & Content Anchoring (`src/l0/tool_buffer.py`)**:
+  - `EvidenceObject` schema binding claims directly to content-addressed raw blobs with verifiable byte ranges (`[start, end]`).
+  - Added `extract_evidence_objects` and `dereference_evidence` to eliminate lossy epistemic compression between raw tool output and reasoning.
+- **3-Stage Unabridged Tool Buffer Pipeline (`src/l0/tool_buffer.py`)**:
+  - Eliminated arbitrary `[:N]` string slicing across web extract, search grounding, and file read tools.
+  - Complete tool outputs are written immediately to `/tmp/jit_tools/*.raw` before deterministic sanitization and intent-grounded distillation.
+- **Realtime Animated ANSI Telemetry Stream (`jit stream` / `src/telemetry/stream.py`)**:
+  - Live 8-10 FPS terminal dashboard displaying Token Reduction %, Latency/Timings, Active Model, Speed (tok/s), and real-time SQLite WAL ticker.
+- **Full Cognitive System Benchmark on GAIA Level 1**:
+  - Verified 4/5 tasks (80.0% accuracy) on GAIA Level 1 benchmarks with full numeric preservation (e.g. 0.1777 fish bag volume, 17 Earth-Moon thousand hours).
+
 ## [0.2.6] - 2026-09-15
 
 ### Added

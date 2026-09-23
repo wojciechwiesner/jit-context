@@ -368,6 +368,10 @@ def run_init(target_path: Path, tier: str = "standard", goal: Optional[str] = No
     }
 
 def main():
+    known_cmds = {"init", "mode", "config", "configure", "off", "on", "status", "doctor", "stream", "jev", "-h", "--help"}
+    if len(sys.argv) > 1 and sys.argv[1] not in known_cmds:
+        sys.argv.insert(1, "init")
+
     parser = argparse.ArgumentParser(description="Hermes JIT Context OS — CLI")
     subparsers = parser.add_subparsers(dest="command")
     
@@ -377,10 +381,28 @@ def main():
     init_parser.add_argument("--tier", choices=["simple", "standard", "deep", "xhigh"], default="standard", help="Initialization depth")
     init_parser.add_argument("--goal", type=str, default=None, help="Explicit project goal")
 
+    # jit mode
+    mode_parser = subparsers.add_parser("mode", help="Get or set JIT operating mode (active, shadow, passive, off)")
+    mode_parser.add_argument("target_mode", nargs="?", choices=["active", "shadow", "passive", "off"], default=None, help="Operating mode to set")
+
+    # jit config / configure
+    config_parser = subparsers.add_parser("config", aliases=["configure"], help="View or modify JIT configuration settings")
+    config_parser.add_argument("action", nargs="?", default="show", help="Action (show, get, set) or config key")
+    config_parser.add_argument("key_or_val", nargs="?", default=None, help="Key name or value")
+    config_parser.add_argument("val", nargs="?", default=None, help="Value when using 'set <key> <val>'")
+
     subparsers.add_parser("off", help="Disable JIT context injection")
     subparsers.add_parser("on", help="Enable JIT context injection")
     subparsers.add_parser("status", help="Show JIT context status")
     subparsers.add_parser("doctor", help="Run system health and invariant diagnostics")
+    stream_parser = subparsers.add_parser("stream", help="Launch live animated ANSI telemetry stream")
+    stream_parser.add_argument("--fps", type=float, default=8.0, help="Frames per second (default: 8)")
+    stream_parser.add_argument("--seconds", type=float, default=None, help="Run for N seconds and exit")
+
+    # jit jev
+    jev_parser = subparsers.add_parser("jev", help="Run JEV probabilistic decision engine diagnostics and live probe")
+    jev_parser.add_argument("action", nargs="?", default="status", choices=["status", "probe", "test"], help="Action (status, probe)")
+    jev_parser.add_argument("--query", type=str, default="drzewo decyzyjne i silnik reguł probabilistycznych", help="Test query for JEV probe")
 
     # Allow running directly as 'jit <path>' without subcommand
     parser.add_argument("direct_path", nargs="?", default=None, help=argparse.SUPPRESS)
@@ -393,52 +415,163 @@ def main():
     live_file = Path("/tmp/hermes-jit-live.json")
 
     cmd = args.command or args.direct_path
+
+    # Subcommand: jit mode
+    if cmd == "mode":
+        from config import load_config, set_config_val, MODE_FILE
+        target = getattr(args, "target_mode", None)
+        if not target and unknown:
+            for u in unknown:
+                if u in ("active", "shadow", "passive", "off"):
+                    target = u
+                    break
+        if target:
+            old_mode, new_mode = set_config_val("mode", target)
+            icons = {"active": "⚡", "shadow": "🌓", "passive": "👁️", "off": "🛑"}
+            icon = icons.get(target, "⚡")
+            print("=" * 60)
+            print(f"{icon} JIT CONTEXT OS — TRYB PRZEŁĄCZONY: {target.upper()}")
+            print("=" * 60)
+            if target == "active":
+                print("• Status: ACTIVE — pełne dynamiczne wstrzykiwanie kapsuły JIT (<1,500 tok)")
+            elif target == "shadow":
+                print("• Status: SHADOW — kapsuła jest kompilowana i logowana do telemetrii, lecz nie wstrzykiwana")
+            elif target == "passive":
+                print("• Status: PASSIVE — lekki nasłuch bez aktywnej kompilacji promptu")
+            elif target == "off":
+                print("• Status: OFF — JIT Context OS całkowicie wyłączony")
+            print(f"• Zapisano w: {MODE_FILE}")
+            print("=" * 60)
+            return
+
+        cfg = load_config()
+        cur_mode = cfg.get("mode", "active")
+        print("=" * 60)
+        print("⚡ HERMES JIT CONTEXT OS — AKTUALNY TRYB")
+        print("=" * 60)
+        print(f"• Tryb bieżący: {cur_mode.upper()}")
+        print(f"• Dostępne tryby: active, shadow, passive, off")
+        print("\nOpis trybów:")
+        print("  active   - Pełne automatyczne wstrzykiwanie lean kapsuły (<1.5k tok)")
+        print("  shadow   - Kompilacja i pomiary w tle (telemetria), bez ingerencji w prompt")
+        print("  passive  - Tryb pasywny (tylko rejestracja zdarzeń)")
+        print("  off      - Całkowite wyłączenie silnika")
+        print("\nSzybkie przełączanie:")
+        print("  jit mode <active|shadow|passive|off>")
+        print("  jit on  /  jit off")
+        print("=" * 60)
+        return
+
+    # Subcommand: jit config / configure
+    if cmd in ("config", "configure"):
+        from config import load_config, set_config_val, get_config_val, CONFIG_DESCRIPTIONS, MODE_FILE
+        cfg = load_config()
+
+        action = getattr(args, "action", "show") or "show"
+        p1 = getattr(args, "key_or_val", None)
+        p2 = getattr(args, "val", None)
+
+        # Syntax 1: jit config set <key> <val>
+        if action == "set":
+            if not p1 or p2 is None:
+                print("❌ Użycie: jit config set <klucz> <wartość>")
+                return
+            old_val, new_val = set_config_val(p1, p2)
+            print("=" * 60)
+            print(f"⚙️  JIT CONTEXT OS — ZAKTUALIZOWANO KONFIGURACJĘ")
+            print("=" * 60)
+            print(f"• {p1} = {repr(new_val)} (poprzednio: {repr(old_val)})")
+            print(f"• Zapisano w: {MODE_FILE}")
+            print("=" * 60)
+            return
+
+        # Syntax 2: jit config get <key>
+        if action == "get":
+            if not p1:
+                print("❌ Użycie: jit config get <klucz>")
+                return
+            val = get_config_val(p1)
+            print(val)
+            return
+
+        # Syntax 3: jit config <key> <val> (shortcut for set)
+        if action in cfg and p1 is not None:
+            old_val, new_val = set_config_val(action, p1)
+            print("=" * 60)
+            print(f"⚙️  JIT CONTEXT OS — ZAKTUALIZOWANO KONFIGURACJĘ")
+            print("=" * 60)
+            print(f"• {action} = {repr(new_val)} (poprzednio: {repr(old_val)})")
+            print(f"• Zapisano w: {MODE_FILE}")
+            print("=" * 60)
+            return
+
+        # Syntax 4: jit config <key> (shortcut for get)
+        if action in cfg and p1 is None:
+            val = get_config_val(action)
+            print(val)
+            return
+
+        # Syntax 5: jit config / jit config show / jit config list
+        print("=" * 70)
+        print("⚙️  HERMES JIT CONTEXT OS — KONFIGURACJA RUNTIME")
+        print("=" * 70)
+        print(f"Plik konfiguracyjny: {MODE_FILE}\n")
+        print(f"{'PARAMETR':<26} {'WARTOŚĆ':<20} {'OPIS'}")
+        print("─" * 70)
+        for k, v in cfg.items():
+            if k == "updated_at":
+                continue
+            desc = CONFIG_DESCRIPTIONS.get(k, "")
+            v_str = str(v)
+            if len(v_str) > 18:
+                v_str = v_str[:15] + "..."
+            print(f"{k:<26} {v_str:<20} {desc}")
+        print("─" * 70)
+        print("\nPolecenia:")
+        print("  jit config set <klucz> <wartość>  Ustaw parametr (np. jit config set worker qwen)")
+        print("  jit config get <klucz>            Pobierz wartość parametru")
+        print("  jit mode <tryb>                   Szybka zmiana trybu (active, shadow, passive, off)")
+        print("=" * 70)
+        return
+
     if cmd == "off":
-        mode_file.parent.mkdir(parents=True, exist_ok=True)
-        mode_file.write_text(json.dumps({"mode": "off", "updated_at": datetime.now().isoformat()}, indent=2), encoding="utf-8")
-        try:
-            live_data = json.loads(live_file.read_text(encoding="utf-8")) if live_file.exists() else {}
-        except Exception:
-            live_data = {}
-        live_data["mode"] = "off"
-        live_file.write_text(json.dumps(live_data, indent=2), encoding="utf-8")
+        from config import set_config_val
+        set_config_val("mode", "off")
         print("=" * 60)
         print("🛑 JIT CONTEXT OS — WYŁĄCZONY (OFF)")
         print("=" * 60)
         print("• Status: off (brak wstrzykiwania kapsuły kontekstu <ONA_CONTEXT>)")
-        print("• Aby włączyć ponownie: jit on")
+        print("• Aby włączyć ponownie: jit on  lub  jit mode active")
         print("=" * 60)
         return
 
     if cmd == "on":
-        mode_file.parent.mkdir(parents=True, exist_ok=True)
-        mode_file.write_text(json.dumps({"mode": "active", "updated_at": datetime.now().isoformat()}, indent=2), encoding="utf-8")
-        try:
-            live_data = json.loads(live_file.read_text(encoding="utf-8")) if live_file.exists() else {}
-        except Exception:
-            live_data = {}
-        live_data["mode"] = "active"
-        live_file.write_text(json.dumps(live_data, indent=2), encoding="utf-8")
+        from config import set_config_val
+        set_config_val("mode", "active")
         print("=" * 60)
         print("⚡ JIT CONTEXT OS — AKTYWNY (ACTIVE)")
         print("=" * 60)
         print("• Status: active (automatyczne wstrzykiwanie kapsuły kontekstu JIT)")
-        print("• Aby wyłączyć: jit off")
+        print("• Aby wyłączyć: jit off  lub  jit mode off")
         print("=" * 60)
         return
 
     if cmd == "status":
-        current_mode = "active"
-        if mode_file.exists():
-            try:
-                current_mode = json.loads(mode_file.read_text(encoding="utf-8")).get("mode", "active")
-            except Exception:
-                pass
+        from config import load_config, MODE_FILE
+        cfg = load_config()
+        current_mode = cfg.get("mode", "active")
+        worker = cfg.get("worker", "routed")
+        tier = cfg.get("tier", "standard")
+        thresh = cfg.get("compaction_threshold", 0.4)
+        c_window = cfg.get("context_window", 1000000)
         print("=" * 60)
         print(f"⚡ JIT CONTEXT OS — STATUS: {current_mode.upper()}")
         print("=" * 60)
-        print(f"• Tryb: {current_mode}")
-        print(f"• Mode config: {mode_file}")
+        print(f"• Tryb runtime:         {current_mode}")
+        print(f"• Domyślny Ego Worker:  {worker}")
+        print(f"• Profiling Tier:       {tier}")
+        print(f"• Próg kompaktowania:   {thresh} (~{int(c_window * thresh):,} tokens)")
+        print(f"• Plik konfiguracyjny:  {MODE_FILE}")
         print("=" * 60)
         return
 
@@ -449,6 +582,62 @@ def main():
             sys.exit(0 if success else 1)
         except Exception as e:
             print(f"Błąd uruchamiania doctor: {e}", file=sys.stderr)
+            sys.exit(1)
+
+    if cmd == "stream":
+        try:
+            from telemetry.stream import run_stream_loop
+            run_stream_loop(fps=getattr(args, "fps", 8.0), max_seconds=getattr(args, "seconds", None))
+            return
+        except Exception as e:
+            print(f"Błąd uruchamiania stream: {e}", file=sys.stderr)
+            sys.exit(1)
+
+    if cmd == "jev":
+        try:
+            import time
+            from cognitive.jev_engine import get_jev_scorer, DECISIONS_URL, DEFAULT_MODEL
+            scorer = get_jev_scorer()
+            query = getattr(args, "query", "drzewo decyzyjne i silnik reguł probabilistycznych")
+            print("=" * 60)
+            print(" ⚡ HERMES JIT CONTEXT OS — JEV DECISION ENGINE")
+            print("=" * 60)
+            print(f"• Model upstream:       {scorer.model}")
+            print(f"• Endpoint API:         {DECISIONS_URL}")
+            key = scorer.api_key
+            masked_key = (key[:8] + "..." + key[-4:]) if (key and len(key) > 12) else ("Brak klucza" if not key else "sk-...")
+            key_status = "[PASS]" if key else "[WARN / OFFLINE FALLBACK]"
+            cb_status = "ALLOWED" if scorer._breaker.allow_request() else "TRIPPED"
+            print(f"• API Key (JEV):        {masked_key} {key_status}")
+            print(f"• Circuit Breaker:      {cb_status}")
+            print(f"• Cache TTL:            {scorer.ttl_s}s")
+            print("─" * 60)
+            print("🔍 LIVE PROBE & HYBRID RERANKING TEST:")
+            candidates = [
+                {"key": "fact_0", "value": "Silnik decyzji probabilistycznych JEV typu typesafe w Hermesie"},
+                {"key": "fact_1", "value": "Wojciech buduje architekturę JIT Context OS i mechanizmy epistemiczne"},
+                {"key": "fact_2", "value": "Kot ma cztery łapy i lubi spać na kanapie"}
+            ]
+            t0 = time.time()
+            raw_scores = scorer.score_remote(query, candidates)
+            latency_ms = (time.time() - t0) * 1000.0
+            if raw_scores:
+                print(f"• Upstream Probe:       PASS ({latency_ms:.1f}ms)")
+                for k, score in raw_scores.items():
+                    print(f"   ├─ {k}: score={score:.2f}")
+            else:
+                print(f"• Upstream Probe:       FALLBACK (deterministic tokens, latency {latency_ms:.1f}ms)")
+
+            reranked = scorer.rerank_hybrid(query, candidates)
+            print("• Wynik Hybrid Reranking (Invariant I6):")
+            for i, r in enumerate(reranked):
+                k = r["key"]
+                val = r["value"][:55]
+                print(f"   [{i+1}] {k}: {val}...")
+            print("=" * 60)
+            return
+        except Exception as e:
+            print(f"Błąd uruchamiania JEV: {e}", file=sys.stderr)
             sys.exit(1)
 
     target_path = "."

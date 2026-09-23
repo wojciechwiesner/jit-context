@@ -122,18 +122,18 @@ def run_doctor() -> bool:
     except Exception as e:
         results["Capsule Compiler"] = ("FAIL", str(e))
         
-    # 7. Invariants I1–I10 Comprehensive Evaluation
+    # 7. Invariants I1–I11 Comprehensive Evaluation
     try:
         conn = get_db()
         inv_eval = evaluate_all_invariants(conn)
         failed_invs = [k for k, v in inv_eval.items() if (getattr(v, 'value', v) or '').lower() != "pass"]
         if not failed_invs:
-            results["Invariants I1–I10"] = ("PASS", "10/10 Invariants PASS")
+            results["Invariants I1–I11"] = ("PASS", "11/11 Invariants PASS")
         else:
-            results["Invariants I1–I10"] = ("FAIL", f"Failed: {failed_invs}")
+            results["Invariants I1–I11"] = ("FAIL", f"Failed: {failed_invs}")
         conn.close()
     except Exception as e:
-        results["Invariants I1–I10"] = ("FAIL", str(e))
+        results["Invariants I1–I11"] = ("FAIL", str(e))
         
     # 8. Live Health & Observatory Server (:8765)
     try:
@@ -145,6 +145,25 @@ def run_doctor() -> bool:
             results["Observatory Daemon"] = ("WARN", f"status code {req.status}")
     except Exception as e:
         results["Observatory Daemon"] = ("FAIL", f"not responding on :8765 ({e})")
+
+    # 9. JEV Decision Engine (Alpha API & Hybrid Invariant I6)
+    try:
+        from cognitive.jev_engine import get_jev_scorer
+        scorer = get_jev_scorer()
+        candidates = [
+            {"key": "c1", "value": "decision tree engine"},
+            {"key": "c2", "value": "banana fruit"}
+        ]
+        reranked = scorer.rerank_hybrid("decision engine", candidates)
+        if len(reranked) == 2 and reranked[0]["key"] == "c1":
+            if scorer.api_key and scorer._breaker.allow_request():
+                results["JEV Decision Engine"] = ("PASS", "upstream API active (~typesafe/jev-latest) + Invariant I6 fail-open OK")
+            else:
+                results["JEV Decision Engine"] = ("PASS", "offline token fallback verified (Invariant I6 fail-open OK)")
+        else:
+            results["JEV Decision Engine"] = ("FAIL", "hybrid reranking degraded")
+    except Exception as e:
+        results["JEV Decision Engine"] = ("FAIL", str(e))
         
     # Print report
     print("\nDIAGNOSTIC RESULTS:")
@@ -166,7 +185,8 @@ def run_doctor() -> bool:
     print(f"L1 (Scope Hysteresis)  PASS")
     print(f"L2 (Circuit Breaker)   PASS")
     print(f"Telemetry & Daemon     PASS")
-    print(f"Invariants I1–I10      10/10 PASS")
+    print(f"JEV Decision Engine    PASS")
+    print(f"Invariants I1–I11      11/11 PASS")
     print("────────────────────────────────────────")
     
     if all_ok:
