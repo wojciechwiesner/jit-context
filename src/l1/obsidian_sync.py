@@ -18,7 +18,7 @@ def find_obsidian_project_dossier(scope: str) -> Optional[Path]:
     if not scope or scope in ("general", "default"):
         return None
     
-    from l1.project_cache import normalize_project_name
+    from l1.project_cache import legacy_dossier_stem, normalize_project_name
     norm_scope = normalize_project_name(scope)
     clean_scope = scope.lower().replace("_", "-")
     vault_dir = getattr(config, "VAULT_DIR", Path.home() / "Documents" / "Wojciech")
@@ -35,6 +35,20 @@ def find_obsidian_project_dossier(scope: str) -> Optional[Path]:
         vault_dir / "context" / "projects" / f"{scope}.md",
         vault_dir / "context" / "projects" / f"{clean_scope}.md",
     ]
+    seen = {str(c) for c in candidates}
+    for stem in (norm_scope, scope, clean_scope):
+        legacy = legacy_dossier_stem(stem)
+        if not legacy or legacy in (norm_scope, scope, clean_scope):
+            continue
+        for extra in (
+            projects_dir / f"{legacy}.md",
+            vault_dir / "projects" / f"{legacy}.md",
+            vault_dir / "context" / "projects" / f"{legacy}.md",
+        ):
+            key = str(extra)
+            if key not in seen:
+                candidates.append(extra)
+                seen.add(key)
     for c in candidates:
         if c.exists() and c.is_file():
             return c

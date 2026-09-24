@@ -31,6 +31,10 @@ def normalize_project_name(name: str) -> str:
     }
     return aliases.get(n, n)
 
+def legacy_dossier_stem(name: str) -> str:
+    """Old jit init stripped a trailing -vN. Last-resort lookup only."""
+    return re.sub(r"-v\d+(?:\.\d+)*$", "", name or "")
+
 def get_project_context(
     project_name: str, 
     base_dir: Optional[Path] = None,
@@ -61,6 +65,14 @@ def get_project_context(
         VAULT_DIR / "projects" / f"{raw_name}.md",
         VAULT_DIR / "context" / "projects" / f"{raw_name}.md",
     ]
+    for stem in (norm_name, raw_name):
+        legacy = legacy_dossier_stem(stem)
+        if legacy and legacy not in (norm_name, raw_name):
+            candidates.extend([
+                VAULT_DIR / "projects" / f"{legacy}.md",
+                VAULT_DIR / "context" / "projects" / f"{legacy}.md",
+                vault_base / f"{legacy}.md",
+            ])
     for cand in candidates:
         try:
             resolved = cand.resolve()

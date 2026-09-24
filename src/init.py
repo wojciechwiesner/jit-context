@@ -26,11 +26,40 @@ OBSIDIAN_VAULT = Path(os.path.expanduser("~/Documents/Wojciech"))
 OBSIDIAN_PROJECTS_DIR = OBSIDIAN_VAULT / "projects"
 OBSIDIAN_KNOWHOW_DIR = OBSIDIAN_VAULT / "knowhow"
 
+# Must stay in lockstep with l1.project_cache.normalize_project_name.
+# Do not strip a trailing -vN: runtime looks up the directory name first.
+_DOSSIER_ALIASES = {
+    "hermes-jit-context-os": "hermes-jit-context-os-v0.1",
+    "jit-context": "hermes-jit-context-os-v0.1",
+    "jit": "hermes-jit-context-os-v0.1",
+    "hermes": "hermes-jit-context-os-v0.1",
+}
+
+def dossier_stem(raw_name: str) -> str:
+    """Canonical Obsidian stem. Same rules as runtime lookup, no version strip."""
+    n = (raw_name or "").lower().strip()
+    n = re.sub(r"[_\s]+", "-", n)
+    return _DOSSIER_ALIASES.get(n, n) or "general"
+
+def legacy_dossier_stem(raw_name: str) -> str:
+    """Old init wrote this stem. Used only to avoid shadowing an existing note."""
+    return re.sub(r"-v\d+(?:\.\d+)*$", "", raw_name or "")
+
+def resolve_dossier(raw_name: str) -> tuple[Path, bool]:
+    """Pick the dossier path. True means the file already exists and must be kept."""
+    canonical = OBSIDIAN_PROJECTS_DIR / f"{dossier_stem(raw_name)}.md"
+    if canonical.exists():
+        return canonical, True
+    legacy_stem = legacy_dossier_stem(raw_name)
+    legacy = OBSIDIAN_PROJECTS_DIR / f"{legacy_stem}.md"
+    if legacy_stem and legacy_stem != canonical.stem and legacy.exists():
+        return legacy, True
+    return canonical, False
+
 class ProjectScanner:
     def __init__(self, target_dir: Path):
         self.target_dir = target_dir.resolve()
-        raw_name = self.target_dir.name
-        self.name = re.sub(r"-v\d+(\.\d+)*$", "", raw_name)
+        self.name = dossier_stem(self.target_dir.name)
 
     def detect_stack(self) -> Dict[str, Any]:
         stack = {
@@ -68,13 +97,24 @@ class ProjectScanner:
         pyproject = self.target_dir / "pyproject.toml"
         reqs = self.target_dir / "requirements.txt"
         setup_py = self.target_dir / "setup.py"
-        has_py_files = any(self.target_dir.rglob("*.py"))
-        if pyproject.exists() or reqs.exists() or setup_py.exists() or has_py_files:
+        py_files = []
+        skip_dirs = {"node_modules", ".git", ".next", "venv", ".venv", "__pycache__", "dist", "build", ".turbo"}
+        for root, dirs, files in os.walk(self.target_dir):
+            dirs[:] = [d for d in dirs if d not in skip_dirs and not d.startswith(".")]
+            for f in files:
+                if f.endswith(".py"):
+                    py_files.append(Path(root) / f)
+                    if len(py_files) >= 20:
+                        break
+            if len(py_files) >= 20:
+                break
+
+        if pyproject.exists() or reqs.exists() or setup_py.exists() or py_files:
             stack["languages"].append("Python")
             content = ""
             if reqs.exists(): content += reqs.read_text(encoding="utf-8", errors="ignore")
             if pyproject.exists(): content += pyproject.read_text(encoding="utf-8", errors="ignore")
-            for pyf in list(self.target_dir.rglob("*.py"))[:20]:
+            for pyf in py_files:
                 content += pyf.read_text(encoding="utf-8", errors="ignore")[:500] + "\n"
             if "fastapi" in content.lower(): stack["frameworks"].append("FastAPI")
             if "flask" in content.lower(): stack["frameworks"].append("Flask")
@@ -225,9 +265,9 @@ def run_init(target_path: Path, tier: str = "standard", goal: Optional[str] = No
     if tier in ["deep", "xhigh"]:
         deep_knowledge = fetch_and_synthesize_deep_knowledge(scanner.target_dir, stack, tier=tier)
 
-    # 1. Generate Obsidian Project Dossier
+    # 1. Resolve Obsidian dossier. Never overwrite an existing note.
     OBSIDIAN_PROJECTS_DIR.mkdir(parents=True, exist_ok=True)
-    obsidian_file = OBSIDIAN_PROJECTS_DIR / f"{scanner.name}.md"
+    obsidian_file, dossier_existed = resolve_dossier(scanner.target_dir.name)
 
     commit_sha = ""
     commit_msg = ""
@@ -304,7 +344,11 @@ def run_init(target_path: Path, tier: str = "standard", goal: Optional[str] = No
     ])
 
     obsidian_content = "\n".join(doc_lines)
-    obsidian_file.write_text(obsidian_content, encoding="utf-8")
+    if dossier_existed:
+        dossier_action = "preserved"
+    else:
+        obsidian_file.write_text(obsidian_content, encoding="utf-8")
+        dossier_action = "created"
 
     # 2. Generate or update local .planning/STATE.md if missing
     planning_dir = target_path / ".planning"
@@ -363,6 +407,7 @@ def run_init(target_path: Path, tier: str = "standard", goal: Optional[str] = No
         "stack": stack,
         "structure": structure,
         "obsidian_dossier": str(obsidian_file),
+        "dossier_action": dossier_action,
         "state_file": str(state_file),
         "external_resources": external_reqs
     }
@@ -662,7 +707,7 @@ def main():
     print(f"• Ścieżka: {res['path']}")
     print(f"• Wykryty Stack: {', '.join(res['stack']['languages'])} | Frameworki: {', '.join(res['stack']['frameworks'])}")
     print(f"• Bazy Danych: {', '.join(res['stack']['databases']) or 'Brak'}")
-    print(f"• Obsidian SSOT: {res['obsidian_dossier']}")
+    print(f"• Obsidian SSOT: {res['obsidian_dossier']} ({'zachowany' if res.get('dossier_action') == 'preserved' else 'utworzony'})")
     print(f"• Local State: {res['state_file']}")
     print(f"• Zewnętrzne Zasoby (Context7/Docs): {len(res['external_resources'])} wykrytych")
     for r in res['external_resources']:
