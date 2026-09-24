@@ -8,5 +8,6 @@ __pycache__/
 *.db-wal
 *.db-shm
 *.egg-info/
+build/
 state.html
 uv.lock

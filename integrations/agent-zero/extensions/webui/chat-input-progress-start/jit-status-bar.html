@@ -1,0 +1,185 @@
+<script type="module">
+  import { store } from "/plugins/jit_context/webui/jit-status-store.js";
+</script>
+
+<div x-data>
+  <template x-if="$store.jitStatusStore">
+    <div x-init="$store.jitStatusStore.onOpen()" x-destroy="$store.jitStatusStore.cleanup()" style="display:contents">
+      <div id="jit-status-bar" class="jit-status-bar" role="status" :class="{ 'jit-expanded': $store.jitStatusStore.expanded }" @click="$store.jitStatusStore.toggle()">
+
+        <!-- badges -->
+        <span class="jit-badge jit-badge-jit" :class="{ 'jit-off': !$store.jitStatusStore.jitActive() }">
+          <span class="jit-dot"></span>JIT
+        </span>
+        <span class="jit-badge jit-badge-jev" :class="{ 'jit-off': !$store.jitStatusStore.jevActive() }">
+          <span class="jit-dot"></span>JEV
+        </span>
+
+        <span class="jit-sep"></span>
+
+        <!-- tiers -->
+        <span class="jit-tiers">
+          <span class="jit-tier" :class="$store.jitStatusStore.tierClass('l0')" title="L0 core_canon">L0</span>
+          <span class="jit-tier" :class="$store.jitStatusStore.tierClass('l1')" title="L1 distill">L1</span>
+          <span class="jit-tier" :class="$store.jitStatusStore.tierClass('l2')" title="L2 hot_facts">L2</span>
+        </span>
+
+        <span class="jit-sep"></span>
+
+        <!-- stats -->
+        <span class="jit-stat"><b class="jit-ok">▮ <span x-text="$store.jitStatusStore.helpful()"></span></b>/<span x-text="$store.jitStatusStore.verdictsTotal()"></span> HELPFUL</span>
+        <span class="jit-stat">⏱ <b x-text="$store.jitStatusStore.lastCompileMs()"></b></span>
+        <span class="jit-stat">💧 <b class="jit-info"><span x-text="$store.jitStatusStore.tokensSaved()"></span> tok</b></span>
+
+        <span class="jit-spacer"></span>
+
+        <!-- issues chip -->
+        <span class="jit-warn-chip" x-show="$store.jitStatusStore.issueCount() > 0">
+          ⚠ <span x-text="$store.jitStatusStore.issueCount()"></span>
+        </span>
+        <span class="jit-chevron" :class="{ 'open': $store.jitStatusStore.expanded }">▼</span>
+      </div>
+
+      <!-- diagnostics panel -->
+      <div id="jit-status-panel" class="jit-status-panel" x-show="$store.jitStatusStore.expanded" x-collapse @click.stop>
+        <div class="jit-panel-inner">
+
+          <div class="jit-diag-grid" x-show="$store.jitStatusStore.status">
+            <div class="jit-diag-card">
+              <h4>🧠 JIT Context</h4>
+              <div class="jit-diag-row"><span>Mode</span><b x-text="$store.jitStatusStore.status?.jit?.mode || '—'"></b></div>
+              <div class="jit-diag-row"><span>Capsule budget</span><b x-text="($store.jitStatusStore.status?.jit?.max_capsule_tokens ?? '—') + ' tok'"></b></div>
+              <div class="jit-diag-row"><span>Last compile</span><b x-text="$store.jitStatusStore.lastCompileMs()"></b></div>
+              <div class="jit-diag-row"><span>Fence window</span><b x-text="$store.jitStatusStore.status?.jit?.recent_turn_fence ?? '—'"></b></div>
+              <div class="jit-diag-row"><span>L2 mode</span><b x-text="$store.jitStatusStore.status?.jit?.l2_mode || '—'"></b></div>
+            </div>
+            <div class="jit-diag-card">
+              <h4>⚖️ JEV Judge</h4>
+              <div class="jit-diag-row"><span>Verdicts total</span><b x-text="$store.jitStatusStore.verdictsTotal()"></b></div>
+              <div class="jit-diag-row"><span class="jit-ok">HELPFUL</span><b x-text="$store.jitStatusStore.status?.jev?.verdicts?.HELPFUL ?? 0"></b></div>
+              <div class="jit-diag-row"><span>NEUTRAL</span><b x-text="$store.jitStatusStore.status?.jev?.verdicts?.NEUTRAL ?? 0"></b></div>
+              <div class="jit-diag-row"><span class="jit-err">HARMFUL</span><b x-text="$store.jitStatusStore.status?.jev?.verdicts?.HARMFUL ?? 0"></b></div>
+              <div class="jit-diag-row"><span>Distill → L1</span><b x-text="$store.jitStatusStore.status?.jev?.distill_enabled ? 'on (max ' + ($store.jitStatusStore.status?.jev?.distill_max_facts ?? 3) + ')' : 'off'"></b></div>
+            </div>
+          </div>
+
+          <div class="jit-issues-head" x-show="$store.jitStatusStore.issueCount() > 0">What may not work</div>
+          <div class="jit-issues-list">
+            <template x-for="issue in $store.jitStatusStore.status?.issues || []" :key="issue.code">
+              <div class="jit-issue" :class="'jit-issue-' + issue.level">
+                <span class="jit-issue-ic" x-text="issue.level === 'error' ? '🔴' : (issue.level === 'warn' ? '🟡' : '🔵')"></span>
+                <div>
+                  <b x-text="issue.title"></b>
+                  <p x-text="issue.detail"></p>
+                  <span class="jit-issue-fix" x-text="issue.fix ? '→ ' + issue.fix : ''"></span>
+                </div>
+              </div>
+            </template>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </template>
+</div>
+
+<style>
+  .jit-status-bar {
+    display: flex;
+    align-items: center;
+    gap: .55rem;
+    width: min(100%, 46rem);
+    margin: .25rem auto .1rem;
+    padding: .35rem .7rem;
+    border: 1px solid var(--color-border);
+    border-radius: 9px;
+    background: color-mix(in srgb, var(--color-panel) 92%, var(--color-accent));
+    color: var(--color-text);
+    font-size: .78rem;
+    cursor: pointer;
+    user-select: none;
+  }
+  .jit-status-bar:hover { filter: brightness(1.06); }
+
+  .jit-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: .3rem;
+    padding: .1rem .45rem;
+    border-radius: 6px;
+    font-weight: 700;
+    font-size: .68rem;
+    letter-spacing: .3px;
+  }
+  .jit-badge-jit { background: color-mix(in srgb, #38bdf8 14%, transparent); color: #38bdf8; border: 1px solid color-mix(in srgb, #38bdf8 30%, transparent); }
+  .jit-badge-jev { background: color-mix(in srgb, #a78bfa 14%, transparent); color: #a78bfa; border: 1px solid color-mix(in srgb, #a78bfa 30%, transparent); }
+  .jit-badge.jit-off { opacity: .4; }
+  .jit-dot { width: .4rem; height: .4rem; border-radius: 50%; background: currentColor; animation: jit-pulse 2s infinite; }
+  @keyframes jit-pulse { 0%,100% { opacity: 1 } 50% { opacity: .35 } }
+
+  .jit-sep { width: 1px; height: 1rem; background: var(--color-border); }
+
+  .jit-tier {
+    min-width: 1.5rem;
+    height: 1.05rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    font-size: .62rem;
+    font-weight: 700;
+  }
+  .jit-tier-on { background: color-mix(in srgb, #22c55e 15%, transparent); color: #22c55e; border: 1px solid color-mix(in srgb, #22c55e 30%, transparent); }
+  .jit-tier-shadow { background: color-mix(in srgb, #eab308 12%, transparent); color: #eab308; border: 1px solid color-mix(in srgb, #eab308 30%, transparent); }
+  .jit-tier-off { background: color-mix(in srgb, var(--color-text) 8%, transparent); color: var(--color-text-soft, #888); border: 1px solid var(--color-border); }
+
+  .jit-stat { white-space: nowrap; color: var(--color-text); opacity: .85; }
+  .jit-stat b { font-weight: 600; }
+  .jit-ok { color: #22c55e; }
+  .jit-info { color: #38bdf8; }
+  .jit-err { color: #ef4444; }
+
+  .jit-spacer { flex: 1; }
+
+  .jit-warn-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: .25rem;
+    padding: .1rem .45rem;
+    border-radius: 6px;
+    font-size: .68rem;
+    font-weight: 700;
+    background: color-mix(in srgb, #ef4444 10%, transparent);
+    color: #ef4444;
+    border: 1px solid color-mix(in srgb, #ef4444 25%, transparent);
+  }
+
+  .jit-chevron { color: var(--color-text-soft, #888); font-size: .6rem; transition: transform .2s; }
+  .jit-chevron.open { transform: rotate(180deg); }
+
+  .jit-status-panel {
+    width: min(100%, 46rem);
+    margin: 0 auto .25rem;
+    border: 1px solid var(--color-border);
+    border-radius: 9px;
+    background: var(--color-panel);
+  }
+  .jit-panel-inner { padding: .6rem .7rem; }
+
+  .jit-diag-grid { display: grid; grid-template-columns: 1fr 1fr; gap: .5rem; margin-bottom: .5rem; }
+  @media (max-width: 640px) { .jit-diag-grid { grid-template-columns: 1fr; } }
+  .jit-diag-card { border: 1px solid var(--color-border); border-radius: 8px; padding: .5rem .6rem; font-size: .75rem; }
+  .jit-diag-card h4 { font-size: .7rem; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; margin-bottom: .35rem; }
+  .jit-diag-row { display: flex; justify-content: space-between; padding: .1rem 0; }
+
+  .jit-issues-head { font-size: .68rem; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; margin: .3rem 0 .35rem; opacity: .7; }
+  .jit-issues-list { display: flex; flex-direction: column; gap: .35rem; }
+  .jit-issue { display: flex; gap: .5rem; align-items: flex-start; padding: .45rem .55rem; border-radius: 8px; font-size: .74rem; line-height: 1.45; }
+  .jit-issue-error { background: color-mix(in srgb, #ef4444 7%, transparent); border: 1px solid color-mix(in srgb, #ef4444 20%, transparent); }
+  .jit-issue-warn { background: color-mix(in srgb, #eab308 7%, transparent); border: 1px solid color-mix(in srgb, #eab308 20%, transparent); }
+  .jit-issue-info { background: color-mix(in srgb, #38bdf8 7%, transparent); border: 1px solid color-mix(in srgb, #38bdf8 20%, transparent); }
+  .jit-issue .ic { font-size: .8rem; flex-shrink: 0; }
+  .jit-issue b { display: block; }
+  .jit-issue p { opacity: .8; margin: 0; }
+  .jit-issue-fix { color: #38bdf8; font-size: .68rem; }
+</style>

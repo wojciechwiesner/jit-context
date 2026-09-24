@@ -171,6 +171,10 @@ Operating in tandem with the JIT context compiler, the **JEV System 1 Engine** p
 
 ---
 
+## Integrations
+
+The [Agent Zero plugin](integrations/agent-zero/README.md) is now available inside this repository under `integrations/agent-zero/` (plugin v0.4.0, Apache-2.0). The Python core remains v0.2.11 (MIT); these versions and runtime hosts are independent. Install only the plugin subdirectory into Agent Zero, not the repository root. This source consolidation does not install or deploy the plugin on any Agent Zero host.
+
 ## Quickstart
 
 ### 1. Install via pip

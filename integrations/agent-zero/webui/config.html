@@ -1,0 +1,158 @@
+<html>
+<head>
+    <title>JIT Context OS Settings</title>
+</head>
+
+<body>
+    <div x-data>
+        <template x-if="config">
+            <div>
+                <div class="section-title">JIT Context OS</div>
+                <div class="section-description">
+                    Epistemic context runtime & 3-tier memory cascade (L0 Hot / L1 Warm / L2 Deep)
+                    with deterministic prompt-caching optimization and invariant protection (I1–I10).
+                </div>
+
+                <div class="field">
+                    <div class="field-label">
+                        <div class="field-title">Operation Mode</div>
+                        <div class="field-description">
+                            Active: Injects JIT capsule into system prompt. Shadow: Logs telemetry without injection. Disabled: Turned off.
+                        </div>
+                    </div>
+                    <div class="field-control">
+                        <select x-model="config.mode" class="input">
+                            <option value="active">Active (Full Injection)</option>
+                            <option value="shadow">Shadow (Telemetry & Auditing)</option>
+                            <option value="disabled">Disabled</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="field">
+                    <div class="field-label">
+                        <div class="field-title">Max Capsule Tokens</div>
+                        <div class="field-description">
+                            Strict token budget ceiling for the compiled JIT capsule (default: 1500 tokens).
+                        </div>
+                    </div>
+                    <div class="field-control">
+                        <input type="number" class="input" x-model.number="config.max_capsule_tokens" min="500" max="8000" step="100" />
+                    </div>
+                </div>
+
+                <div class="field">
+                    <div class="field-label">
+                        <div class="field-title">L0 Hot-Path (SQLite WAL)</div>
+                        <div class="field-description">
+                            Enables ultra-low latency (<3ms) in-memory/WAL storage for immediate turn facts & RYOW.
+                        </div>
+                    </div>
+                    <div class="field-control">
+                        <label class="toggle">
+                            <input type="checkbox" x-model="config.l0_enabled" />
+                            <span class="toggler"></span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="field">
+                    <div class="field-label">
+                        <div class="field-title">L1 Warm-Path (Hysteresis Scope Guard)</div>
+                        <div class="field-description">
+                            Prevents context thrashing by requiring sustained project references before switching domain scope.
+                        </div>
+                    </div>
+                    <div class="field-control">
+                        <label class="toggle">
+                            <input type="checkbox" x-model="config.l1_enabled" />
+                            <span class="toggler"></span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="field">
+                    <div class="field-label">
+                        <div class="field-title">L2 Deep-Path Circuit Breaker (ms)</div>
+                        <div class="field-description">
+                            Per-provider deadline for external RAG/Obsidian queries before tripping open (default: 600ms).
+                        </div>
+                    </div>
+                    <div class="field-control">
+                        <input type="number" class="input" x-model.number="config.circuit_breaker_timeout_ms" min="200" max="5000" step="100" />
+                    </div>
+                </div>
+
+                <div class="field">
+                    <div class="field-label">
+                        <div class="field-title">Prompt Cache Optimization</div>
+                        <div class="field-description">
+                            Orders XML sections deterministically to achieve >85% cache hit rates on Claude 3.5/3.7 & Gemini.
+                        </div>
+                    </div>
+                    <div class="field-control">
+                        <label class="toggle">
+                            <input type="checkbox" x-model="config.prompt_cache_optimization" />
+                            <span class="toggler"></span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="section-title">JEV Bridge (Judge)</div>
+                <div class="section-description">
+                    Async judge layer: shadow verdicts, distill → L1 hot facts, eviction advice. Never on the hot path (I6 silent degradation).
+                </div>
+
+                <div class="field">
+                    <div class="field-label">
+                        <div class="field-title">Enable JEV Judge</div>
+                        <div class="field-description">Runs post-turn shadow judge and distillation.</div>
+                    </div>
+                    <div class="field-control">
+                        <label class="toggle">
+                            <input type="checkbox" x-model="config.jev_enabled" />
+                            <span class="toggler"></span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="field">
+                    <div class="field-label">
+                        <div class="field-title">Distill → L1 Hot Facts</div>
+                        <div class="field-description">Archive pruned turns into compact hot facts (I3: assistant prose never distilled).</div>
+                    </div>
+                    <div class="field-control">
+                        <label class="toggle">
+                            <input type="checkbox" x-model="config.jev_distill_enabled" />
+                            <span class="toggler"></span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="field">
+                    <div class="field-label">
+                        <div class="field-title">Max Distilled Facts / Turn</div>
+                        <div class="field-description">Cap for new facts written per message loop end (default 3).</div>
+                    </div>
+                    <div class="field-control">
+                        <input type="number" class="input" x-model.number="config.jev_distill_max_facts" min="1" max="10" />
+                    </div>
+                </div>
+
+                <div class="field">
+                    <div class="field-label">
+                        <div class="field-title">Jev Remote (OpenRouter)</div>
+                        <div class="field-description">Hybrid reranker scorer via OpenRouter decisions API. Key: data/jev_openrouter_key.txt.</div>
+                    </div>
+                    <div class="field-control">
+                        <label class="toggle">
+                            <input type="checkbox" x-model="config.jev_remote_enabled" />
+                            <span class="toggler"></span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </template>
+    </div>
+</body>
+</html>

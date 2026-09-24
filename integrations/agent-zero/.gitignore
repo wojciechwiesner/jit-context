@@ -1,0 +1,7 @@
+# Agent Zero runtime state is local, not part of the distributable plugin.
+data/
+config.json
+.toggle-*
+__pycache__/
+*.pyc
+state.html

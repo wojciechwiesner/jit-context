@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased] - 2026-09-24
+
+### Added
+- Added the independently versioned Agent Zero v0.4.0 JIT/JEV plugin under `integrations/agent-zero/` with its Apache-2.0 license, host-specific install guidance, isolated adapter tests and dual-suite CI. No release or deployment is implied.
+
+### Fixed
+- Declared `httpx` and `pydantic` as core runtime dependencies after the clean-environment CI run exposed missing imports.
+
 ## [0.2.11] - 2026-09-23
 
 ### Fixed

@@ -1,0 +1,21 @@
+mode: "active"
+max_capsule_tokens: 1500
+l0_enabled: true
+l1_enabled: true
+l2_enabled: true
+l2_mode: "shadow"
+circuit_breaker_timeout_ms: 600
+recent_turn_fence: 4
+telemetry_enabled: true
+prompt_cache_optimization: true
+# --- JEV Bridge (merged) ---
+jev_enabled: true
+jev_http_url: ""
+jev_distill_enabled: true
+jev_distill_max_facts: 3
+jev_eviction_budget_pct: 0.9
+jev_remote_enabled: true
+jev_remote_model: "~typesafe/jev-latest"
+jev_remote_timeout: 3.0
+jev_remote_ttl: 300
+jev_remote_max_facts: 40
