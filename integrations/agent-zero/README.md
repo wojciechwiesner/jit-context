@@ -21,10 +21,11 @@ cp -R /tmp/jit-context/integrations/agent-zero/. /a0/usr/plugins/jit_context/
 python3 /a0/usr/plugins/jit_context/execute.py
 ```
 
-The commands above describe installation; the copy has not been performed on
-any production Agent Zero host as part of this repository migration. To avoid
-mixing stale files on an already-populated install, back up and replace the
-plugin directory during a scheduled deployment. Keep runtime `data/`,
+The repository alone does not activate the plugin. Production installation
+and its verification are recorded in
+[`docs/plans/2026-09-24-agent-zero-integration.md`](../../docs/plans/2026-09-24-agent-zero-integration.md).
+To avoid mixing stale files on an already-populated install, back up and replace
+the plugin directory during a scheduled deployment. Keep runtime `data/`,
 `config.json`, and secrets outside version control. Configure the JEV API
 credential through the host configuration/environment, not this repository.
 
