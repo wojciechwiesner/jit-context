@@ -1,0 +1,138 @@
+{
+  "passed": 22,
+  "failed": 0,
+  "rows": [
+    {
+      "name": "test_referral_get_has_no_side_effects",
+      "outcome": "passed",
+      "seconds": 0.012,
+      "message": ""
+    },
+    {
+      "name": "test_get_confirm_does_not_mutate",
+      "outcome": "passed",
+      "seconds": 0.008,
+      "message": ""
+    },
+    {
+      "name": "test_owner_materials_publish_after_exact_approval",
+      "outcome": "passed",
+      "seconds": 0.006,
+      "message": ""
+    },
+    {
+      "name": "test_olx_disabled_does_not_fetch",
+      "outcome": "passed",
+      "seconds": 0.004,
+      "message": ""
+    },
+    {
+      "name": "test_republish_false_blocks_imported_publication",
+      "outcome": "passed",
+      "seconds": 0.005,
+      "message": ""
+    },
+    {
+      "name": "test_host_retyped_fields_can_publish",
+      "outcome": "passed",
+      "seconds": 0.006,
+      "message": ""
+    },
+    {
+      "name": "test_idempotent_import_and_webhook",
+      "outcome": "passed",
+      "seconds": 0.006,
+      "message": ""
+    },
+    {
+      "name": "test_ambiguous_price_is_not_guessed",
+      "outcome": "passed",
+      "seconds": 0.004,
+      "message": ""
+    },
+    {
+      "name": "test_unknown_equipment_is_not_a_match",
+      "outcome": "passed",
+      "seconds": 0.008,
+      "message": ""
+    },
+    {
+      "name": "test_ai_cannot_invent_parking",
+      "outcome": "passed",
+      "seconds": 0.005,
+      "message": ""
+    },
+    {
+      "name": "test_foreign_host_cannot_read_private",
+      "outcome": "passed",
+      "seconds": 0.008,
+      "message": ""
+    },
+    {
+      "name": "test_new_version_invalidates_approval",
+      "outcome": "passed",
+      "seconds": 0.006,
+      "message": ""
+    },
+    {
+      "name": "test_marketing_opt_out_cancels_queued",
+      "outcome": "passed",
+      "seconds": 0.006,
+      "message": ""
+    },
+    {
+      "name": "test_unknown_delivery_does_not_failover",
+      "outcome": "passed",
+      "seconds": 0.006,
+      "message": ""
+    },
+    {
+      "name": "test_source_403_does_not_retry_or_unpublish",
+      "outcome": "passed",
+      "seconds": 0.016,
+      "message": ""
+    },
+    {
+      "name": "test_stale_30_days_pauses_and_confirm_restores",
+      "outcome": "passed",
+      "seconds": 0.009,
+      "message": ""
+    },
+    {
+      "name": "test_past_available_from_does_not_publish",
+      "outcome": "passed",
+      "seconds": 0.005,
+      "message": ""
+    },
+    {
+      "name": "test_payment_is_not_a_state",
+      "outcome": "passed",
+      "seconds": 0.007,
+      "message": ""
+    },
+    {
+      "name": "test_imported_instructions_are_data",
+      "outcome": "passed",
+      "seconds": 0.005,
+      "message": ""
+    },
+    {
+      "name": "test_external_media_without_rights_blocks_publish",
+      "outcome": "passed",
+      "seconds": 0.005,
+      "message": ""
+    },
+    {
+      "name": "test_medical_profile_requires_review",
+      "outcome": "passed",
+      "seconds": 0.005,
+      "message": ""
+    },
+    {
+      "name": "test_enable_policy_requires_evidence",
+      "outcome": "passed",
+      "seconds": 0.004,
+      "message": ""
+    }
+  ]
+}

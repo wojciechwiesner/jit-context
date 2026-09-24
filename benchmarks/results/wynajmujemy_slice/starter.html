@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="refresh" content="2">
+<title>Wynajmujemy slice</title>
+<style>
+body { margin: 0; background: #0d0e12; color: #e8e6e3; font: 15px/1.45 ui-sans-serif, sans-serif; }
+main { max-width: 920px; margin: 0 auto; padding: 28px 20px 48px; }
+h1 { font-size: 22px; font-weight: 560; margin: 0 0 8px; }
+p { color: #a8a29e; margin: 0 0 18px; }
+table { width: 100%; border-collapse: collapse; }
+td { border-top: 1px solid #2a2c33; padding: 10px 8px; vertical-align: top; }
+.ok { color: #8fbc8f; }
+.bad { color: #e07a5f; }
+.msg { color: #a8a29e; font-family: ui-monospace, monospace; font-size: 12px; }
+</style>
+</head>
+<body>
+<main>
+<h1>Wynajmujemy slice</h1>
+<p>0 passed, 22 failed, 22 finished. This page reloads itself.</p>
+<table><tr><td class="bad">failed</td><td>test_referral_get_has_no_side_effects</td><td>0.004s</td><td class="msg">     +  where 501 = &lt;Response [501 Not Implemented]&gt;.status_code</td></tr>
+<tr><td class="bad">failed</td><td>test_get_confirm_does_not_mutate</td><td>0.001s</td><td class="msg">     +  where 501 = &lt;Response [501 Not Implemented]&gt;.status_code</td></tr>
+<tr><td class="bad">failed</td><td>test_owner_materials_publish_after_exact_approval</td><td>0.001s</td><td class="msg">     +  where 501 = &lt;Response [501 Not Implemented]&gt;.status_code</td></tr>
+<tr><td class="bad">failed</td><td>test_olx_disabled_does_not_fetch</td><td>0.001s</td><td class="msg">     +  where 501 = &lt;Response [501 Not Implemented]&gt;.status_code</td></tr>
+<tr><td class="bad">failed</td><td>test_republish_false_blocks_imported_publication</td><td>0.001s</td><td class="msg">     +  where 501 = &lt;Response [501 Not Implemented]&gt;.status_code</td></tr>
+<tr><td class="bad">failed</td><td>test_host_retyped_fields_can_publish</td><td>0.001s</td><td class="msg">E   KeyError: &#x27;listing_id&#x27;</td></tr>
+<tr><td class="bad">failed</td><td>test_idempotent_import_and_webhook</td><td>0.001s</td><td class="msg">     +  where 501 = &lt;Response [501 Not Implemented]&gt;.status_code</td></tr>
+<tr><td class="bad">failed</td><td>test_ambiguous_price_is_not_guessed</td><td>0.001s</td><td class="msg">     +  where 501 = &lt;Response [501 Not Implemented]&gt;.status_code</td></tr>
+<tr><td class="bad">failed</td><td>test_unknown_equipment_is_not_a_match</td><td>0.001s</td><td class="msg">E   KeyError: &#x27;listing_id&#x27;</td></tr>
+<tr><td class="bad">failed</td><td>test_ai_cannot_invent_parking</td><td>0.001s</td><td class="msg">E   KeyError: &#x27;listing_id&#x27;</td></tr>
+<tr><td class="bad">failed</td><td>test_foreign_host_cannot_read_private</td><td>0.001s</td><td class="msg">E   KeyError: &#x27;listing_id&#x27;</td></tr>
+<tr><td class="bad">failed</td><td>test_new_version_invalidates_approval</td><td>0.0s</td><td class="msg">E   KeyError: &#x27;listing_id&#x27;</td></tr>
+<tr><td class="bad">failed</td><td>test_marketing_opt_out_cancels_queued</td><td>0.001s</td><td class="msg">     +      where post = &lt;test_slice.client_for.&lt;locals&gt;._Client object at 0x108850790&gt;.post</td></tr>
+<tr><td class="bad">failed</td><td>test_unknown_delivery_does_not_failover</td><td>0.001s</td><td class="msg">E   KeyError: &#x27;outbox&#x27;</td></tr>
+<tr><td class="bad">failed</td><td>test_source_403_does_not_retry_or_unpublish</td><td>0.0s</td><td class="msg">E   KeyError: &#x27;listing_id&#x27;</td></tr>
+<tr><td class="bad">failed</td><td>test_stale_30_days_pauses_and_confirm_restores</td><td>0.001s</td><td class="msg">E   KeyError: &#x27;listing_id&#x27;</td></tr>
+<tr><td class="bad">failed</td><td>test_past_available_from_does_not_publish</td><td>0.0s</td><td class="msg">E   KeyError: &#x27;listing_id&#x27;</td></tr>
+<tr><td class="bad">failed</td><td>test_payment_is_not_a_state</td><td>0.0s</td><td class="msg">E   KeyError: &#x27;listing_id&#x27;</td></tr>
+<tr><td class="bad">failed</td><td>test_imported_instructions_are_data</td><td>0.001s</td><td class="msg">     +  where 501 = &lt;Response [501 Not Implemented]&gt;.status_code</td></tr>
+<tr><td class="bad">failed</td><td>test_external_media_without_rights_blocks_publish</td><td>0.001s</td><td class="msg">E   KeyError: &#x27;listing_id&#x27;</td></tr>
+<tr><td class="bad">failed</td><td>test_medical_profile_requires_review</td><td>0.001s</td><td class="msg">E   KeyError: &#x27;listing_id&#x27;</td></tr>
+<tr><td class="bad">failed</td><td>test_enable_policy_requires_evidence</td><td>0.001s</td><td class="msg">     +  where 501 = &lt;Response [501 Not Implemented]&gt;.status_code</td></tr></table>
+</main>
+</body>
+</html>

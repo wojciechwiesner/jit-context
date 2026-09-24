@@ -1,0 +1,138 @@
+{
+  "passed": 0,
+  "failed": 22,
+  "rows": [
+    {
+      "name": "test_referral_get_has_no_side_effects",
+      "outcome": "failed",
+      "seconds": 0.004,
+      "message": "     +  where 501 = <Response [501 Not Implemented]>.status_code"
+    },
+    {
+      "name": "test_get_confirm_does_not_mutate",
+      "outcome": "failed",
+      "seconds": 0.001,
+      "message": "     +  where 501 = <Response [501 Not Implemented]>.status_code"
+    },
+    {
+      "name": "test_owner_materials_publish_after_exact_approval",
+      "outcome": "failed",
+      "seconds": 0.001,
+      "message": "     +  where 501 = <Response [501 Not Implemented]>.status_code"
+    },
+    {
+      "name": "test_olx_disabled_does_not_fetch",
+      "outcome": "failed",
+      "seconds": 0.001,
+      "message": "     +  where 501 = <Response [501 Not Implemented]>.status_code"
+    },
+    {
+      "name": "test_republish_false_blocks_imported_publication",
+      "outcome": "failed",
+      "seconds": 0.001,
+      "message": "     +  where 501 = <Response [501 Not Implemented]>.status_code"
+    },
+    {
+      "name": "test_host_retyped_fields_can_publish",
+      "outcome": "failed",
+      "seconds": 0.001,
+      "message": "E   KeyError: 'listing_id'"
+    },
+    {
+      "name": "test_idempotent_import_and_webhook",
+      "outcome": "failed",
+      "seconds": 0.001,
+      "message": "     +  where 501 = <Response [501 Not Implemented]>.status_code"
+    },
+    {
+      "name": "test_ambiguous_price_is_not_guessed",
+      "outcome": "failed",
+      "seconds": 0.001,
+      "message": "     +  where 501 = <Response [501 Not Implemented]>.status_code"
+    },
+    {
+      "name": "test_unknown_equipment_is_not_a_match",
+      "outcome": "failed",
+      "seconds": 0.001,
+      "message": "E   KeyError: 'listing_id'"
+    },
+    {
+      "name": "test_ai_cannot_invent_parking",
+      "outcome": "failed",
+      "seconds": 0.001,
+      "message": "E   KeyError: 'listing_id'"
+    },
+    {
+      "name": "test_foreign_host_cannot_read_private",
+      "outcome": "failed",
+      "seconds": 0.001,
+      "message": "E   KeyError: 'listing_id'"
+    },
+    {
+      "name": "test_new_version_invalidates_approval",
+      "outcome": "failed",
+      "seconds": 0.0,
+      "message": "E   KeyError: 'listing_id'"
+    },
+    {
+      "name": "test_marketing_opt_out_cancels_queued",
+      "outcome": "failed",
+      "seconds": 0.001,
+      "message": "     +      where post = <test_slice.client_for.<locals>._Client object at 0x108850790>.post"
+    },
+    {
+      "name": "test_unknown_delivery_does_not_failover",
+      "outcome": "failed",
+      "seconds": 0.001,
+      "message": "E   KeyError: 'outbox'"
+    },
+    {
+      "name": "test_source_403_does_not_retry_or_unpublish",
+      "outcome": "failed",
+      "seconds": 0.0,
+      "message": "E   KeyError: 'listing_id'"
+    },
+    {
+      "name": "test_stale_30_days_pauses_and_confirm_restores",
+      "outcome": "failed",
+      "seconds": 0.001,
+      "message": "E   KeyError: 'listing_id'"
+    },
+    {
+      "name": "test_past_available_from_does_not_publish",
+      "outcome": "failed",
+      "seconds": 0.0,
+      "message": "E   KeyError: 'listing_id'"
+    },
+    {
+      "name": "test_payment_is_not_a_state",
+      "outcome": "failed",
+      "seconds": 0.0,
+      "message": "E   KeyError: 'listing_id'"
+    },
+    {
+      "name": "test_imported_instructions_are_data",
+      "outcome": "failed",
+      "seconds": 0.001,
+      "message": "     +  where 501 = <Response [501 Not Implemented]>.status_code"
+    },
+    {
+      "name": "test_external_media_without_rights_blocks_publish",
+      "outcome": "failed",
+      "seconds": 0.001,
+      "message": "E   KeyError: 'listing_id'"
+    },
+    {
+      "name": "test_medical_profile_requires_review",
+      "outcome": "failed",
+      "seconds": 0.001,
+      "message": "E   KeyError: 'listing_id'"
+    },
+    {
+      "name": "test_enable_policy_requires_evidence",
+      "outcome": "failed",
+      "seconds": 0.001,
+      "message": "     +  where 501 = <Response [501 Not Implemented]>.status_code"
+    }
+  ]
+}

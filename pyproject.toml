@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "jit-context"
 version = "0.2.11"
-description = "An Epistemic Context Runtime & JIT OS for AI Agents"
+description = "JIT-JEV Context OS: Epistemic Context Runtime & System 1 Gate for AI Agents"
 readme = "README.md"
 authors = [{ name = "Wojciech Wiesner", email = "wojciech@theones.io" }]
 license = { text = "MIT" }
@@ -33,3 +33,6 @@ Repository = "https://github.com/wojciechwiesner/jit-context"
 [project.scripts]
 jit-doctor = "health.doctor:main"
 jit-observatory = "telemetry.observatory:main"
+
+[tool.pytest.ini_options]
+testpaths = ["src/tests"]

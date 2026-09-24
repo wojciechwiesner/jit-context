@@ -86,7 +86,7 @@ class JevDecisionScorer:
         api_key: Optional[str] = None,
         model: str = DEFAULT_MODEL,
         ttl_s: float = 300.0,
-        timeout_s: float = 3.0,
+        timeout_s: float = 10.0,
         max_facts: int = 40,
     ) -> None:
         self.api_key = api_key or os.environ.get("JEV_OPENROUTER_KEY", "").strip()
@@ -169,15 +169,15 @@ class JevDecisionScorer:
         questions = {}
         for i, c in enumerate(sliced):
             k = str(c.get("key", f"item_{i}"))
-            val = str(c.get("value", c.get("text", "")))[:200]
+            val = str(c.get("value", c.get("text", "")))
             questions[f"q_{i}"] = {
                 "type": "noul",
-                "instructions": f"Fact [{k}: {val}] is relevant for: {query[:150]}",
+                "instructions": f"Fact [{k}: {val}] is relevant for: {query}",
             }
 
         payload = {
             "model": self.model,
-            "state": {"query": query[:300], "task": "evaluate candidate relevance"},
+            "state": {"query": query, "task": "evaluate candidate relevance"},
             "questions": questions,
         }
 
@@ -265,15 +265,15 @@ class JevDecisionScorer:
         questions = {}
         for i, c in enumerate(sliced):
             k = str(c.get("key", f"item_{i}"))
-            val = str(c.get("value", c.get("text", "")))[:200]
+            val = str(c.get("value", c.get("text", "")))
             questions[f"q_{i}"] = {
                 "type": "noul",
-                "instructions": f"Fact [{k}: {val}] is relevant for: {query[:150]}",
+                "instructions": f"Fact [{k}: {val}] is relevant for: {query}",
             }
 
         payload = {
             "model": self.model,
-            "state": {"query": query[:300], "task": "evaluate candidate relevance"},
+            "state": {"query": query, "task": "evaluate candidate relevance"},
             "questions": questions,
         }
 

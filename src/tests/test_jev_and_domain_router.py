@@ -121,6 +121,49 @@ def test_jev_score_remote_noul_parsing(monkeypatch):
     assert scores["fact_b"] == 0.12
 
 
+def test_jev_does_not_truncate_candidate_value(monkeypatch):
+    """The client must send the full fact and the full query."""
+    scorer = JevDecisionScorer(api_key="sk-test-key")
+    marker = "NEEDLE-" + ("x" * 400)
+    query = "where is the needle " + ("q" * 400)
+    captured = {}
+
+    class FakeResponse:
+        status = 200
+
+        def read(self):
+            return b'{"answers": {"q_0": {"noul": 0.5}}}'
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *args):
+            return False
+
+    import json
+    import urllib.request
+
+    def fake_urlopen(req, timeout=None):
+        captured["body"] = json.loads(req.data.decode("utf-8"))
+        return FakeResponse()
+
+    monkeypatch.setattr(urllib.request, "urlopen", fake_urlopen)
+    scorer.score_remote(query, [{"key": "target.py", "value": marker}])
+    body = captured["body"]
+    instructions = body["questions"]["q_0"]["instructions"]
+    assert marker in instructions
+    assert query in instructions
+    assert body["state"]["query"] == query
+
+    captured.clear()
+    scorer.score_remote_detailed(query, [{"key": "target.py", "value": marker}])
+    body = captured["body"]
+    instructions = body["questions"]["q_0"]["instructions"]
+    assert marker in instructions
+    assert query in instructions
+    assert body["state"]["query"] == query
+
+
 # --- Domain Router Tests ---
 
 def test_domain_router_whatsapp():
