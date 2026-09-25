@@ -13,6 +13,7 @@ import os
 import re
 import threading
 import time
+import unicodedata
 import urllib.error
 import urllib.request
 from typing import Any, Callable, Dict, List, Optional, Set, Tuple
@@ -20,19 +21,44 @@ from typing import Any, Callable, Dict, List, Optional, Set, Tuple
 DECISIONS_URL = "https://openrouter.ai/api/alpha/decisions"
 DEFAULT_MODEL = "~typesafe/jev-latest"
 
-_TOKEN_RE = re.compile(r"[a-z0-9_:\-.]{3,}")
+_TOKEN_RE = re.compile(r"[\w:\-.]{3,}", re.UNICODE)
 _STOP_WORDS = {
     "the", "and", "for", "that", "this", "with", "you", "are", "not",
     "nie", "jest", "tak", "jak", "dla", "oraz", "przez", "ktore", "jako",
-    "oraz", "wiec", "albo", "oraz", "lecz", "moze", "ktory", "ktora",
+    "wiec", "albo", "lecz", "moze", "ktory", "ktora", "czy", "sie",
 }
+# Reuse cached scores of a previous query when token-set Jaccard similarity reaches this value.
+DEFAULT_FUZZY_THRESHOLD = 0.5
+
+
+def fold_text(text: str) -> str:
+    """Lowercase and strip diacritics so 'połączenie' and 'polaczenie' tokenize identically."""
+    lowered = text.lower().replace("ł", "l")
+    decomposed = unicodedata.normalize("NFKD", lowered)
+    return "".join(ch for ch in decomposed if not unicodedata.combining(ch))
 
 
 def tokenize(text: str) -> Set[str]:
-    """Extract lowercased semantic tokens with stopwords removed."""
+    """Extract folded semantic tokens (Unicode-aware, diacritics removed) with stopwords removed."""
     if not text:
         return set()
-    return {t for t in _TOKEN_RE.findall(text.lower()) if t not in _STOP_WORDS}
+    tokens = set()
+    for raw in _TOKEN_RE.findall(fold_text(text)):
+        token = raw.strip(".:-_")
+        if len(token) >= 3 and token not in _STOP_WORDS:
+            tokens.add(token)
+    return tokens
+
+
+def fact_key(value: str) -> str:
+    """Content-addressed candidate key, stable across turns even when the fact list changes."""
+    return "fact_" + hashlib.sha1(value.encode("utf-8")).hexdigest()[:10]
+
+
+def _jaccard(a: Set[str], b: Set[str]) -> float:
+    if not a or not b:
+        return 0.0
+    return len(a & b) / len(a | b)
 
 
 def token_overlap_score(candidate_text: str, query_tokens: Set[str]) -> float:
@@ -95,31 +121,46 @@ class JevDecisionScorer:
         self.timeout_s = timeout_s
         self.max_facts = max_facts
 
-        self._cache: Dict[str, Tuple[float, Dict[str, float]]] = {}
+        self._cache: Dict[str, Tuple[float, Set[str], Dict[str, float]]] = {}
         self._cache_lock = threading.Lock()
         self._breaker = CircuitBreaker()
         self._inflight: Set[str] = set()
         self._inflight_lock = threading.Lock()
+        self.fuzzy_threshold = DEFAULT_FUZZY_THRESHOLD
 
     def is_available(self) -> bool:
         """True if configured with an API key and circuit breaker is open to requests."""
         return bool(self.api_key) and self._breaker.allow_request()
 
     def _query_hash(self, query: str) -> str:
-        return hashlib.sha256(query.strip().lower().encode("utf-8")).hexdigest()[:16]
+        """Hash of the normalized token set, so '?' or word order do not cause a cache miss."""
+        tokens = tokenize(query)
+        basis = " ".join(sorted(tokens)) if tokens else query.strip().lower()
+        return hashlib.sha256(basis.encode("utf-8")).hexdigest()[:16]
 
     def get_cached_scores(self, query: str) -> Optional[Dict[str, float]]:
-        """Non-blocking cache lookup (<0.05 ms). Returns scores dict or None if absent/expired."""
+        """Non-blocking cache lookup (<0.1 ms).
+
+        Exact match on the normalized token set first; otherwise reuses the freshest entry whose
+        token-set Jaccard similarity with the query reaches ``fuzzy_threshold``. This lets a
+        prefetch fired on turn N serve turn N+1 when the user rephrases or continues the topic.
+        Scores are per candidate key, so callers should use content-addressed keys (``fact_key``).
+        """
         h = self._query_hash(query)
+        q_tokens = tokenize(query)
+        now = time.time()
         with self._cache_lock:
+            for k in [k for k, (ts, _, _) in self._cache.items() if now - ts > self.ttl_s]:
+                del self._cache[k]
             entry = self._cache.get(h)
-            if entry is None:
-                return None
-            ts, scores = entry
-            if time.time() - ts > self.ttl_s:
-                del self._cache[h]
-                return None
-            return dict(scores)
+            if entry is not None:
+                return dict(entry[2])
+            best: Optional[Tuple[float, float, Dict[str, float]]] = None
+            for ts, tokens, scores in self._cache.values():
+                sim = _jaccard(q_tokens, tokens)
+                if sim >= self.fuzzy_threshold and (best is None or (sim, ts) > (best[0], best[1])):
+                    best = (sim, ts, scores)
+            return dict(best[2]) if best else None
 
     def _store_cache(self, query: str, scores: Dict[str, float]) -> None:
         h = self._query_hash(query)
@@ -128,7 +169,7 @@ class JevDecisionScorer:
                 # Evict oldest 32 items
                 for k in sorted(self._cache, key=lambda x: self._cache[x][0])[:32]:
                     self._cache.pop(k, None)
-            self._cache[h] = (time.time(), dict(scores))
+            self._cache[h] = (time.time(), tokenize(query), dict(scores))
 
     def prefetch_async(self, query: str, candidates: List[Dict[str, str]]) -> None:
         """Fires an asynchronous daemon prefetch off the hot path."""

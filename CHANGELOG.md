@@ -47,6 +47,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added a wheel-level distribution test that installs the CLI in a separate virtual environment, probes an ephemeral localhost Observatory, verifies bundled HTML/manifest files, and asserts a missing Hermes plugin yields a nonzero doctor exit.
 
 ### Fixed
+- JEV scores now actually reach the capsule. Previously `compiler.py` fired the prefetch and reranked in the same call with
+  exact-text cache keys and positional fact keys (`fact_{i}`), so the remote result was almost never used. Now: content-addressed
+  fact keys (`fact_key`), cache keyed by the normalized token set, and fuzzy reuse (token Jaccard >= 0.5, TTL 300 s) so a prefetch
+  from turn N reranks turn N+1. Measured against the live API: prefetch lands in 0.73 s, the next paraphrased turn ranks the
+  relevant fact first, rerank 0.16 ms.
+- The JEV tokenizer handles Polish: Unicode-aware, diacritics folded (`połączenie` == `polaczenie`), words no longer split on
+  non-ASCII letters. Duplicate stopwords removed.
 - `jit init` no longer strips a trailing `-vN` from the dossier name and no longer overwrites an existing Obsidian note. The written stem matches runtime lookup. A legacy stripped file is kept and used only when the canonical note is missing.
 - Declared `httpx` and `pydantic` as core runtime dependencies after the clean-environment CI run exposed missing imports.
 - Corrected the `jit`, `jit-doctor` and `jit-observatory` wheel entrypoints; explicitly ship dashboard HTML and the plugin manifest, exclude test modules from the wheel, and align the advertised Python minimum with CI (3.11).

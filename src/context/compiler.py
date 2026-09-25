@@ -344,12 +344,13 @@ def compile_context(
 
     # JEV Asynchronous Prefetch & Hybrid Fact Reranking (Slot 2 + Slot 5)
     try:
-        from cognitive.jev_engine import get_jev_scorer
+        from cognitive.jev_engine import fact_key, get_jev_scorer
         jev = get_jev_scorer()
         if recalled_facts:
-            candidates = [{"key": f"fact_{i}", "value": f} for i, f in enumerate(recalled_facts)]
-            jev.prefetch_async(user_message, candidates)
+            # Content-addressed keys: JEV scores cached on an earlier turn stay valid for the same fact.
+            candidates = [{"key": fact_key(f), "value": f} for f in recalled_facts]
             reranked = jev.rerank_hybrid(user_message, candidates)
+            jev.prefetch_async(user_message, candidates)
             recalled_facts = [r["value"] for r in reranked]
     except Exception:
         pass
