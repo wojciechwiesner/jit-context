@@ -1,0 +1,247 @@
+Starting Full Cognitive System Benchmark on 10 tasks (Mode: STANDARD, Worker: qwen3.8:jit)...
+
+=======================================================
+COGNITIVE TASK [1/10]: e1fc63a2
+Q: If Eliud Kipchoge could maintain his record-making marathon pace indefinitely, how many thousand hours would it take him...
+GT: 17
+=======================================================
+  [Bus Intuition (['text'])]: direct_execution | tools: ['python_exec', 'web_search']
+  [Bus Meta-Plan]:
+    Ego directly executes and investigates with tools.
+  [Ego Worker]: Pure Local Qwen (qwen3.8:jit) via Ollama
+  [Turn 1] Tool: web_search(['query']) -> raw 1869 chars, processed 1869 chars (spill: web_search_e1fc63a2-da7a-432f-be78-7c4a95598703_1790428639107_6a01fb6ce84a.raw)
+  [Turn 1] Tool: web_search(['query']) -> raw 875 chars, processed 875 chars (spill: web_search_e1fc63a2-da7a-432f-be78-7c4a95598703_1790428642196_0349a9811802.raw)
+  [Turn 2] Tool: web_extract(['url']) -> raw 95190 chars, processed 1230 chars (spill: web_extract_e1fc63a2-da7a-432f-be78-7c4a95598703_1790428657059_a0906e339032.raw)
+  [Turn 2] Tool: web_extract(['url']) -> raw 37327 chars, processed 875 chars (spill: web_extract_e1fc63a2-da7a-432f-be78-7c4a95598703_1790428660369_257ac7ce100e.raw)
+  [Turn 3] Tool: web_extract(['url']) -> raw 268230 chars, processed 777 chars (spill: web_extract_e1fc63a2-da7a-432f-be78-7c4a95598703_1790428681597_83aca2da8344.raw)
+  [Turn 4] Tool: python_exec(['code']) -> raw 183 chars, processed 183 chars (spill: python_exec_e1fc63a2-da7a-432f-be78-7c4a95598703_1790428713064_d9c9919790dc.raw)
+  [Sumienie Gate]: VERIFIED (GATE_PASSED:GROUNDED_EXACT) -> '17000' => '17'
+  [Experience Ingest]: Committed exp_389c434d94645268 to SQLite WAL
+--> RESULT: [VERIFIED_PASS]
+    Model Answer: 17
+    Ground Truth: 17
+    Gate: VERIFIED (GATE_PASSED:GROUNDED_EXACT)
+    Time: 132.79s | Tools: 6
+
+=======================================================
+COGNITIVE TASK [2/10]: 8e867cd7
+Q: How many studio albums were published by Mercedes Sosa between 2000 and 2009 (included)? You can use the latest 2022 ver...
+GT: 3
+=======================================================
+  [Bus Intuition (['text'])]: direct_execution | tools: ['python_exec', 'web_search']
+  [Bus Meta-Plan]:
+    Ego directly executes and investigates with tools.
+  [Ego Worker]: Pure Local Qwen (qwen3.8:jit) via Ollama
+  [Turn 1] Tool: web_search(['query']) -> raw 2213 chars, processed 2213 chars (spill: web_search_8e867cd7-cff9-4e6c-867a-ff5ddc2550be_1790428759143_006eac894f67.raw)
+  [Turn 2] Tool: web_extract(['url']) -> raw 43039 chars, processed 450 chars (spill: web_extract_8e867cd7-cff9-4e6c-867a-ff5ddc2550be_1790428772012_827a077e45eb.raw)
+  [Rozwaga]: Sumienie UNVERIFIED (UNGROUNDED) -> second attempt
+  [Turn 1] Tool: web_search(['query']) -> raw 2695 chars, processed 2695 chars (spill: web_search_8e867cd7-cff9-4e6c-867a-ff5ddc2550be_1790428806473_39403b8a5c07.raw)
+  [Turn 2] Tool: web_extract(['url']) -> raw 43039 chars, processed 450 chars (spill: web_extract_8e867cd7-cff9-4e6c-867a-ff5ddc2550be_1790428819620_827a077e45eb.raw)
+  [Rozwaga]: A='3 studio albums were published by Mercedes Sosa between 2000 and 2009 (inclusive):' B='3' -> 1 (gate_preference: only candidate verified by Sumienie)
+  [Sumienie Gate]: VERIFIED (GATE_PASSED:GROUNDED_EXACT) -> '3' => '3'
+  [Experience Ingest]: Committed exp_359c363f6fda258e to SQLite WAL
+--> RESULT: [VERIFIED_PASS]
+    Model Answer: 3
+    Ground Truth: 3
+    Gate: VERIFIED (GATE_PASSED:GROUNDED_EXACT)
+    Time: 99.44s | Tools: 4
+
+=======================================================
+COGNITIVE TASK [3/10]: ec09fa32
+Q: Here's a fun riddle that I think you'll enjoy.
+
+You have been selected to play the final round of the hit new game show ...
+GT: 3
+=======================================================
+  [Bus Intuition (['text'])]: direct_execution | tools: ['python_exec', 'web_search']
+  [Bus Meta-Plan]:
+    Ego directly executes and investigates with tools.
+  [Ego Worker]: Pure Local Qwen (qwen3.8:jit) via Ollama
+  [Epistemic Gate]: Blocked premature calculation without Python. Forcing python_exec verification.
+  [Turn 6] API error (qwen3.8:jit): HTTP Error 500: Internal Server Error {"error":{"message":"llama-server returned invalid tool call arguments for \"python_exec\": unexpected end of JSON input","type":"api_error","param":null,"code":null}}
+
+  [Rozwaga]: Sumienie REJECTED (NO_CANDIDATE_ANSWER) -> second attempt
+  [Turn 1] API error (qwen3.8:jit): HTTP Error 500: Internal Server Error {"error":{"message":"llama-server returned invalid tool call arguments for \"python_exec\": unexpected end of JSON input","type":"api_error","param":null,"code":null}}
+
+  [Rozwaga]: A='' B='' -> 0 (fallback: all candidates empty)
+  [Sumienie Gate]: REJECTED (NO_CANDIDATE_ANSWER) -> '' => ''
+--> RESULT: [FAIL]
+    Model Answer: 
+    Ground Truth: 3
+    Gate: REJECTED (NO_CANDIDATE_ANSWER)
+    Time: 696.50s | Tools: 0
+
+=======================================================
+COGNITIVE TASK [4/10]: 5d0080cb
+Q: What was the volume in m^3 of the fish bag that was calculated in the University of Leicester paper "Can Hiccup Supply E...
+GT: 0.1777
+=======================================================
+  [Bus Intuition (['text'])]: direct_execution | tools: ['python_exec', 'web_search']
+  [Bus Meta-Plan]:
+    Ego directly executes and investigates with tools.
+  [Ego Worker]: Pure Local Qwen (qwen3.8:jit) via Ollama
+  [Turn 1] Tool: web_search(['query']) -> raw 187 chars, processed 187 chars (spill: web_search_5d0080cb-90d7-4712-bc33-848150e917d3_1790429556549_16c29c034a22.raw)
+  [Turn 3] Tool: web_search(['query']) -> raw 1277 chars, processed 1277 chars (spill: web_search_5d0080cb-90d7-4712-bc33-848150e917d3_1790429571907_193aa7e42272.raw)
+  [Sumienie Gate]: VERIFIED (GATE_PASSED:GROUNDED_EXACT) -> '0.1777 m³' => '0.1777'
+  [Experience Ingest]: Committed exp_3a80941163a5a5dc to SQLite WAL
+--> RESULT: [VERIFIED_PASS]
+    Model Answer: 0.1777
+    Ground Truth: 0.1777
+    Gate: VERIFIED (GATE_PASSED:GROUNDED_EXACT)
+    Time: 46.92s | Tools: 2
+
+=======================================================
+COGNITIVE TASK [5/10]: a1e91b78
+Q: In the video https://www.youtube.com/watch?v=L1vXCYZAYYM, what is the highest number of bird species to be on camera sim...
+GT: 3
+=======================================================
+  [Bus Intuition (['text', 'video'])]: direct_execution | tools: ['python_exec', 'video_inspect', 'web_extract', 'web_search']
+  [Bus Meta-Plan]:
+    Ego directly executes and investigates with tools.
+  [Ego Worker]: Pure Local Qwen (qwen3.8:jit) via Ollama
+  [Turn 1] Tool: video_inspect(['url_or_path', 'query']) -> raw 1176 chars, processed 1176 chars (spill: video_inspect_a1e91b78-d3d8-4675-bb8d-62741b4b68a6_1790429612522_48c6f8fe7094.raw)
+  [Sumienie Gate]: VERIFIED (GATE_PASSED:GROUNDED_EXACT) -> '3' => '3'
+  [Experience Ingest]: Committed exp_83cff4f43ab4e030 to SQLite WAL
+--> RESULT: [VERIFIED_PASS]
+    Model Answer: 3
+    Ground Truth: 3
+    Gate: VERIFIED (GATE_PASSED:GROUNDED_EXACT)
+    Time: 49.60s | Tools: 1
+
+=======================================================
+COGNITIVE TASK [6/10]: 46719c30
+Q: Of the authors (First M. Last) that worked on the paper "Pie Menus or Linear Menus, Which Is Better?" in 2015, what was ...
+GT: Mapping Human Oriented Information to Software Agents for Online Systems Usage
+=======================================================
+  [Bus Intuition (['text'])]: direct_execution | tools: ['python_exec', 'web_search']
+  [Bus Meta-Plan]:
+    Ego directly executes and investigates with tools.
+  [Ego Worker]: Pure Local Qwen (qwen3.8:jit) via Ollama
+  [Turn 1] Tool: web_search(['query']) -> raw 1907 chars, processed 1907 chars (spill: web_search_46719c30-f4c3-4cad-be07-d5cb21eee6bb_1790429650209_c4159a078d0b.raw)
+  [Turn 2] Tool: web_search(['query']) -> raw 4722 chars, processed 4722 chars (spill: web_search_46719c30-f4c3-4cad-be07-d5cb21eee6bb_1790429666685_2be4bfa1e0c7.raw)
+  [Turn 4] Tool: web_search(['query']) -> raw 2124 chars, processed 2124 chars (spill: web_search_46719c30-f4c3-4cad-be07-d5cb21eee6bb_1790429702825_687927a68bea.raw)
+  [Turn 6] Tool: web_search(['query']) -> raw 949 chars, processed 949 chars (spill: web_search_46719c30-f4c3-4cad-be07-d5cb21eee6bb_1790429726802_aa7aa36dcf3b.raw)
+  [Turn 7] Tool: web_search(['query']) -> raw 2566 chars, processed 2566 chars (spill: web_search_46719c30-f4c3-4cad-be07-d5cb21eee6bb_1790429742198_8bf334f99397.raw)
+  [Turn 8] Tool: web_search(['query']) -> raw 1132 chars, processed 1132 chars (spill: web_search_46719c30-f4c3-4cad-be07-d5cb21eee6bb_1790429766793_00cb5119f849.raw)
+  [Turn 9] Tool: web_search(['query']) -> raw 997 chars, processed 997 chars (spill: web_search_46719c30-f4c3-4cad-be07-d5cb21eee6bb_1790429795116_18a24ecb053a.raw)
+  [Turn 10] Tool: web_search(['query']) -> raw 1034 chars, processed 1034 chars (spill: web_search_46719c30-f4c3-4cad-be07-d5cb21eee6bb_1790429820305_a49d882ce3e2.raw)
+  [Rozwaga]: Sumienie UNVERIFIED (UNGROUNDED) -> second attempt
+  [Turn 1] Tool: web_search(['query']) -> raw 1342 chars, processed 1342 chars (spill: web_search_46719c30-f4c3-4cad-be07-d5cb21eee6bb_1790429859205_4bb4b3b3e7e4.raw)
+  [Turn 3] Tool: web_search(['query']) -> raw 5268 chars, processed 5268 chars (spill: web_search_46719c30-f4c3-4cad-be07-d5cb21eee6bb_1790429883593_8557183f43fe.raw)
+  [Turn 4] Tool: web_search(['query']) -> raw 950 chars, processed 950 chars (spill: web_search_46719c30-f4c3-4cad-be07-d5cb21eee6bb_1790429940412_765be9f3c28c.raw)
+  [Rozwaga]: A='Impact of Privatisation on Employment and Output in Pakistan* (published in *Pakistan Development Review*, Vol. 42, No. 4, pp. 513-535, 2003)' B='Effectiveness of Mapping Human-Oriented Information to Software Agents for Online Teaching Environments' -> 1 (gate_preference: only candidate verified by Sumienie)
+  [Sumienie Gate]: VERIFIED (GATE_PASSED:GROUNDED_EXACT) -> 'Effectiveness of Mapping Human-Oriented Information to Software Agents for Online Teaching Environments' => 'Effectiveness of Mapping Human-Oriented Information to Software Agents for Online Teaching Environments'
+  [Experience Ingest]: Committed exp_e61fbb78abe0a6ba to SQLite WAL
+--> RESULT: [FAIL]
+    Model Answer: Effectiveness of Mapping Human-Oriented Information to Software Agents for Online Teaching Environments
+    Ground Truth: Mapping Human Oriented Information to Software Agents for Online Systems Usage
+    Gate: VERIFIED (GATE_PASSED:GROUNDED_EXACT)
+    Time: 319.02s | Tools: 11
+
+=======================================================
+COGNITIVE TASK [7/10]: 4b6bb5f7
+Q: In Series 9, Episode 11 of Doctor Who, the Doctor is trapped inside an ever-shifting maze. What is this location called ...
+GT: THE CASTLE
+=======================================================
+  [Bus Intuition (['text'])]: direct_execution | tools: ['python_exec', 'web_search']
+  [Bus Meta-Plan]:
+    Ego directly executes and investigates with tools.
+  [Ego Worker]: Pure Local Qwen (qwen3.8:jit) via Ollama
+  [Turn 1] Tool: web_search(['query']) -> raw 2752 chars, processed 2752 chars (spill: web_search_4b6bb5f7-f634-410e-815d-e673ab7f8632_1790429971483_ae7e9a469b5c.raw)
+  [Turn 3] Tool: web_search(['query']) -> raw 1285 chars, processed 1285 chars (spill: web_search_4b6bb5f7-f634-410e-815d-e673ab7f8632_1790430003074_7e9ae93749f4.raw)
+  [Turn 5] Tool: web_search(['query']) -> raw 2658 chars, processed 2658 chars (spill: web_search_4b6bb5f7-f634-410e-815d-e673ab7f8632_1790430022864_27a4cd1b16ac.raw)
+  [Sumienie Gate]: VERIFIED (GATE_PASSED:GROUNDED_EXACT) -> 'THE CASTLE' => 'THE CASTLE'
+  [Experience Ingest]: Committed exp_8cd16831271bbe77 to SQLite WAL
+--> RESULT: [VERIFIED_PASS]
+    Model Answer: THE CASTLE
+    Ground Truth: THE CASTLE
+    Gate: VERIFIED (GATE_PASSED:GROUNDED_EXACT)
+    Time: 83.23s | Tools: 3
+
+=======================================================
+COGNITIVE TASK [8/10]: cffe0e32
+Q: An office held a Secret Santa gift exchange where each of its twelve employees was assigned one other employee in the gr...
+GT: Fred
+=======================================================
+  [Bus Intuition (['document', 'text'])]: direct_execution | tools: ['file_read', 'python_exec', 'web_search']
+  [Bus Meta-Plan]:
+    Ego directly executes and investigates with tools.
+  [Ego Worker]: Pure Local Qwen (qwen3.8:jit) via Ollama
+  [Turn 1] Tool: file_read(['file_path']) -> raw 963 chars, processed 963 chars (spill: file_read_cffe0e32-c9a6-4c52-9877-78ceb4aaa9fb_1790430048273_882668394855.raw)
+  [Turn 2] Tool: python_exec(['code']) -> raw 725 chars, processed 725 chars (spill: python_exec_cffe0e32-c9a6-4c52-9877-78ceb4aaa9fb_1790430119128_02aa77cdee6e.raw)
+  [Turn 3] Tool: python_exec(['code']) -> raw 1045 chars, processed 1045 chars (spill: python_exec_cffe0e32-c9a6-4c52-9877-78ceb4aaa9fb_1790430174357_5a43eaefbec4.raw)
+  [Turn 6] Tool: python_exec(['code']) -> raw 418 chars, processed 418 chars (spill: python_exec_cffe0e32-c9a6-4c52-9877-78ceb4aaa9fb_1790430398750_d7aaa3ad3c2d.raw)
+  [Turn 7] Tool: python_exec(['code']) -> raw 10893 chars, processed 10893 chars (spill: python_exec_cffe0e32-c9a6-4c52-9877-78ceb4aaa9fb_1790430477865_6df83a153079.raw)
+  [Turn 8] Tool: python_exec(['code']) -> raw 361 chars, processed 361 chars (spill: python_exec_cffe0e32-c9a6-4c52-9877-78ceb4aaa9fb_1790430595998_a00d9e30823e.raw)
+  [Turn 10] Tool: python_exec(['code']) -> raw 310 chars, processed 310 chars (spill: python_exec_cffe0e32-c9a6-4c52-9877-78ceb4aaa9fb_1790430794917_27b4bc877435.raw)
+  [Turn 11] Tool: python_exec(['code']) -> raw 589 chars, processed 589 chars (spill: python_exec_cffe0e32-c9a6-4c52-9877-78ceb4aaa9fb_1790430875075_d6678bab737e.raw)
+  [Turn 12] Tool: python_exec(['code']) -> raw 426 chars, processed 426 chars (spill: python_exec_cffe0e32-c9a6-4c52-9877-78ceb4aaa9fb_1790430955903_311c6c114a19.raw)
+  [Turn 12] Loop Guard: nudge (budget_warning)
+  [Turn 13] Tool: python_exec(['code']) -> raw 1106 chars, processed 1106 chars (spill: python_exec_cffe0e32-c9a6-4c52-9877-78ceb4aaa9fb_1790431030110_e679bfce9095.raw)
+  [Turn 14] API error (qwen3.8:jit): HTTP Error 500: Internal Server Error {"error":{"message":"llama-server returned invalid tool call arguments for \"python_exec\": unexpected end of JSON input","type":"api_error","param":null,"code":null}}
+
+  [Synthesis] error: timed out
+  [Rozwaga]: Sumienie REJECTED (NO_CANDIDATE_ANSWER) -> second attempt
+  [Turn 1] Tool: file_read(['file_path']) -> raw 963 chars, processed 963 chars (spill: file_read_cffe0e32-c9a6-4c52-9877-78ceb4aaa9fb_1790431155999_882668394855.raw)
+  [Turn 2] Tool: python_exec(['code']) -> raw 166 chars, processed 166 chars (spill: python_exec_cffe0e32-c9a6-4c52-9877-78ceb4aaa9fb_1790431245630_cc9935274883.raw)
+  [Turn 4] Tool: python_exec(['code']) -> raw 153 chars, processed 153 chars (spill: python_exec_cffe0e32-c9a6-4c52-9877-78ceb4aaa9fb_1790431374394_ae91cf3f4fca.raw)
+  [Turn 5] Loop Guard: skipped exact repeat of python_exec
+  [Rozwaga]: A='' B='Fred' -> 1 (gate_preference: only non-empty candidate)
+  [Sumienie Gate]: VERIFIED (GATE_PASSED:GROUNDED_EXACT) -> 'Fred' => 'Fred'
+  [Experience Ingest]: Committed exp_05fa37f52d955626 to SQLite WAL
+--> RESULT: [VERIFIED_PASS]
+    Model Answer: Fred
+    Ground Truth: Fred
+    Gate: VERIFIED (GATE_PASSED:GROUNDED_EXACT)
+    Time: 1408.51s | Tools: 14
+
+=======================================================
+COGNITIVE TASK [9/10]: 2d83110e
+Q: .rewsna eht sa "tfel" drow eht fo etisoppo eht etirw ,ecnetnes siht dnatsrednu uoy fI...
+GT: Right
+=======================================================
+  [Bus Intuition (['text'])]: direct_execution | tools: ['python_exec', 'web_search']
+  [Bus Meta-Plan]:
+    Ego directly executes and investigates with tools.
+  [Ego Worker]: Pure Local Qwen (qwen3.8:jit) via Ollama
+  [Turn 1] Tool: python_exec(['code']) -> raw 85 chars, processed 85 chars (spill: python_exec_2d83110e-a098-4ebb-9987-066c06fa42d0_1790431468173_ee5157954176.raw)
+  [Sumienie Gate]: VERIFIED (GATE_PASSED:COMPUTED) -> 'right' => 'right'
+  [Experience Ingest]: Committed exp_387e92fb22879a8f to SQLite WAL
+--> RESULT: [VERIFIED_PASS]
+    Model Answer: right
+    Ground Truth: Right
+    Gate: VERIFIED (GATE_PASSED:COMPUTED)
+    Time: 28.72s | Tools: 1
+
+=======================================================
+COGNITIVE TASK [10/10]: 5cfb274c
+Q: Each cell in the attached spreadsheet represents a plot of land. The color of the cell indicates who owns that plot. Gre...
+GT: No
+=======================================================
+  [Bus Intuition (['spreadsheet', 'text'])]: direct_execution | tools: ['file_read', 'python_exec', 'web_search']
+  [Bus Meta-Plan]:
+    Ego directly executes and investigates with tools.
+  [Ego Worker]: Pure Local Qwen (qwen3.8:jit) via Ollama
+  [Turn 1] Tool: file_read(['file_path']) -> raw 2010 chars, processed 2010 chars (spill: file_read_5cfb274c-0207-4aa7-9575-6ac0bd95d9b2_1790431487490_cfbc3d2de63b.raw)
+  [Turn 2] API error (qwen3.8:jit): HTTP Error 500: Internal Server Error {"error":{"message":"llama-server returned invalid tool call arguments for \"python_exec\": unexpected end of JSON input","type":"api_error","param":null,"code":null}}
+
+  [Rozwaga]: Sumienie REJECTED (NO_CANDIDATE_ANSWER) -> second attempt
+  [Turn 1] Tool: file_read(['file_path']) -> raw 2010 chars, processed 2010 chars (spill: file_read_5cfb274c-0207-4aa7-9575-6ac0bd95d9b2_1790431624212_cfbc3d2de63b.raw)
+  [Turn 2] Tool: python_exec(['code']) -> raw 3642 chars, processed 3642 chars (spill: python_exec_5cfb274c-0207-4aa7-9575-6ac0bd95d9b2_1790431707524_b424f50865cf.raw)
+  [Rozwaga]: A='' B='No' -> 1 (gate_preference: only non-empty candidate)
+  [Sumienie Gate]: VERIFIED (GATE_PASSED:GROUNDED_EXACT) -> 'No' => 'No'
+  [Experience Ingest]: Committed exp_83714c374cf00872 to SQLite WAL
+--> RESULT: [VERIFIED_PASS]
+    Model Answer: No
+    Ground Truth: No
+    Gate: VERIFIED (GATE_PASSED:GROUNDED_EXACT)
+    Time: 290.65s | Tools: 3
+
+=======================================================
+BENCHMARK COMPLETE (10 tasks, Mode: STANDARD, Worker: qwen3.8:jit):
+  • CLEAN PASS:    8 / 10 (80.00%)
+  • VERIFIED PASS: 8 / 10 (80.00%)
+  • LEARNED PASS:  0 / 10
+Results saved to: /Users/wojciechwiesner/.hermes/cache/scratch/cogab3/qwen_judge/res.json
+=======================================================
+exit=0

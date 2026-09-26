@@ -139,7 +139,17 @@ Worker `gemini-3.8-flash`, STANDARD mode, one run per row, same 53 validation ta
 
 What the numbers say: almost all of the gain (34 to 45) came from deterministic harness fixes: tool declarations on the synthesis turn, a loop guard, a forced last-turn answer and a real turn budget. The judge added +4 / -2 tasks against the 15-turn run at 1.7x the time per task, which one run cannot separate from sampling noise. The cognitive pre-pipeline did not help and is scheduled for removal.
 
-Local model, same first 10 tasks, `qwen3.8:jit` (9B, Ollama, Mac mini M2 Pro): 3/10 exact without the judge (Gemini: 10/10 on the same 10). That run hit 4 HTTP 400 errors that ended tasks early. The rerun logged the response body: Ollama rejects a history ending in two assistant messages. That harness bug is fixed in `bba46e5`, so 3/10 likely understates the model. A rerun with Rozwaga is in progress; its result will be added here with the raw JSON. Raw logs: `benchmarks/results/gaia_loop_guard/`.
+Local model, same first 10 tasks, `qwen3.8:jit` (9B, Ollama, Mac mini M2 Pro): 3/10 exact without the judge (Gemini: 10/10 on the same 10). That run hit 4 HTTP 400 errors that ended tasks early. The rerun logged the response body: Ollama rejects a history ending in two assistant messages. That harness bug is fixed in `bba46e5`.
+
+Rerun at `7fe938d` with the fix and `--judge`, same 10 tasks, 15 turns: **8/10 exact**, all 8 verified by Sumienie. 0 HTTP 400. Where it moved:
+
+| | qwen3.8:jit before fix, no judge | qwen3.8:jit fix + judge | gemini-3.8-flash + judge |
+|---|---|---|---|
+| Exact | 3/10 | 8/10 | 10/10 |
+| Avg time per task | 107 s | 316 s | 37 s |
+| API errors | 4x HTTP 400 (our history bug) | 4x HTTP 500 (llama-server: truncated tool-call JSON) | 0 |
+
+The fix and the judge landed together, so this run cannot split their shares. What the log shows: Rozwaga ran on 5 tasks. On 2 of them the first attempt was empty and the second attempt was right and verified (`Fred`, `No`). On 1 it picked the verified short `3` over a verbose sentence. On 1 it picked a verified but wrong paper title. On 1 both attempts were empty after the HTTP 500s. The other 3 gains had no judge involvement. N=10, one run each, at 8.5x Gemini's time per task. "Exact" here is normalized string equality (case and punctuation ignored); the runner's own substring-based CLEAN metric scored the old run 5/10 and this one 8/10. Raw JSON and log: `benchmarks/results/gaia_loop_guard/qwen38jit_t15_judge_10.{json,log}`.
 
 > 📊 **Explore the Live Telemetry & Architecture:**
 > * **Interactive Benchmark Hub:** [theones.io/benchmark/](https://theones.io/benchmark/) *(fixture-battle logs and other measured runs; not a full SWE-bench Docker sweep)*

@@ -45,5 +45,5 @@ live checks on the gateway log and `~/.hermes/state/ona-context/session_overlay.
   the pairwise judge stay on a frontier model until measured otherwise.
 - Harness requirements: thinking off, Ollama `format` JSON schema for structured outputs, tolerant tool-call parser,
   <=5 tools, tool output capped ~1.5k tokens, 16k context ceiling, one error-feedback retry, temperature 0 for gates.
-- Measurement in progress: qwen3.8:jit worker on 10 GAIA L1 tasks
-  (`~/.hermes/cache/scratch/cogab3/qwen_smoke/res.json`).
+- Measured: qwen3.8:jit worker on 10 GAIA L1 tasks with the history fix and `--judge`: 8/10 exact
+  (`benchmarks/results/gaia_loop_guard/qwen38jit_t15_judge_10.json`).
