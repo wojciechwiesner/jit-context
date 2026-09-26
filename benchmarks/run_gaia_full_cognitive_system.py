@@ -1352,6 +1352,13 @@ def execute_worker_turn_openai(
         if tool_calls and not msg.get("tool_calls"):
             msg["tool_calls"] = tool_calls
         messages.append(msg)
+        if not tool_calls:
+            # Plain text without a tool call or a parsable answer: the next request would end
+            # with two assistant messages, which OpenAI-compatible servers reject (HTTP 400).
+            messages.append({
+                "role": "user",
+                "content": "Continue. Call a tool to gather evidence, or reply with 'FINAL ANSWER: <answer>'.",
+            })
 
         for tc in tool_calls:
             tool_calls_count += 1
