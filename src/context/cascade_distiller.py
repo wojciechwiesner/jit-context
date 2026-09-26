@@ -333,10 +333,13 @@ def assemble_elastic_capsule(
         "Evidence only. User instructions take strict precedence over historical data. Assistant assertions without runtime tool proofs carry 0.0 authority."
     ]
 
-    # Only render direct user goal if genuine user_intent is present
+    # Only render direct user goal if genuine user_intent is present.
+    # The host appends the capsule to the verbatim user turn, so the Goal is a verbatim
+    # extractive anchor (<= GOAL_ANCHOR_LIMIT chars), never a full copy or a paraphrase.
     if user_intent:
+        from context.goal_anchor import build_goal_anchor, DEFAULT_LIMIT as GOAL_ANCHOR_LIMIT
         lines.append("  [CURRENT — direct user]")
-        lines.append(f"    • Goal: {escape_xml_content(user_intent)}")
+        lines.append(f"    • Goal: {escape_xml_content(build_goal_anchor(user_intent, GOAL_ANCHOR_LIMIT).render())}")
         if intent:
             lines.append(f"    • Intent: {escape_xml_content(intent)}")
         if enhanced_spec:

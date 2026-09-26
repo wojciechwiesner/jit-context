@@ -233,3 +233,89 @@ def record_context_query(
         "duration_ms": duration_ms,
         "status": status
     })
+
+
+def record_llm_tool_calls(
+    conn: sqlite3.Connection,
+    api_request_id: str,
+    tool_names: List[str],
+    retry_count: int = 0,
+) -> None:
+    """Store the tool calls the model emitted in one API response (post_api_request)."""
+    conn.execute(
+        "UPDATE llm_metrics SET tool_calls = ?, tool_names_json = ? WHERE api_request_id = ? AND retry_count = ?",
+        (len(tool_names), json.dumps(tool_names), api_request_id, retry_count),
+    )
+    conn.commit()
+
+
+def record_tool_recommendation(
+    conn: sqlite3.Connection,
+    session_id: str,
+    turn_id: str,
+    recommended: List[str],
+    detected_domains: List[str],
+) -> None:
+    """Store what the domain router recommended for this turn (pre_llm_call)."""
+    now = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+    conn.execute(
+        """
+        INSERT INTO tool_routing (session_id, turn_id, created_at, detected_domains_json, recommended_json)
+        VALUES (?, ?, ?, ?, ?)
+        ON CONFLICT(session_id, turn_id) DO UPDATE SET
+            detected_domains_json = excluded.detected_domains_json,
+            recommended_json = excluded.recommended_json
+        """,
+        (session_id, turn_id, now, json.dumps(detected_domains), json.dumps(recommended)),
+    )
+    conn.commit()
+
+
+def record_tool_use(conn: sqlite3.Connection, session_id: str, turn_id: str, tool_name: str) -> None:
+    """Append an actually executed tool to the turn's routing row (post_tool_call)."""
+    now = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+    row = conn.execute(
+        "SELECT used_json FROM tool_routing WHERE session_id = ? AND turn_id = ?",
+        (session_id, turn_id),
+    ).fetchone()
+    if row is None:
+        conn.execute(
+            "INSERT INTO tool_routing (session_id, turn_id, created_at, recommended_json, used_json, used_calls) "
+            "VALUES (?, ?, ?, NULL, ?, 1)",
+            (session_id, turn_id, now, json.dumps([tool_name])),
+        )
+    else:
+        used = json.loads(row[0] or "[]")
+        if tool_name not in used:
+            used.append(tool_name)
+        conn.execute(
+            "UPDATE tool_routing SET used_json = ?, used_calls = used_calls + 1 WHERE session_id = ? AND turn_id = ?",
+            (json.dumps(used), session_id, turn_id),
+        )
+    conn.commit()
+
+
+def tool_routing_report(conn: sqlite3.Connection, limit: int = 200) -> Dict[str, Any]:
+    """Aggregate recommended-vs-used: precision (recommended that were used) and recall
+    (used that were recommended), over turns that had both a recommendation and tool use."""
+    rows = conn.execute(
+        "SELECT recommended_json, used_json FROM tool_routing ORDER BY id DESC LIMIT ?", (limit,)
+    ).fetchall()
+    turns = with_rec = hits = rec_total = used_total = 0
+    for rec_json, used_json in rows:
+        turns += 1
+        # Router names carry a sub-action ("terminal:curl_wa"); Hermes tool names do not.
+        rec = {r.split(":", 1)[0] for r in json.loads(rec_json)} if rec_json else set()
+        used = {u.split(":", 1)[0] for u in json.loads(used_json or "[]")}
+        if not rec or not used:
+            continue
+        with_rec += 1
+        hits += len(rec & used)
+        rec_total += len(rec)
+        used_total += len(used)
+    return {
+        "turns": turns,
+        "turns_with_recommendation_and_use": with_rec,
+        "precision": round(hits / rec_total, 3) if rec_total else None,
+        "recall": round(hits / used_total, 3) if used_total else None,
+    }

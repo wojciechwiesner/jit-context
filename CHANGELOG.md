@@ -10,6 +10,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - `src/cognitive/loop_guard.py`: deterministic in-loop controller for the GAIA worker (Gemini and OpenAI-compatible loops). It skips exact-repeat tool calls, detects near-repeat searches and no-progress streaks (novelty < 10% for 3 calls), nudges a strategy change, warns 2 turns before the budget ends and disables tools on the reserved last turn so the model must answer.
 - `--max_turns` / `GAIA_MAX_TURNS` for the cognitive GAIA runner (default 15, was a hardcoded 8 that was never passed to the worker).
+- `src/context/goal_anchor.py`: the capsule Goal is a verbatim extract of the user prompt (max 300 chars) instead of a paraphrase; the current prompt is no longer duplicated into PRIOR.
+- `src/cognitive/judge.py` (Rozwaga): when Sumienie marks an answer UNVERIFIED, a second attempt runs and the judge prefers the candidate Sumienie verifies; an LLM judge is used only when neither or both verify.
+- Sumienie (`src/l0/epistemics.py`) checks three things: grounding in collected tool evidence, expected answer format, and whether the answer was forced by the turn budget.
+- `vision_inspect` tool; image attachments are sent to the worker as pixels.
+- `tool_routing` telemetry table comparing recommended vs used tools; the tool-call counter is now populated.
+
+### Changed
+- GAIA runner sends the question once and omits an empty COGNITIVE BUS block.
+- List answers are scored element-wise (a fraction list no longer passes on a prefix match).
+
+### Measured (8 previously failing GAIA L1 tasks, gemini-3.8-flash, `--judge`, single run)
+- 5/8 now correct with the element-wise scorer (the runner log reports 6/8 with the old scorer). All 3 judge rescues were cases where Sumienie verified exactly one of two candidates. This is a failure-slice probe, not a benchmark score.
 
 ### Fixed
 - Post-loop synthesis sent the history without tool declarations; Gemini answered with a functionCall and `except: pass` hid it, producing 14/53 empty answers. Synthesis and forced turns now declare tools with `functionCallingConfig: NONE` and log failures.

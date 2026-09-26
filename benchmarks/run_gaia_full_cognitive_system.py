@@ -34,6 +34,7 @@ import urllib.error
 
 # Raised from 8: 14/17 GAIA failures exhausted 8 turns without an answer (2026-09-26 A/B).
 DEFAULT_MAX_TURNS = int(os.environ.get("GAIA_MAX_TURNS", "15"))
+VISION_MODEL = os.environ.get("GAIA_VISION_MODEL", "gemini-3.8-flash")
 
 _PLACEHOLDER_ANSWERS = {"", "<value>", "<exact_answer>", "<exact concise answer>", "final answer", "value"}
 
@@ -281,6 +282,80 @@ def tool_video_inspect(url_or_path: str, query: Optional[str] = None) -> str:
         v_data = json.loads(resp.read().decode("utf-8"))
         ans_text = v_data["candidates"][0]["content"]["parts"][0]["text"].strip()
         return f"Video Visual Inspection Result ({len(frame_files)} frames analyzed over {dur:.1f}s):\n{ans_text}"
+
+def tool_vision_inspect(file_path: str, question: str) -> str:
+    """Ask a targeted question about a local image with a multimodal model.
+
+    file_read only returns a generic description (gemini-2.5-flash), which loses exactly the
+    details GAIA image tasks ask about (chess piece squares, fractions in a worksheet).
+    """
+    import base64
+    path = Path(file_path)
+    if not path.exists():
+        return f"Error: file not found: {file_path}"
+    if not GOOGLE_API_KEY:
+        return "Error: GOOGLE_API_KEY missing; vision_inspect unavailable"
+    ext = path.suffix.lower()
+    mime = {".png": "image/png", ".webp": "image/webp", ".gif": "image/gif"}.get(ext, "image/jpeg")
+    b64 = base64.b64encode(path.read_bytes()).decode("utf-8")
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/{VISION_MODEL}:generateContent?key={GOOGLE_API_KEY}"
+    payload = {
+        "contents": [{"parts": [
+            {"text": (
+                "Answer the question about this image precisely. First transcribe every relevant "
+                "element exactly as shown (text, numbers, positions/coordinates, labels), then answer.\n"
+                f"Question: {question}"
+            )},
+            {"inlineData": {"mimeType": mime, "data": b64}},
+        ]}],
+        "generationConfig": {"temperature": 0.0, "maxOutputTokens": 2048},
+    }
+    req = urllib.request.Request(url, data=json.dumps(payload).encode("utf-8"), headers={"Content-Type": "application/json"})
+    try:
+        with urllib.request.urlopen(req, timeout=60) as resp:
+            data = json.loads(resp.read().decode("utf-8"))
+        parts = data["candidates"][0]["content"]["parts"]
+        return " ".join(p.get("text", "") for p in parts).strip() or "Error: empty vision response"
+    except urllib.error.HTTPError as e:
+        return f"Error: vision HTTP {e.code}: {e.read().decode('utf-8', 'replace')[:300]}"
+    except Exception as e:
+        return f"Error: vision_inspect failed: {e}"
+
+
+IMAGE_EXTS = (".png", ".jpg", ".jpeg", ".webp", ".gif")
+
+
+def image_inline_part(attached_file: Optional[str]) -> Optional[Dict[str, Any]]:
+    """Gemini inlineData part for an attached image, so the worker sees the pixels itself."""
+    if not attached_file or Path(attached_file).suffix.lower() not in IMAGE_EXTS:
+        return None
+    import base64
+    p = Path(attached_file)
+    if not p.exists():
+        return None
+    mime = {".png": "image/png", ".webp": "image/webp", ".gif": "image/gif"}.get(p.suffix.lower(), "image/jpeg")
+    return {"inlineData": {"mimeType": mime, "data": base64.b64encode(p.read_bytes()).decode("utf-8")}}
+
+
+def call_judge_llm(prompt: str, model_name: str = "gemini-3.8-flash") -> str:
+    """Single tool-less call used by Rozwaga. Errors are returned as text (judge falls back)."""
+    if not GOOGLE_API_KEY:
+        return ""
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:generateContent?key={GOOGLE_API_KEY}"
+    payload = {
+        "contents": [{"role": "user", "parts": [{"text": prompt}]}],
+        "generationConfig": {"temperature": 0.0, "maxOutputTokens": 200},
+    }
+    req = urllib.request.Request(url, data=json.dumps(payload).encode("utf-8"), headers={"Content-Type": "application/json"})
+    try:
+        with urllib.request.urlopen(req, timeout=30) as resp:
+            data = json.loads(resp.read().decode("utf-8"))
+        parts = data.get("candidates", [{}])[0].get("content", {}).get("parts", [])
+        return " ".join(p.get("text", "") for p in parts).strip()
+    except Exception as e:
+        print(f"  [Rozwaga] judge call failed: {e}")
+        return ""
+
 
 def tool_file_read(file_path: str) -> str:
     path = Path(file_path)
@@ -720,6 +795,21 @@ OPENAI_TOOLS_SCHEMA = [
     {
         "type": "function",
         "function": {
+            "name": "vision_inspect",
+            "description": "Ask a precise question about a local image (chess boards, worksheets, charts, screenshots). Returns an exact transcription of the relevant elements plus an answer.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "file_path": {"type": "string", "description": "Path to the image"},
+                    "question": {"type": "string", "description": "What to read or determine from the image"}
+                },
+                "required": ["file_path", "question"]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
             "name": "video_inspect",
             "description": "Inspect a YouTube video or local video file. Extracts transcript or samples video frames.",
             "parameters": {
@@ -788,6 +878,8 @@ def dispatch_tool_call(
             out = tool_web_search(q)
     elif fname == "web_extract":
         out = tool_web_extract(fargs.get("url", ""))
+    elif fname == "vision_inspect":
+        out = tool_vision_inspect(fargs.get("file_path") or attached_file or "", fargs.get("question") or question)
     elif fname == "file_read":
         req_path = fargs.get("file_path", "")
         if not Path(req_path).exists() and attached_file:
@@ -824,7 +916,8 @@ def execute_worker_turn_gemini(
     capsule: str,
     model_name: str = "gemini-3.8-flash",
     max_turns: int = DEFAULT_MAX_TURNS,
-    attached_file: Optional[str] = None
+    attached_file: Optional[str] = None,
+    temperature: float = 0.0
 ) -> Tuple[Optional[str], int, List[Dict[str, Any]]]:
     if not GOOGLE_API_KEY:
         return None, 0, []
@@ -870,6 +963,18 @@ def execute_worker_turn_gemini(
                     }
                 },
                 {
+                    "name": "vision_inspect",
+                    "description": "Ask a precise question about a local image (chess boards, worksheets, charts, screenshots). Returns an exact transcription of the relevant elements plus an answer.",
+                    "parameters": {
+                        "type": "OBJECT",
+                        "properties": {
+                            "file_path": {"type": "STRING", "description": "Path to the image"},
+                            "question": {"type": "STRING", "description": "What to read or determine from the image"}
+                        },
+                        "required": ["file_path", "question"]
+                    }
+                },
+                {
                     "name": "video_inspect",
                     "description": "Inspect a YouTube video or local video file. Extracts transcript/dialogue or samples video frames.",
                     "parameters": {
@@ -898,8 +1003,17 @@ def execute_worker_turn_gemini(
     ]
 
     file_prompt = f"\n\n[ATTACHED FILE: {attached_file}] (Inspect this file using file_read or python_exec)." if attached_file else ""
+    img_part = image_inline_part(attached_file)
+    if img_part:
+        file_prompt = (
+            f"\n\n[ATTACHED IMAGE: {attached_file}] The image is included below. Read it directly; "
+            f"use vision_inspect for a focused second look at specific details."
+        )
+    first_parts: List[Dict[str, Any]] = [{"text": f"{capsule}\n\nTask:\n{question}{file_prompt}\n\nResolve this task using available tools."}]
+    if img_part:
+        first_parts.append(img_part)
     contents = [
-        {"role": "user", "parts": [{"text": f"{capsule}\n\nTask:\n{question}{file_prompt}\n\nResolve this task using available tools. End with 'FINAL ANSWER: <value>'."}]}
+        {"role": "user", "parts": first_parts}
     ]
 
     tool_calls_count = 0
@@ -927,7 +1041,7 @@ def execute_worker_turn_gemini(
                 }]
             },
             "generationConfig": {
-                "temperature": 0.0,
+                "temperature": temperature,
                 "maxOutputTokens": 2048,
                 "thinkingConfig": {"thinkingBudget": 0}
             }
@@ -1034,6 +1148,8 @@ def execute_worker_turn_gemini(
             # Gemini accepts text parts alongside functionResponse parts in the same user turn.
             response_parts.append({"text": verdict.message})
             force_answer = verdict.action == "force_answer"
+            if force_answer:
+                tool_events.append({"tool": "loop_guard", "status": "FORCED_ANSWER", "reason": verdict.reason})
 
         contents.append({"role": "user", "parts": response_parts})
 
@@ -1103,7 +1219,7 @@ def execute_worker_turn_openai(
     )
     messages: List[Dict[str, Any]] = [
         {"role": "system", "content": system_msg},
-        {"role": "user", "content": f"{capsule}\n\nTask:\n{question}{file_prompt}\n\nResolve this task using available tools. End with 'FINAL ANSWER: <value>'."}
+        {"role": "user", "content": f"{capsule}\n\nTask:\n{question}{file_prompt}\n\nResolve this task using available tools."}
     ]
 
     tool_calls_count = 0
@@ -1236,6 +1352,8 @@ def execute_worker_turn_openai(
                 print(f"  [Turn {turn}] Loop Guard: {verdict.action} ({verdict.reason})")
                 messages.append({"role": "user", "content": verdict.message})
                 force_answer = verdict.action == "force_answer"
+                if force_answer:
+                    tool_events.append({"tool": "loop_guard", "status": "FORCED_ANSWER", "reason": verdict.reason})
 
         session_id = f"gaia_{task_id[:12]}"
         messages, comp_telemetry = compact_turn_history(
@@ -1442,6 +1560,10 @@ def is_answer_match(model_ans: str, ground_truth: str) -> bool:
     # Comma-separated list equivalence (e.g. food/ingredient items)
     items_m = [i.strip() for i in norm_m.split(",") if i.strip()]
     items_g = [i.strip() for i in norm_g.split(",") if i.strip()]
+    # Numeric/symbolic lists (fractions, numbers, codes) must match exactly and in order.
+    # The fuzzy word matcher below scored '1/4,1/4,...' as equal to '3/4,1/4,...' (2026-09-26).
+    if len(items_g) >= 2 and all(re.fullmatch(r"[\d./\-+%$ ]+", ig) for ig in items_g):
+        return [i.replace(" ", "") for i in items_m] == [i.replace(" ", "") for i in items_g]
     if len(items_m) >= 3 and len(items_m) == len(items_g):
         matched = 0
         for im in items_m:
@@ -1467,7 +1589,8 @@ def run_cognitive_system_benchmark(
     mode: str = "COGNITIVE",
     output_path: str = "/tmp/gaia_cognitive_system_results.json",
     worker_model: Optional[str] = None,
-    max_turns: int = DEFAULT_MAX_TURNS
+    max_turns: int = DEFAULT_MAX_TURNS,
+    judge_enabled: bool = False
 ):
     val_json_path = "/tmp/gaia/validation_metadata.json"
     with open(val_json_path, "r", encoding="utf-8") as f:
@@ -1535,6 +1658,38 @@ def run_cognitive_system_benchmark(
         # 6. Bus: Step Conscience Gate (Option D Deterministic Verification)
         gate = bus.step_conscience_gate(task_state, raw_ans, tool_events)
         ans = gate.verified_answer or gate.candidate_answer
+
+        # 6a. Rozwaga (deliberation): only when Sumienie does not verify, run one independent
+        #     second attempt (temperature 0.7) and let the judge pick. The judge never writes.
+        judge_record = None
+        if judge_enabled and gate.decision != "VERIFIED" and worker_used.startswith("gemini"):
+            print(f"  [Rozwaga]: Sumienie {gate.decision} ({gate.reason}) -> second attempt")
+            ans2_raw, tools2, events2 = execute_worker_turn_gemini(
+                tid, q, capsule, model_name=worker_used, max_turns=max_turns,
+                attached_file=attached_path, temperature=0.7,
+            )
+            gate2 = bus.step_conscience_gate(task_state, ans2_raw, events2)
+            ans2 = gate2.verified_answer or gate2.candidate_answer
+            from cognitive.judge import Candidate, deliberate
+            from l0.epistemics import _evidence_text
+            cands = [
+                Candidate(str(ans or ""), gate.decision, gate.reason or "", _evidence_text(tool_events)[-2500:], tools_used),
+                Candidate(str(ans2 or ""), gate2.decision, gate2.reason or "", _evidence_text(events2)[-2500:], tools2),
+            ]
+            verdict = deliberate(q, cands, llm_fn=lambda p: call_judge_llm(p, worker_used))
+            print(f"  [Rozwaga]: A='{cands[0].answer}' B='{cands[1].answer}' -> {verdict.index} ({verdict.method}: {verdict.reason})")
+            judge_record = {
+                "candidates": [c.answer for c in cands],
+                "gates": [c.gate_decision for c in cands],
+                "choice": verdict.index,
+                "method": verdict.method,
+                "reason": verdict.reason,
+            }
+            if verdict.index == 1:
+                raw_ans, tool_events, gate, ans = ans2_raw, events2, gate2, ans2
+                tools_used += tools2
+            else:
+                tools_used += tools2
         
         # 6b. Bus: Answer Fidelity & Specificity Gate
         from cognitive.contracts import check_fidelity_and_specificity
@@ -1585,6 +1740,8 @@ def run_cognitive_system_benchmark(
             "tools_count": tools_used,
             "turns_budget": max_turns,
             "loop_guard_skips": sum(1 for e in tool_events if e.get("status") == "SKIPPED_REPEAT"),
+            "forced_answer": any(e.get("status") == "FORCED_ANSWER" for e in tool_events),
+            "rozwaga": judge_record,
             "tool_events": tool_events,
             "worker_used": worker_used,
             "sensory": intuition_proposal.to_dict(),
@@ -1632,6 +1789,7 @@ if __name__ == "__main__":
     parser.add_argument("--output", default="/tmp/gaia_cognitive_system_results.json")
     parser.add_argument("--worker", type=str, default=None, help="Worker engine: 'routed' (default), 'qwen' (local Ollama), 'lfm' (OpenRouter), or 'gemini-3.8-flash'")
     parser.add_argument("--max_turns", type=int, default=DEFAULT_MAX_TURNS, help="Worker tool-loop turn budget (last turn is reserved for a forced answer)")
+    parser.add_argument("--judge", action="store_true", help="Rozwaga: second attempt + judge when Sumienie does not verify the first answer")
     args = parser.parse_args()
     run_cognitive_system_benchmark(
         limit=args.limit,
@@ -1639,5 +1797,6 @@ if __name__ == "__main__":
         mode=args.mode,
         output_path=args.output,
         worker_model=args.worker,
-        max_turns=args.max_turns
+        max_turns=args.max_turns,
+        judge_enabled=args.judge
     )

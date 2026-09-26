@@ -8,7 +8,7 @@ import uuid
 import json
 import re
 from pathlib import Path
-from typing import Dict, Any, Optional, Tuple
+from typing import Dict, Any, List, Optional, Tuple
 from l0.db import get_db, init_db
 from l0.overlay import append_event, ensure_session, get_active_overlays
 from l1.scope import resolve_scope
@@ -19,7 +19,10 @@ from telemetry.collector import (
     record_llm_start,
     record_llm_success,
     record_llm_error,
-    record_context_query
+    record_context_query,
+    record_llm_tool_calls,
+    record_tool_recommendation,
+    record_tool_use,
 )
 
 # Active by default for full JIT Context OS execution.
@@ -92,6 +95,11 @@ def is_synthetic_harness_message(text: str) -> bool:
         "<ONA_CONTEXT",
         "[ONA_CONTEXT",
         "[IMPORTANT: The user has invoked the ",
+        # Host notifications (background process completion, system reminders) are not
+        # user instructions and must never enter [PRIOR USER INSTRUCTIONS].
+        "[IMPORTANT: Background process",
+        "[SYSTEM:",
+        "<system-reminder>",
     )
     return any(t.startswith(p) for p in prefixes)
 
@@ -242,6 +250,16 @@ def pre_llm_call(ctx: Dict[str, Any]) -> Dict[str, Any]:
             capsule=capsule,
             mode=ONA_CONTEXT_MODE
         )
+        try:
+            from context.domain_router import resolve_domain_routing
+            routing = resolve_domain_routing(effective_user_message, session_cwd=session_cwd)
+            record_tool_recommendation(
+                conn, session_id, turn_id,
+                recommended=routing.get("recommended_tools", []),
+                detected_domains=routing.get("detected_domains", []),
+            )
+        except Exception as e:
+            print(f"[ona-context:error] record_tool_recommendation: {e}")
 
         # Resolve live mode dynamically: mode.json is strictly authoritative over shell env
         current_mode = None
@@ -464,8 +482,12 @@ def pre_api_request(ctx: Dict[str, Any]) -> None:
     turn_id = ctx.get("turn_id", "default")
     provider = ctx.get("provider", "unknown")
     requested_model = ctx.get("model", "unknown")
-    messages = ctx.get("messages", [])
-    tools = ctx.get("tools", [])
+    messages = ctx.get("messages") or ctx.get("request_messages") or []
+    # Hermes passes tool_count (int); older harnesses passed the tools list itself.
+    tools = ctx.get("tools")
+    tool_count = ctx.get("tool_count")
+    if tool_count is None:
+        tool_count = len(tools) if isinstance(tools, list) else 0
     approx_tokens = ctx.get("approx_input_tokens", 0)
     retry_count = ctx.get("retry_count", 0)
     
@@ -478,8 +500,8 @@ def pre_api_request(ctx: Dict[str, Any]) -> None:
             turn_id=turn_id,
             provider=provider,
             requested_model=requested_model,
-            message_count=len(messages),
-            tool_count=len(tools),
+            message_count=ctx.get("message_count") or len(messages),
+            tool_count=int(tool_count or 0),
             approx_input_tokens=approx_tokens,
             retry_count=retry_count
         )
@@ -517,10 +539,30 @@ def post_api_request(ctx: Dict[str, Any]) -> None:
             cost_usd=cost_usd,
             retry_count=retry_count
         )
+        tool_names = _response_tool_names(ctx)
+        if tool_names:
+            record_llm_tool_calls(conn, api_request_id, tool_names, retry_count=retry_count)
     except Exception as e:
         print(f"[ona-context:error] post_api_request: {e}")
     finally:
         conn.close()
+
+
+def _response_tool_names(ctx: Dict[str, Any]) -> List[str]:
+    """Tool names the model emitted in this API response (Hermes: assistant_message.tool_calls)."""
+    msg = ctx.get("assistant_message")
+    calls = getattr(msg, "tool_calls", None) if msg is not None else None
+    if calls is None and isinstance(msg, dict):
+        calls = msg.get("tool_calls")
+    names: List[str] = []
+    for c in calls or []:
+        fn = getattr(c, "function", None) if not isinstance(c, dict) else c.get("function")
+        name = getattr(fn, "name", None) if fn is not None and not isinstance(fn, dict) else (fn or {}).get("name")
+        if name:
+            names.append(str(name))
+    if not names and ctx.get("assistant_tool_call_count"):
+        names = ["unknown"] * int(ctx["assistant_tool_call_count"])
+    return names
 
 def api_request_error(ctx: Dict[str, Any]) -> None:
     """API error hook: Records LLM failure and fallback tracking."""
@@ -549,11 +591,16 @@ def post_tool_call(ctx: Dict[str, Any]) -> None:
     session_id = ctx.get("session_id", "default")
     turn_id = ctx.get("turn_id", "default")
     tool_name = ctx.get("tool_name", "unknown")
-    tool_input = ctx.get("tool_input", {})
-    tool_output = ctx.get("tool_output", "")
+    # Hermes passes args/result; older harnesses used tool_input/tool_output.
+    tool_input = ctx.get("tool_input") or ctx.get("args") or {}
+    tool_output = ctx.get("tool_output") or ctx.get("tool_result") or ctx.get("result") or ""
     
     conn = get_db(session_id=session_id)
     try:
+        try:
+            record_tool_use(conn, session_id, turn_id, tool_name)
+        except Exception as e:
+            print(f"[ona-context:error] record_tool_use: {e}")
         origin, fact_kind, fact_key, fact_value = parse_tool_execution(tool_name, tool_input, tool_output)
         content_preview = str(tool_output)[:400]
         append_event(

@@ -35,6 +35,11 @@ from l0.epistemics import (
 )
 
 
+def _drop_goal_line(capsule: str) -> str:
+    """Remove the '• Goal:' line: the GAIA worker already sends the task verbatim once."""
+    return "\n".join(l for l in capsule.splitlines() if not l.lstrip().startswith("• Goal:"))
+
+
 class CognitiveBus:
     """Decoupled, modular cognitive context bus."""
 
@@ -233,13 +238,7 @@ class CognitiveBus:
 
         # 3. Substrate compilation
         capsule_res = context_compiler.compile_context(self.conn, session_id=task.session_id, user_message=task.question)
-        full_capsule = str(capsule_res).rstrip()
-
-        # Wrap with active cognitive bus state
-        plan_str = " | ".join(plan.steps)
-        obs_str = "; ".join(intuition.observations)
-        hyp_str = "; ".join(intuition.hypotheses)
-        tools_str = ", ".join(intuition.recommended_tools)
+        full_capsule = _drop_goal_line(str(capsule_res).rstrip())
 
         # Extract mathematical & epistemic obligations from question semantics
         oblig = extract_epistemic_obligations(task.question)
@@ -248,18 +247,26 @@ class CognitiveBus:
             inv_lines = "\n".join(f"    • {inv}" for inv in oblig.invariants)
             oblig_block = f"\n  [EPISTEMIC OBLIGATION & COMPLETENESS CONTRACT]\n    • Operator: {oblig.operator or 'DIRECT_LOOKUP'}\n    • Candidate Set Required: {oblig.candidate_set_required}\n    • Source Contract: {oblig.source_contract or 'OPEN_WEB'}\n{inv_lines}"
 
+        # Cognitive bus block only when it carries information (STANDARD mode used to emit
+        # "Observations: None | Hypotheses: None" = 16% of the capsule with zero content).
+        bus_lines = []
+        if intuition.observations:
+            bus_lines.append(f"    • Observations: {'; '.join(intuition.observations)}")
+        if intuition.hypotheses:
+            bus_lines.append(f"    • Hypotheses (Auth 0.0): {'; '.join(intuition.hypotheses)}")
+        if plan.steps and plan.steps != ["Ego directly executes and investigates with tools."]:
+            bus_lines.append(f"    • Strategy Plan: {' | '.join(plan.steps)}")
+        bus_block = ""
+        if bus_lines:
+            bus_block = f"\n  [COGNITIVE BUS (Mode: {self.config.mode.value})]\n" + "\n".join(bus_lines)
+
         if "</ONA_CONTEXT>" in full_capsule:
             prefix = full_capsule.replace("</ONA_CONTEXT>", "").rstrip()
-            full_capsule = f"""{prefix}
-  [COGNITIVE BUS (Mode: {self.config.mode.value})]
-    • Intent: {intuition.intent} | Tools: {tools_str}
-    • Observations: {obs_str or 'None'}
-    • Hypotheses (Auth 0.0): {hyp_str or 'None'}
-    • Strategy Plan: {plan_str}{oblig_block}
+            # The task text itself is sent once, verbatim, by the worker ("Task: ...") and the
+            # FINAL ANSWER format lives in the system prompt; the capsule carries only context.
+            full_capsule = f"""{prefix}{bus_block}{oblig_block}
   [ACTIVE INVARIANTS]
-    • ZERO FAKE / EVIDENCE FIRST: Every factual assertion requires physical tool verification.
-    • INVARIANT I4: No LLM token can promote a claim without tool proof.
-    • HARD CONSTRAINT: End response with exactly 'FINAL ANSWER: <value>'.
+    • Evidence first: factual claims need tool verification (I4); assistant text has 0 authority.
 </ONA_CONTEXT>"""
 
         return full_capsule

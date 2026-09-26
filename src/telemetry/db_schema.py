@@ -141,8 +141,32 @@ CREATE TABLE IF NOT EXISTS telemetry_feed (
     ref_id TEXT,
     payload_json TEXT
 );
+
+-- Prompt -> tools audit: what the router recommended vs what the model actually called.
+CREATE TABLE IF NOT EXISTS tool_routing (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    session_id TEXT NOT NULL,
+    turn_id TEXT NOT NULL,
+    created_at TEXT NOT NULL,
+    detected_domains_json TEXT,
+    recommended_json TEXT,
+    used_json TEXT DEFAULT '[]',
+    used_calls INTEGER DEFAULT 0,
+    UNIQUE(session_id, turn_id)
+);
 """
+
+# Columns added after the first schema release; applied idempotently to existing DBs.
+_MIGRATIONS = (
+    "ALTER TABLE llm_metrics ADD COLUMN tool_names_json TEXT",
+)
+
 
 def init_telemetry_schema(conn: sqlite3.Connection) -> None:
     conn.executescript(TELEMETRY_SCHEMA_SQL)
+    for stmt in _MIGRATIONS:
+        try:
+            conn.execute(stmt)
+        except sqlite3.OperationalError:
+            pass  # column already exists
     conn.commit()

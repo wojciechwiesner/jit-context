@@ -175,6 +175,10 @@ def evaluate_conscience_gate(
     # 3. DETERMINISTIC NORMALIZATION (Units and numbers)
     clean_ans = raw_str.rstrip('.')
 
+    # Lossless format normalization explicitly requested by the question.
+    if re.search(r"(no|without)\s+(any\s+)?white\s?space", question, re.IGNORECASE):
+        clean_ans = re.sub(r"\s+", "", clean_ans)
+
     # Unit normalization (e.g. 17000 hours -> 17 thousand hours)
     if re.search(r'how many thousand', question, re.IGNORECASE) and clean_ans.isdigit() and len(clean_ans) >= 4:
         val_num = int(clean_ans)
@@ -187,12 +191,106 @@ def evaluate_conscience_gate(
         if high_prec:
             clean_ans = high_prec.group(0)
 
+    # 4. EVIDENCE CHECKS. Conscience never rewrites content; it only labels confidence.
+    #    Before 2026-09-26 every non-empty answer was VERIFIED (53/53 in the GAIA run),
+    #    so "verified" carried no information. Now VERIFIED requires all three checks.
+    grounding = answer_grounding(clean_ans, tool_events)
+    format_issues = check_answer_format(clean_ans, question)
+    forced = any(e.get("status") == "FORCED_ANSWER" or e.get("forced_answer") for e in tool_events)
+
+    problems = []
+    if grounding == "UNGROUNDED":
+        problems.append("UNGROUNDED")
+    if format_issues:
+        problems.append("FORMAT:" + ",".join(format_issues))
+    if forced:
+        problems.append("FORCED_BY_BUDGET")
+
+    if problems:
+        return GateDecision(
+            decision="UNVERIFIED",
+            candidate_answer=raw_str,
+            verified_answer=clean_ans,
+            reason="|".join(problems),
+            evidence_refs=[grounding],
+        )
     return GateDecision(
         decision="VERIFIED",
         candidate_answer=raw_str,
         verified_answer=clean_ans,
-        reason="DETERMINISTIC_GATE_PASSED"
+        reason=f"GATE_PASSED:{grounding}",
+        evidence_refs=[grounding],
     )
+
+
+def _evidence_text(tool_events: List[Dict[str, Any]], max_chars_per_event: int = 200_000) -> str:
+    """Full tool evidence: spill files when present (raw output), else inline previews."""
+    chunks = []
+    for e in tool_events:
+        spill = e.get("spill_path")
+        text = ""
+        if spill:
+            try:
+                text = Path(spill).read_text(encoding="utf-8", errors="ignore")[:max_chars_per_event]
+            except OSError:
+                text = ""
+        if not text:
+            text = str(e.get("output", "")) + " " + str(e.get("output_preview", ""))
+        chunks.append(text)
+    return "\n".join(chunks)
+
+
+def _norm_evidence(s: str) -> str:
+    return re.sub(r"[\s,]+", " ", s.lower()).strip()
+
+
+def answer_grounding(answer: str, tool_events: List[Dict[str, Any]]) -> str:
+    """Classify whether the answer is traceable to tool evidence.
+
+    GROUNDED_EXACT   - the answer string occurs in tool output
+    GROUNDED_PARTS   - every list item / every number of the answer occurs in tool output
+    COMPUTED         - python_exec ran successfully (answer may be derived, not quoted)
+    UNGROUNDED       - none of the above
+    """
+    ans = (answer or "").strip()
+    if not ans:
+        return "UNGROUNDED"
+    evidence = _norm_evidence(_evidence_text(tool_events))
+    a = _norm_evidence(ans)
+    if a and a in evidence:
+        return "GROUNDED_EXACT"
+    parts = [p.strip() for p in re.split(r"[;,]|\band\b", ans) if p.strip()]
+    if len(parts) > 1 and all(_norm_evidence(p) in evidence for p in parts):
+        return "GROUNDED_PARTS"
+    nums = re.findall(r"\d+(?:\.\d+)?", ans.replace(",", ""))
+    if nums and all(n in evidence.replace(",", "") for n in nums) and len(re.sub(r"[\d.,\s$%]", "", ans)) == 0:
+        return "GROUNDED_PARTS"
+    if any(e.get("tool") == "python_exec" and e.get("status") != "ERROR" for e in tool_events):
+        return "COMPUTED"
+    return "UNGROUNDED"
+
+
+def check_answer_format(answer: str, question: str) -> List[str]:
+    """Deterministic checks of explicit format instructions in the question."""
+    q = question.lower()
+    a = answer.strip()
+    issues: List[str] = []
+    if re.search(r"comma[- ]separated|comma[- ]delimited", q) and "," not in a and len(a.split()) > 1:
+        issues.append("EXPECTED_COMMA_LIST")
+    if re.search(r"(no|without)\s+(any\s+)?white\s?space", q) and re.search(r"\s", a):
+        issues.append("WHITESPACE")
+    if re.search(r"alphabetical", q) and "," in a:
+        items = [x.strip().lower() for x in a.split(",") if x.strip()]
+        if items != sorted(items):
+            issues.append("NOT_ALPHABETICAL")
+    asks_number = re.search(r"\bhow many\b|\bwhat is the (number|total|sum|count)\b|just (give|provide) the number", q)
+    if asks_number and not re.search(r"\d", a) and len(a.split()) <= 3 and not re.search(r"\b(zero|one|two|three|four|five|six|seven|eight|nine|ten)\b", a.lower()):
+        issues.append("EXPECTED_NUMBER")
+    if re.search(r"without (the )?(\$|dollar sign|units?)|no units|don'?t include (units|the \$)", q) and re.search(r"[$€£%]|\busd\b", a.lower()):
+        issues.append("UNIT_NOT_ALLOWED")
+    if len(a) > 200 and not re.search(r"list|sentence|explain|describe", q):
+        issues.append("TOO_LONG")
+    return issues
 
 
 def resolve_required_modalities(question: str, attached_files: Optional[List[str]] = None) -> Dict[str, Any]:

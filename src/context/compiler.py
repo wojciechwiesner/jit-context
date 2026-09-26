@@ -25,6 +25,43 @@ class CapsuleResult(str):
     def __iter__(self):  # type: ignore[override]
         return iter((str(self), self.meta))
 
+def _norm_statement(text: str) -> str:
+    return re.sub(r"\s+", " ", (text or "")).strip().lower()
+
+
+def _prior_user_statements(overlays: List[Dict], user_message: str) -> List[str]:
+    """Prior user statements, excluding the current turn and harness/system notifications.
+
+    The overlay stores the raw user turn, while user_message may be the extracted genuine
+    instruction (or vice versa), so exact equality missed the current turn in 34/40 live
+    capsules. Containment on normalized text catches both directions.
+    """
+    try:
+        from hooks import extract_genuine_user_instruction, is_synthetic_harness_message
+    except ImportError:  # compiler used standalone (benchmarks) without the plugin hooks module
+        def extract_genuine_user_instruction(text: str) -> str:
+            return text
+
+        def is_synthetic_harness_message(text: str) -> bool:
+            return False
+
+    current = _norm_statement(user_message)
+    out: List[str] = []
+    for o in overlays:
+        if o.get("kind") != "statement":
+            continue
+        value = o.get("value") or ""
+        if is_synthetic_harness_message(value):
+            continue
+        norm = _norm_statement(extract_genuine_user_instruction(value))
+        if not norm:
+            continue
+        if current and (norm == current or norm in current or current in norm):
+            continue
+        out.append(value)
+    return out
+
+
 def compile_context(
     conn: sqlite3.Connection,
     session_id: str,
@@ -58,7 +95,7 @@ def compile_context(
     
     # 2. L0 Active Overlays (RYOW - Invariant I2)
     overlays = get_active_overlays(conn, session_id, limit=10)
-    current_statements = [o["value"] for o in overlays if o.get("kind") == "statement" and o["value"] != user_message]
+    current_statements = _prior_user_statements(overlays, user_message)
     verified_facts = [{"key": o.get("key", ""), "value": o.get("value", "")} for o in overlays if o.get("kind") == "verified_fact"]
     
     # 3. L0 RecentTurnFence (Deduplication across compressions)
@@ -70,9 +107,12 @@ def compile_context(
                 transcript_hashes.add(compute_content_hash(content))
                 
     missing_turns = get_missing_recent_turns(conn, session_id, transcript_hashes)
-    for t in missing_turns:
-        if t["content"] not in current_statements:
-            current_statements.append(t["content"])
+    fence_prior = _prior_user_statements(
+        [{"kind": "statement", "value": t["content"]} for t in missing_turns], user_message
+    )
+    for content in fence_prior:
+        if content not in current_statements:
+            current_statements.append(content)
             
     # 4. L1 Project Context (GSD STATE.md & Architecture integration)
     session_cwd = session.get("last_cwd") or kwargs.get("session_cwd")
