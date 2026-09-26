@@ -1,0 +1,22 @@
+{
+  "running": false,
+  "passed": true,
+  "query": "drzewo decyzyjne i silnik regu\u0142 probabilistycznych",
+  "model": "typesafe/jev-1.13-20260917",
+  "http_status": 200,
+  "latency_ms": 555.37,
+  "remote_call_success": true,
+  "fallback_used": false,
+  "error": null,
+  "scores": {
+    "fact_0": 0.69,
+    "fact_1": 0.24,
+    "fact_2": 0.16
+  },
+  "rank": [
+    "fact_0",
+    "fact_1",
+    "fact_2"
+  ],
+  "text": "model: typesafe/jev-1.13-20260917\nhttp: 200\nlatency_ms: 555.37\nremote_call_success: True\nfallback_used: False\nerror: None\nscore fact_0: 0.69\nscore fact_1: 0.24\nscore fact_2: 0.16\nrank 1: fact_0\nrank 2: fact_1\nrank 3: fact_2"
+}

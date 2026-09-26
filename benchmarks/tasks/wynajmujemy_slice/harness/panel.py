@@ -46,6 +46,8 @@ STATE = {
     "finished_at": None,
     "error": None,
     "config": None,
+    "jev_running": False,
+    "jev": None,
 }
 
 
@@ -66,6 +68,7 @@ def _status() -> dict:
         started = STATE["started_at"]
         finished = STATE["finished_at"]
     live = _read_json(RESULTS / "live.json")
+    jev = STATE["jev"] or _read_json(RESULTS / "jev.json")
     return {
         "running": running,
         "started_at": started,
@@ -78,7 +81,66 @@ def _status() -> dict:
         "judge_tools": False,
         "implementer_tools": bool((config or {}).get("tools")),
         "model_called": False,
+        "jev_running": STATE["jev_running"],
+        "jev": jev or None,
     }
+
+
+def _jev_report(query: str) -> dict:
+    import sys
+    src = str(ROOT.parents[2] / "src")
+    if src not in sys.path:
+        sys.path.insert(0, src)
+    from cognitive.jev_engine import JevDecisionScorer
+
+    candidates = [
+        {"key": "fact_0", "value": "Silnik decyzji probabilistycznych JEV typu typesafe w Hermesie"},
+        {"key": "fact_1", "value": "Wojciech buduje architekturę JIT Context OS i mechanizmy epistemiczne"},
+        {"key": "fact_2", "value": "Kot ma cztery łapy i lubi spać na kanapie"},
+    ]
+    scorer = JevDecisionScorer()
+    detailed = scorer.score_remote_detailed(query, candidates)
+    ranked = scorer.rerank_hybrid(query, candidates)
+    scores = detailed.get("scores") or {}
+    lines = [
+        f"model: {detailed.get('model')}",
+        f"http: {detailed.get('http_status')}",
+        f"latency_ms: {detailed.get('latency_ms')}",
+        f"remote_call_success: {detailed.get('remote_call_success')}",
+        f"fallback_used: {detailed.get('fallback_used')}",
+        f"error: {detailed.get('error')}",
+    ]
+    for key, score in scores.items():
+        lines.append(f"score {key}: {score}")
+    for index, row in enumerate(ranked, start=1):
+        lines.append(f"rank {index}: {row.get('key')}")
+    passed = bool(detailed.get("remote_call_success")) and detailed.get("http_status") == 200 and len(scores) == 3
+    return {
+        "running": False,
+        "passed": passed,
+        "query": query,
+        "model": detailed.get("model"),
+        "http_status": detailed.get("http_status"),
+        "latency_ms": detailed.get("latency_ms"),
+        "remote_call_success": detailed.get("remote_call_success"),
+        "fallback_used": detailed.get("fallback_used"),
+        "error": detailed.get("error"),
+        "scores": scores,
+        "rank": [row.get("key") for row in ranked],
+        "text": "\n".join(lines),
+    }
+
+
+def _run_jev(query: str) -> None:
+    try:
+        report = _jev_report(query)
+    except Exception as exc:
+        report = {"running": False, "passed": False, "error": str(exc), "text": str(exc)}
+    RESULTS.mkdir(parents=True, exist_ok=True)
+    (RESULTS / "jev.json").write_text(json.dumps(report, indent=2), encoding="utf-8")
+    with LOCK:
+        STATE["jev_running"] = False
+        STATE["jev"] = report
 
 
 def _run(config: dict) -> None:
@@ -133,7 +195,7 @@ td { border-top: 1px solid #2a2c33; padding: 8px; vertical-align: top; }
 .ok { color: #8fbc8f; }
 .bad { color: #e07a5f; }
 .msg { color: #a8a29e; font: 12px/1.3 ui-monospace, monospace; }
-.note { font-size: 13px; }
+pre { white-space: pre-wrap; color: #e8e6e3; font: 13px/1.4 ui-monospace, monospace; }
 </style>
 </head>
 <body>
@@ -157,11 +219,15 @@ td { border-top: 1px solid #2a2c33; padding: 8px; vertical-align: top; }
 <label>Prompt agenta</label>
 <textarea name="prompt"></textarea>
 <button type="submit">Odpal sędziego</button>
+<button type="button" id="jev">Odpal JIT JEV</button>
+<label>Zapytanie JEV</label>
+<input name="query" value="drzewo decyzyjne i silnik reguł probabilistycznych">
 <p id="msg" class="note"></p>
 </form>
 <section>
 <h1 id="score">Wynik</h1>
 <p id="meta" class="note">Brak biegu.</p>
+<pre id="jevout">JEV: brak biegu</pre>
 <table id="rows"></table>
 </section>
 </main>
@@ -192,6 +258,11 @@ function draw(data) {
     rows.append(tr);
   });
   if (data.error) msg.textContent = data.error;
+  const jev = data.jev;
+  const out = document.getElementById('jevout');
+  if (data.jev_running) out.textContent = 'JEV: w toku';
+  else if (!jev || !jev.text) out.textContent = 'JEV: brak biegu';
+  else out.textContent = (jev.passed ? 'PASS' : 'FAIL') + '\\n' + jev.text;
 }
 
 async function tick() {
@@ -211,6 +282,16 @@ document.getElementById('panel').addEventListener('submit', async (event) => {
   const res = await fetch('/api/run', {method: 'POST', headers: {'content-type': 'application/json'}, body: JSON.stringify(body)});
   const data = await res.json();
   msg.textContent = data.error || 'bieg zapisany, sędzia leci';
+  tick();
+});
+document.getElementById('jev').addEventListener('click', async () => {
+  const res = await fetch('/api/jev', {
+    method: 'POST',
+    headers: {'content-type': 'application/json'},
+    body: JSON.stringify({query: document.querySelector('[name=query]').value})
+  });
+  const data = await res.json();
+  msg.textContent = data.error || 'JEV leci, to jest prawdziwe wywołanie';
   tick();
 });
 tick();
@@ -243,7 +324,28 @@ class Handler(BaseHTTPRequestHandler):
         self._send(404, b"not found", "text/plain")
 
     def do_POST(self) -> None:
-        if urlparse(self.path).path != "/api/run":
+        path = urlparse(self.path).path
+        if path == "/api/jev":
+            length = int(self.headers.get("Content-Length", "0"))
+            if length > 10_000:
+                self._send(413, b'{"error":"query too large"}', "application/json")
+                return
+            try:
+                payload = json.loads(self.rfile.read(length).decode() or "{}")
+            except json.JSONDecodeError:
+                self._send(400, b'{"error":"bad json"}', "application/json")
+                return
+            query = str(payload.get("query") or "drzewo decyzyjne i silnik reguł probabilistycznych")[:500]
+            with LOCK:
+                if STATE["jev_running"]:
+                    self._send(409, b'{"error":"jev already running"}', "application/json")
+                    return
+                STATE["jev_running"] = True
+                STATE["jev"] = {"running": True, "text": "w toku"}
+            threading.Thread(target=_run_jev, args=(query,), daemon=True).start()
+            self._send(202, b'{"ok":true}', "application/json")
+            return
+        if path != "/api/run":
             self._send(404, b"not found", "text/plain")
             return
         length = int(self.headers.get("Content-Length", "0"))
