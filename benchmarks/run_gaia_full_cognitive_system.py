@@ -337,6 +337,43 @@ def image_inline_part(attached_file: Optional[str]) -> Optional[Dict[str, Any]]:
     return {"inlineData": {"mimeType": mime, "data": base64.b64encode(p.read_bytes()).decode("utf-8")}}
 
 
+def _git_head() -> str:
+    try:
+        root = str(Path(__file__).resolve().parent.parent)
+        out = subprocess.run(["git", "rev-parse", "--short", "HEAD"], cwd=root,
+                             capture_output=True, text=True, timeout=5)
+        dirty = subprocess.run(["git", "status", "--porcelain", "--", "src", "benchmarks/run_gaia_full_cognitive_system.py"],
+                               cwd=root, capture_output=True, text=True, timeout=5)
+        return out.stdout.strip() + ("-dirty" if dirty.stdout.strip() else "")
+    except Exception:
+        return "unknown"
+
+
+def _jit_version() -> str:
+    try:
+        import tomllib
+        pyproject = Path(__file__).resolve().parent.parent / "pyproject.toml"
+        return tomllib.loads(pyproject.read_text())["project"]["version"]
+    except Exception:
+        return "unknown"
+
+
+def call_judge_llm_local(prompt: str, model_name: str) -> str:
+    """Rozwaga judge for local workers: same model via Ollama, no tools, temperature 0."""
+    payload = {"model": model_name, "messages": [{"role": "user", "content": prompt}],
+               "temperature": 0.0, "max_tokens": 200}
+    req = urllib.request.Request("http://localhost:11434/v1/chat/completions",
+                                 data=json.dumps(payload).encode("utf-8"),
+                                 headers={"Content-Type": "application/json"})
+    try:
+        with urllib.request.urlopen(req, timeout=120) as resp:
+            data = json.loads(resp.read().decode("utf-8"))
+        return (data.get("choices", [{}])[0].get("message", {}).get("content") or "").strip()
+    except Exception as e:
+        print(f"  [Rozwaga] local judge call failed: {e}")
+        return ""
+
+
 def call_judge_llm(prompt: str, model_name: str = "gemini-3.8-flash") -> str:
     """Single tool-less call used by Rozwaga. Errors are returned as text (judge falls back)."""
     if not GOOGLE_API_KEY:
@@ -1205,7 +1242,8 @@ def execute_worker_turn_openai(
     endpoint: str,
     api_key: Optional[str] = None,
     max_turns: int = DEFAULT_MAX_TURNS,
-    attached_file: Optional[str] = None
+    attached_file: Optional[str] = None,
+    temperature: float = 0.0
 ) -> Tuple[Optional[str], int, List[Dict[str, Any]]]:
     file_prompt = f"\n\n[ATTACHED FILE: {attached_file}] (Inspect this file using file_read or python_exec)." if attached_file else ""
     system_msg = (
@@ -1238,7 +1276,7 @@ def execute_worker_turn_openai(
             "model": model_name,
             "messages": messages,
             "tools": OPENAI_TOOLS_SCHEMA,
-            "temperature": 0.0,
+            "temperature": temperature,
             "max_tokens": 2048
         }
         if force_answer:
@@ -1253,7 +1291,13 @@ def execute_worker_turn_openai(
             with urllib.request.urlopen(req, timeout=api_timeout) as resp:
                 data = json.loads(resp.read().decode("utf-8"))
         except Exception as e:
-            print(f"  [Turn {turn}] API error ({model_name}): {e}")
+            body = ""
+            if isinstance(e, urllib.error.HTTPError):
+                try:
+                    body = e.read().decode("utf-8", "replace")[:300]
+                except Exception:
+                    body = ""
+            print(f"  [Turn {turn}] API error ({model_name}): {e} {body}")
             break
 
         choices = data.get("choices", [{}])
@@ -1662,12 +1706,19 @@ def run_cognitive_system_benchmark(
         # 6a. Rozwaga (deliberation): only when Sumienie does not verify, run one independent
         #     second attempt (temperature 0.7) and let the judge pick. The judge never writes.
         judge_record = None
-        if judge_enabled and gate.decision != "VERIFIED" and worker_used.startswith("gemini"):
+        if judge_enabled and gate.decision != "VERIFIED":
             print(f"  [Rozwaga]: Sumienie {gate.decision} ({gate.reason}) -> second attempt")
-            ans2_raw, tools2, events2 = execute_worker_turn_gemini(
-                tid, q, capsule, model_name=worker_used, max_turns=max_turns,
-                attached_file=attached_path, temperature=0.7,
-            )
+            if worker_used.startswith("gemini"):
+                ans2_raw, tools2, events2 = execute_worker_turn_gemini(
+                    tid, q, capsule, model_name=worker_used, max_turns=max_turns,
+                    attached_file=attached_path, temperature=0.7,
+                )
+            else:
+                ans2_raw, tools2, events2 = execute_worker_turn_openai(
+                    tid, q, capsule, model_name=worker_used,
+                    endpoint="http://localhost:11434/v1/chat/completions",
+                    max_turns=max_turns, attached_file=attached_path, temperature=0.7,
+                )
             gate2 = bus.step_conscience_gate(task_state, ans2_raw, events2)
             ans2 = gate2.verified_answer or gate2.candidate_answer
             from cognitive.judge import Candidate, deliberate
@@ -1676,7 +1727,8 @@ def run_cognitive_system_benchmark(
                 Candidate(str(ans or ""), gate.decision, gate.reason or "", _evidence_text(tool_events)[-2500:], tools_used),
                 Candidate(str(ans2 or ""), gate2.decision, gate2.reason or "", _evidence_text(events2)[-2500:], tools2),
             ]
-            verdict = deliberate(q, cands, llm_fn=lambda p: call_judge_llm(p, worker_used))
+            judge_fn = call_judge_llm if worker_used.startswith("gemini") else call_judge_llm_local
+            verdict = deliberate(q, cands, llm_fn=lambda p: judge_fn(p, worker_used))
             print(f"  [Rozwaga]: A='{cands[0].answer}' B='{cands[1].answer}' -> {verdict.index} ({verdict.method}: {verdict.reason})")
             judge_record = {
                 "candidates": [c.answer for c in cands],
@@ -1753,8 +1805,9 @@ def run_cognitive_system_benchmark(
         with open(output_path, "w", encoding="utf-8") as f:
             json.dump({
                 "provenance": {
-                    "git_commit": "71cb284",
-                    "jit_version": "0.2.8",
+                    "git_commit": _git_head(),
+                    "jit_version": _jit_version(),
+                    "judge_enabled": judge_enabled,
                     "mode": mode,
                     "worker_model": worker_model,
                     "subconscious_model": "LFM2-1.2B-Extract-MLX-4bit",

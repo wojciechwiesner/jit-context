@@ -1,0 +1,632 @@
+{
+  "provenance": {
+    "git_commit": "71cb284",
+    "jit_version": "0.2.8",
+    "mode": "STANDARD",
+    "worker_model": "qwen3.8:jit",
+    "subconscious_model": "LFM2-1.2B-Extract-MLX-4bit",
+    "conscience_version": "v2_deterministic_gate_option_d",
+    "timestamp": 1790426986.034889
+  },
+  "total": 10,
+  "clean_passed": 5,
+  "verified_passed": 4,
+  "learned_passed": 0,
+  "clean_accuracy": 50.0,
+  "verified_accuracy": 40.0,
+  "tasks": [
+    {
+      "task_id": "e1fc63a2-da7a-432f-be78-7c4a95598703",
+      "attempt_id": "att_e1fc63a2_1790426003",
+      "question": "If Eliud Kipchoge could maintain his record-making marathon pace indefinitely, how many thousand hours would it take him to run the distance between the Earth and the Moon its closest approach? Please use the minimum perigee value on the Wikipedia page for the Moon when carrying out your calculation. Round your result to the nearest 1000 hours and do not use any comma separators if necessary.",
+      "ground_truth": "17",
+      "candidate_answer": "| Moon minimum perigee | 356,400 km | Moon page |",
+      "model_answer": "| Moon minimum perigee | 356,400 km | Moon page |",
+      "gate_decision": "UNVERIFIED",
+      "gate_reason": "UNGROUNDED",
+      "repair_ticket": null,
+      "is_clean_match": false,
+      "is_verified_match": false,
+      "has_prior_used": false,
+      "duration_s": 89.98282790184021,
+      "tools_count": 4,
+      "turns_budget": 15,
+      "loop_guard_skips": 0,
+      "forced_answer": false,
+      "rozwaga": null,
+      "tool_events": [
+        {
+          "tool": "web_search",
+          "input": {
+            "query": "Eliud Kipchoge marathon world record pace Wikipedia"
+          },
+          "output_preview": "Search Grounding Result:\nEliud Kipchoge has set multiple notable marathon times and records:\n\n*   **2022 Berlin Marathon World Record:** On September 25, 2022, Eliud Kipchoge set a marathon world record at the Berlin Marathon, finishing in **2:01:09**. His average speed for this race was 21.02 km/h,",
+          "spill_path": "/tmp/jit_tools/web_search_e1fc63a2-da7a-432f-be78-7c4a95598703_1790425941697_04a70d0194d4.raw",
+          "status": "SUCCESS"
+        },
+        {
+          "tool": "web_search",
+          "input": {
+            "query": "Moon perigee closest approach distance minimum Wikipedia"
+          },
+          "output_preview": "Search Grounding Result:\nThe minimum closest approach distance of the Moon at perigee, according to Jean Meeus's extreme values for 1500 BC to AD 8000, was 356,352.93 km on November 13, 1054 BC. Modern calculations also indicate that the smallest perigee occurs at either new moon or full moon, appro",
+          "spill_path": "/tmp/jit_tools/web_search_e1fc63a2-da7a-432f-be78-7c4a95598703_1790425946488_aa92d1599411.raw",
+          "status": "SUCCESS"
+        },
+        {
+          "tool": "web_extract",
+          "input": {
+            "url": "https://en.wikipedia.org/wiki/Eliud_Kipchoge"
+          },
+          "output_preview": "Eliud Kipchoge - Wikipedia Jump to content Main menu Main menu move to sidebar hide Navigation Main page Contents Current events Random article About Wikipedia Contact us Contribute Help Learn to edit Community portal Recent changes Upload file Special pages Search Search Appearance Donate Create ac",
+          "spill_path": "/tmp/jit_tools/web_extract_e1fc63a2-da7a-432f-be78-7c4a95598703_1790425962674_a0906e339032.raw",
+          "status": "SUCCESS"
+        },
+        {
+          "tool": "web_extract",
+          "input": {
+            "url": "https://en.wikipedia.org/wiki/Moon"
+          },
+          "output_preview": "Moon - Wikipedia Jump to content Main menu Main menu move to sidebar hide Navigation Main page Contents Current events Random article About Wikipedia Contact us Contribute Help Learn to edit Community portal Recent changes Upload file Special pages Search Search Appearance Donate Create account Log ",
+          "spill_path": "/tmp/jit_tools/web_extract_e1fc63a2-da7a-432f-be78-7c4a95598703_1790425966275_83aca2da8344.raw",
+          "status": "ERROR"
+        }
+      ],
+      "worker_used": "qwen3.8:jit",
+      "sensory": {
+        "intent": "direct_execution",
+        "target_entity": "unknown",
+        "output_format": "scalar",
+        "recommended_tools": [
+          "python_exec",
+          "web_search"
+        ],
+        "observations": [],
+        "hypotheses": [],
+        "required_modalities": [
+          "text"
+        ],
+        "duration_ms": 0.0
+      },
+      "plan": "Ego directly executes and investigates with tools."
+    },
+    {
+      "task_id": "8e867cd7-cff9-4e6c-867a-ff5ddc2550be",
+      "attempt_id": "att_8e867cd7_1790426056",
+      "question": "How many studio albums were published by Mercedes Sosa between 2000 and 2009 (included)? You can use the latest 2022 version of english wikipedia.",
+      "ground_truth": "3",
+      "candidate_answer": "3",
+      "model_answer": "3",
+      "gate_decision": "VERIFIED",
+      "gate_reason": "GATE_PASSED:GROUNDED_EXACT",
+      "repair_ticket": null,
+      "is_clean_match": true,
+      "is_verified_match": true,
+      "has_prior_used": false,
+      "duration_s": 52.36042499542236,
+      "tools_count": 3,
+      "turns_budget": 15,
+      "loop_guard_skips": 0,
+      "forced_answer": false,
+      "rozwaga": null,
+      "tool_events": [
+        {
+          "tool": "web_search",
+          "input": {
+            "query": "Mercedes Sosa studio albums discography wikipedia"
+          },
+          "output_preview": "Search Grounding Result:\nMercedes Sosa's studio album discography includes:\n\n*   **1962**: *La Voz de la Zafra*. Label: RCA.\n*   **1965**: *Canciones Con Fundamento*. Label: El Grillo.\n*   **1966**: *Hermano*. Label: Philips.\n*   **1966**: *Yo No Canto Por Cantar*. Label: Philips.\n*   **1967**: *Par",
+          "spill_path": "/tmp/jit_tools/web_search_8e867cd7-cff9-4e6c-867a-ff5ddc2550be_1790426015111_f4aa402d4303.raw",
+          "status": "SUCCESS"
+        },
+        {
+          "tool": "web_extract",
+          "input": {
+            "url": "https://en.wikipedia.org/wiki/Mercedes_Sosa"
+          },
+          "output_preview": "Mercedes Sosa - Wikipedia Jump to content Main menu Main menu move to sidebar hide Navigation Main page Contents Current events Random article About Wikipedia Contact us Contribute Help Learn to edit Community portal Recent changes Upload file Special pages Search Search Appearance Donate Create acc",
+          "spill_path": "/tmp/jit_tools/web_extract_8e867cd7-cff9-4e6c-867a-ff5ddc2550be_1790426025651_827a077e45eb.raw",
+          "status": "SUCCESS"
+        },
+        {
+          "tool": "file_read",
+          "input": {
+            "file_path": "/tmp/jit_tools/web_extract_8e867cd7-cff9-4e6c-867a-ff5ddc2550be_1790426025651_827a077e45eb.raw"
+          },
+          "output_preview": "Mercedes Sosa - Wikipedia Jump to content Main menu Main menu move to sidebar hide Navigation Main page Contents Current events Random article About Wikipedia Contact us Contribute Help Learn to edit Community portal Recent changes Upload file Special pages Search Search Appearance Donate Create acc",
+          "spill_path": "/tmp/jit_tools/file_read_8e867cd7-cff9-4e6c-867a-ff5ddc2550be_1790426042069_827a077e45eb.raw",
+          "status": "SUCCESS"
+        }
+      ],
+      "worker_used": "qwen3.8:jit",
+      "sensory": {
+        "intent": "direct_execution",
+        "target_entity": "unknown",
+        "output_format": "scalar",
+        "recommended_tools": [
+          "python_exec",
+          "web_search"
+        ],
+        "observations": [],
+        "hypotheses": [],
+        "required_modalities": [
+          "text"
+        ],
+        "duration_ms": 0.0
+      },
+      "plan": "Ego directly executes and investigates with tools."
+    },
+    {
+      "task_id": "ec09fa32-d03f-4bf8-84b0-1f16922c3ae4",
+      "attempt_id": "att_ec09fa32_1790426346",
+      "question": "Here's a fun riddle that I think you'll enjoy.\n\nYou have been selected to play the final round of the hit new game show \"Pick That Ping-Pong\". In this round, you will be competing for a large cash prize. Your job will be to pick one of several different numbered ping-pong balls, and then the game will commence. The host describes how the game works.\n\nA device consisting of a winding clear ramp and a series of pistons controls the outcome of the game. The ramp feeds balls onto a platform. The platform has room for three ping-pong balls at a time. The three balls on the platform are each aligned with one of three pistons. At each stage of the game, one of the three pistons will randomly fire, ejecting the ball it strikes. If the piston ejects the ball in the first position on the platform the balls in the second and third position on the platform each advance one space, and the next ball on the ramp advances to the third position. If the piston ejects the ball in the second position, the ball in the first position is released and rolls away, the ball in the third position advances two spaces to occupy the first position, and the next two balls on the ramp advance to occupy the second and third positions on the platform. If the piston ejects the ball in the third position, the ball in the first position is released and rolls away, the ball in the second position advances one space to occupy the first position, and the next two balls on the ramp advance to occupy the second and third positions on the platform.\n\nThe ramp begins with 100 numbered ping-pong balls, arranged in ascending order from 1 to 100. The host activates the machine and the first three balls, numbered 1, 2, and 3, advance to the platform. Before the random firing of the pistons begins, you are asked which of the 100 balls you would like to pick. If your pick is ejected by one of the pistons, you win the grand prize, $10,000.\n\nWhich ball should you choose to maximize your odds of winning the big prize? Please provide your answer as the number of the ball selected.",
+      "ground_truth": "3",
+      "candidate_answer": "",
+      "model_answer": "",
+      "gate_decision": "REJECTED",
+      "gate_reason": "NO_CANDIDATE_ANSWER",
+      "repair_ticket": {
+        "claim_id": "root",
+        "error_type": "MISSING_EVIDENCE",
+        "required_action": "Worker must propose a grounded candidate answer",
+        "required_proof": {
+          "type": "candidate_answer",
+          "non_empty": true
+        },
+        "attempt_count": 1
+      },
+      "is_clean_match": false,
+      "is_verified_match": false,
+      "has_prior_used": false,
+      "duration_s": 290.3110730648041,
+      "tools_count": 0,
+      "turns_budget": 15,
+      "loop_guard_skips": 0,
+      "forced_answer": false,
+      "rozwaga": null,
+      "tool_events": [],
+      "worker_used": "qwen3.8:jit",
+      "sensory": {
+        "intent": "direct_execution",
+        "target_entity": "unknown",
+        "output_format": "scalar",
+        "recommended_tools": [
+          "python_exec",
+          "web_search"
+        ],
+        "observations": [],
+        "hypotheses": [],
+        "required_modalities": [
+          "text"
+        ],
+        "duration_ms": 0.0
+      },
+      "plan": "Ego directly executes and investigates with tools."
+    },
+    {
+      "task_id": "5d0080cb-90d7-4712-bc33-848150e917d3",
+      "attempt_id": "att_5d0080cb_1790426375",
+      "question": "What was the volume in m^3 of the fish bag that was calculated in the University of Leicester paper \"Can Hiccup Supply Enough Fish to Maintain a Dragon\u2019s Diet?\"",
+      "ground_truth": "0.1777",
+      "candidate_answer": "0.1777",
+      "model_answer": "0.1777",
+      "gate_decision": "VERIFIED",
+      "gate_reason": "GATE_PASSED:GROUNDED_EXACT",
+      "repair_ticket": null,
+      "is_clean_match": true,
+      "is_verified_match": true,
+      "has_prior_used": false,
+      "duration_s": 29.000613927841187,
+      "tools_count": 1,
+      "turns_budget": 15,
+      "loop_guard_skips": 0,
+      "forced_answer": false,
+      "rozwaga": null,
+      "tool_events": [
+        {
+          "tool": "web_search",
+          "input": {
+            "query": "University of Leicester \"Can Hiccup Supply Enough Fish to Maintain a Dragon's Diet\" fish bag volume m^3"
+          },
+          "output_preview": "Search Grounding Result:\nThe University of Leicester paper \"Can Hiccup Supply Enough Fish to Maintain a Dragon's Diet\" calculated the fish bag volume to be 0.1777 m^3. This volume was derived from the formula \ud835\udc49\ud835\udc4f\ud835\udc4e\ud835\udc54 = \ud835\udf0b\ud835\udc5f^2\u210e, using a radius of 0.3047 m and a height of 0.6094 m. The bag was estimated to",
+          "spill_path": "/tmp/jit_tools/web_search_5d0080cb-90d7-4712-bc33-848150e917d3_1790426357176_5a16a193caaa.raw",
+          "status": "SUCCESS"
+        }
+      ],
+      "worker_used": "qwen3.8:jit",
+      "sensory": {
+        "intent": "direct_execution",
+        "target_entity": "unknown",
+        "output_format": "scalar",
+        "recommended_tools": [
+          "python_exec",
+          "web_search"
+        ],
+        "observations": [],
+        "hypotheses": [],
+        "required_modalities": [
+          "text"
+        ],
+        "duration_ms": 0.0
+      },
+      "plan": "Ego directly executes and investigates with tools."
+    },
+    {
+      "task_id": "a1e91b78-d3d8-4675-bb8d-62741b4b68a6",
+      "attempt_id": "att_a1e91b78_1790426414",
+      "question": "In the video https://www.youtube.com/watch?v=L1vXCYZAYYM, what is the highest number of bird species to be on camera simultaneously?",
+      "ground_truth": "3",
+      "candidate_answer": "The highest number of bird species to be on camera simultaneously is 3 \u2014 Emperor penguin, giant petrel, and Ad\u00e9lie penguin.",
+      "model_answer": "The highest number of bird species to be on camera simultaneously is 3 \u2014 Emperor penguin, giant petrel, and Ad\u00e9lie penguin",
+      "gate_decision": "UNVERIFIED",
+      "gate_reason": "UNGROUNDED",
+      "repair_ticket": null,
+      "is_clean_match": true,
+      "is_verified_match": false,
+      "has_prior_used": false,
+      "duration_s": 38.58950209617615,
+      "tools_count": 1,
+      "turns_budget": 15,
+      "loop_guard_skips": 0,
+      "forced_answer": false,
+      "rozwaga": null,
+      "tool_events": [
+        {
+          "tool": "video_inspect",
+          "input": {
+            "url_or_path": "https://www.youtube.com/watch?v=L1vXCYZAYYM",
+            "query": "What birds are shown in this video? What is the highest number of bird species appearing on camera simultaneously at any point?"
+          },
+          "output_preview": "Video Visual Inspection Result (35 frames analyzed over 120.6s):\nThe birds shown in this video are:\n1.  **Emperor Penguin** (*Aptenodytes forsteri*) - seen as chicks and adults.\n2.  **Giant Petrel** (*Macronectes sp.*, likely Southern Giant Petrel *Macronectes giganteus*).\n3.  **Adelie Penguin** (*P",
+          "spill_path": "/tmp/jit_tools/video_inspect_a1e91b78-d3d8-4675-bb8d-62741b4b68a6_1790426402969_70f7bc756133.raw",
+          "status": "SUCCESS"
+        }
+      ],
+      "worker_used": "qwen3.8:jit",
+      "sensory": {
+        "intent": "direct_execution",
+        "target_entity": "unknown",
+        "output_format": "scalar",
+        "recommended_tools": [
+          "python_exec",
+          "video_inspect",
+          "web_extract",
+          "web_search"
+        ],
+        "observations": [],
+        "hypotheses": [],
+        "required_modalities": [
+          "text",
+          "video"
+        ],
+        "duration_ms": 0.0
+      },
+      "plan": "Ego directly executes and investigates with tools."
+    },
+    {
+      "task_id": "46719c30-f4c3-4cad-be07-d5cb21eee6bb",
+      "attempt_id": "att_46719c30_1790426537",
+      "question": "Of the authors (First M. Last) that worked on the paper \"Pie Menus or Linear Menus, Which Is Better?\" in 2015, what was the title of the first paper authored by the one that had authored prior papers?",
+      "ground_truth": "Mapping Human Oriented Information to Software Agents for Online Systems Usage",
+      "candidate_answer": "A New Software Agent 'Learning' Algorithm",
+      "model_answer": "A New Software Agent 'Learning' Algorithm",
+      "gate_decision": "VERIFIED",
+      "gate_reason": "GATE_PASSED:GROUNDED_EXACT",
+      "repair_ticket": null,
+      "is_clean_match": false,
+      "is_verified_match": false,
+      "has_prior_used": false,
+      "duration_s": 123.44215202331543,
+      "tools_count": 4,
+      "turns_budget": 15,
+      "loop_guard_skips": 0,
+      "forced_answer": false,
+      "rozwaga": null,
+      "tool_events": [
+        {
+          "tool": "web_search",
+          "input": {
+            "query": "\"Pie Menus or Linear Menus, Which Is Better?\" 2015 authors"
+          },
+          "output_preview": "Search Grounding Result:\nA study published in September 2015, titled \"Pie Menus or Linear Menus, Which Is Better?\", was authored by Pietro Murano. The investigation aimed to determine which menu type is more usable on a website or application, specifically comparing pie menus with linear menus.\n\nKey",
+          "spill_path": "/tmp/jit_tools/web_search_46719c30-f4c3-4cad-be07-d5cb21eee6bb_1790426427928_ae61e64442b4.raw",
+          "status": "ERROR"
+        },
+        {
+          "tool": "web_search",
+          "input": {
+            "query": "\"Pie Menus or Linear Menus, Which Is Better?\" 2015 full author list"
+          },
+          "output_preview": "Search Grounding Result:\nThe paper \"Pie Menus or Linear Menus, Which Is Better?\", published in September 2015, was authored by Pietro Murano and Iram N. Khan.\n\nRegarding which menu type is better, the paper's findings are as follows:\n\"There were no statistically significant results for task times an",
+          "spill_path": "/tmp/jit_tools/web_search_46719c30-f4c3-4cad-be07-d5cb21eee6bb_1790426444385_7da1fdf00d4b.raw",
+          "status": "ERROR"
+        },
+        {
+          "tool": "web_search",
+          "input": {
+            "query": "Pietro Murano publications prior to 2015"
+          },
+          "output_preview": "Search Grounding Result:\nPietro Murano has several publications prior to 2015, including journal articles and conference papers:\n\n**2014**\n*   \"A Comparative Study of the Usability of Touch-Based and Mouse-Based Interaction\" by Travis, Charlotte & Murano, Pietro, published in the International Journ",
+          "spill_path": "/tmp/jit_tools/web_search_46719c30-f4c3-4cad-be07-d5cb21eee6bb_1790426458617_c6d185e38dc1.raw",
+          "status": "SUCCESS"
+        },
+        {
+          "tool": "web_search",
+          "input": {
+            "query": "Iram N. Khan publications prior to 2015"
+          },
+          "output_preview": "Search Grounding Result:\nVerbatim facts regarding Iram N. Khan's publications prior to 2015 are as follows:\n\n*   \"Studies on larvicidal and IGR properties of leaf extract of Cassia fistula and Saraca indica (Family: Leguminosae)\" by SH Mehdi, A Qamar, I Khan, PI Tayyaba was published in J. Herbal Me",
+          "spill_path": "/tmp/jit_tools/web_search_46719c30-f4c3-4cad-be07-d5cb21eee6bb_1790426482725_4997e170680b.raw",
+          "status": "SUCCESS"
+        }
+      ],
+      "worker_used": "qwen3.8:jit",
+      "sensory": {
+        "intent": "direct_execution",
+        "target_entity": "unknown",
+        "output_format": "scalar",
+        "recommended_tools": [
+          "python_exec",
+          "web_search"
+        ],
+        "observations": [],
+        "hypotheses": [],
+        "required_modalities": [
+          "text"
+        ],
+        "duration_ms": 0.0
+      },
+      "plan": "Ego directly executes and investigates with tools."
+    },
+    {
+      "task_id": "4b6bb5f7-f634-410e-815d-e673ab7f8632",
+      "attempt_id": "att_4b6bb5f7_1790426621",
+      "question": "In Series 9, Episode 11 of Doctor Who, the Doctor is trapped inside an ever-shifting maze. What is this location called in the official script for the episode? Give the setting exactly as it appears in the first scene heading.",
+      "ground_truth": "THE CASTLE",
+      "candidate_answer": "INT. THE CASTLE",
+      "model_answer": "INT. THE CASTLE",
+      "gate_decision": "VERIFIED",
+      "gate_reason": "GATE_PASSED:GROUNDED_EXACT",
+      "repair_ticket": null,
+      "is_clean_match": true,
+      "is_verified_match": true,
+      "has_prior_used": false,
+      "duration_s": 83.84232592582703,
+      "tools_count": 4,
+      "turns_budget": 15,
+      "loop_guard_skips": 0,
+      "forced_answer": false,
+      "rozwaga": null,
+      "tool_events": [
+        {
+          "tool": "web_search",
+          "input": {
+            "query": "Doctor Who Series 9 Episode 11 maze location setting"
+          },
+          "output_preview": "Search Grounding Result:\nThe maze location in Doctor Who Series 9 Episode 11, \"Heaven Sent,\" is a mysterious, waterlocked castle that constantly reconfigures itself. This castle is described as a torture chamber and a \"puzzle box of revelations\". The Doctor is imprisoned here by his people, the Time",
+          "spill_path": "/tmp/jit_tools/web_search_4b6bb5f7-f634-410e-815d-e673ab7f8632_1790426548814_0fe23b76a8d8.raw",
+          "status": "SUCCESS"
+        },
+        {
+          "tool": "web_search",
+          "input": {
+            "query": "\"Heaven Sent\" Doctor Who Series 9 Episode 11 first scene heading setting"
+          },
+          "output_preview": "Search Grounding Result:\nThe first scene heading setting of \"Heaven Sent,\" Doctor Who Series 9 Episode 11, places the Doctor in an ancient, sprawling castle. He materializes in a teleportation chamber within this \"medieval looking castle\". The castle is described as \"waterlocked\" and located \"in the",
+          "spill_path": "/tmp/jit_tools/web_search_4b6bb5f7-f634-410e-815d-e673ab7f8632_1790426567483_86f3cf470bac.raw",
+          "status": "SUCCESS"
+        },
+        {
+          "tool": "web_search",
+          "input": {
+            "query": "\"Heaven Sent\" Doctor Who script first scene \"INT.\" or \"EXT.\" setting name"
+          },
+          "output_preview": "Search Grounding Result:\nThe first scene of the \"Heaven Sent\" Doctor Who script is set as \"INT. THE CASTLE - DAY\".",
+          "spill_path": "/tmp/jit_tools/web_search_4b6bb5f7-f634-410e-815d-e673ab7f8632_1790426579651_650e21f7815b.raw",
+          "status": "SUCCESS"
+        },
+        {
+          "tool": "web_search",
+          "input": {
+            "query": "\"Heaven Sent\" Doctor Who Episode 11 Series 9 official script first scene INT THE CASTLE"
+          },
+          "output_preview": "Search Grounding Result:\nThe first scene of \"Heaven Sent,\" Doctor Who Episode 11 of Series 9, titled \"INT. THE CASTLE - DAY,\" begins with visual descriptions and a voiceover from the Doctor.\n\n**Verbatim Facts from the Official Script for INT. THE CASTLE - DAY:**\n\n*   \"Spires and towers, an ancient s",
+          "spill_path": "/tmp/jit_tools/web_search_4b6bb5f7-f634-410e-815d-e673ab7f8632_1790426591912_7da337aab3c4.raw",
+          "status": "SUCCESS"
+        }
+      ],
+      "worker_used": "qwen3.8:jit",
+      "sensory": {
+        "intent": "direct_execution",
+        "target_entity": "unknown",
+        "output_format": "scalar",
+        "recommended_tools": [
+          "python_exec",
+          "web_search"
+        ],
+        "observations": [],
+        "hypotheses": [],
+        "required_modalities": [
+          "text"
+        ],
+        "duration_ms": 0.0
+      },
+      "plan": "Ego directly executes and investigates with tools."
+    },
+    {
+      "task_id": "cffe0e32-c9a6-4c52-9877-78ceb4aaa9fb",
+      "attempt_id": "att_cffe0e32_1790426828",
+      "question": "An office held a Secret Santa gift exchange where each of its twelve employees was assigned one other employee in the group to present with a gift. Each employee filled out a profile including three likes or hobbies. On the day of the gift exchange, only eleven gifts were given, each one specific to one of the recipient's interests. Based on the information in the document, who did not give a gift?",
+      "ground_truth": "Fred",
+      "candidate_answer": "| Alex \u2192 Tyson (Historical Fiction Novels) | War and Peace novel \u2713 |",
+      "model_answer": "| Alex \u2192 Tyson (Historical Fiction Novels) | War and Peace novel \u2713 |",
+      "gate_decision": "VERIFIED",
+      "gate_reason": "GATE_PASSED:COMPUTED",
+      "repair_ticket": null,
+      "is_clean_match": false,
+      "is_verified_match": false,
+      "has_prior_used": false,
+      "duration_s": 206.8693733215332,
+      "tools_count": 3,
+      "turns_budget": 15,
+      "loop_guard_skips": 0,
+      "forced_answer": false,
+      "rozwaga": null,
+      "tool_events": [
+        {
+          "tool": "file_read",
+          "input": {
+            "file_path": "/tmp/gaia/files/cffe0e32-c9a6-4c52-9877-78ceb4aaa9fb.docx"
+          },
+          "output_preview": "Employees\nHarry\nRebecca\nGeorgette\nMicah\nPerry\nTyson\nLucy\nJun\nSara\nMiguel\nFred\nAlex\nGift Assignments\nProfiles\nHarry: Fishing, Camping, Wine\nRebecca: Cars, Dogs, Chocolate\nGeorgette: Yoga, Cooking, Green Energy\nMicah: Knitting, Rainy Weather, Books\nPerry: Old Movies, Rats, Journaling\nTyson: Historical",
+          "spill_path": "/tmp/jit_tools/file_read_cffe0e32-c9a6-4c52-9877-78ceb4aaa9fb_1790426629578_882668394855.raw",
+          "status": "SUCCESS"
+        },
+        {
+          "tool": "python_exec",
+          "input": {
+            "code": "# Define employees with their interests\nemployees = {\n    \"Harry\": [\"Fishing\", \"Camping\", \"Wine\"],\n    \"Rebecca\": [\"Cars\", \"Dogs\", \"Chocolate\"],\n    \"Georgette\": [\"Yoga\", \"Cooking\", \"Green Energy\"],\n    \"Micah\": [\"Knitting\", \"Rainy Weather\", \"Books\"],\n    \"Perry\": [\"Old Movies\", \"Rats\", \"Journaling\"],\n    \"Tyson\": [\"Historical Fiction Novels\", \"Biking\", \"Parakeets\"],\n    \"Lucy\": [\"Coffee\", \"Physics\", \"Board Games\"],\n    \"Jun\": [\"Woodworking\", \"Barbecue\", \"JavaScript\"],\n    \"Sara\": [\"Tabletop RPGs\", \"Spas\", \"Music\"],\n    \"Miguel\": [\"Astronomy\", \"Decorative Washi Tape\", \"Ketchup\"],\n    \"Fred\": [\"Chemistry\", \"Perl\", \"Cats\"],\n    \"Alex\": [\"Surfing\", \"Audrey Hepburn\", \"Manga\"]\n}\n\n# Gift assignments (Giver -> Recipient)\nassignments = {\n    \"Harry\": \"Miguel\",\n    \"Rebecca\": \"Micah\",\n    \"Georgette\": \"Lucy\",\n    \"Micah\": \"Jun\",\n    \"Perry\": \"Georgette\",\n    \"Tyson\": \"Fred\",\n    \"Lucy\": \"Alex\",\n    \"Jun\": \"Harry\",\n    \"Sara\": \"Perry\",\n    \"Fred\": \"Rebecca\",\n    \"Miguel\": \"Sara\",\n    \"Alex\": \"Tyson\"\n}\n\n# Gifts and their likely recipients based on interests\ngifts = {\n    \"Galileo Galilei biography\": [\"Astronomy\"],  # Miguel\n    \"Fishing reel\": [\"Fishing\"],  # Harry\n    \"Raku programming guide\": [\"JavaScript\", \"Perl\"],  # Jun or Fred\n    \"Chisel set\": [\"Woodworking\"],  # Jun\n    \"Custom dice\": [\"Tabletop RPGs\", \"Board Games\"],  # Sara or Lucy\n    \"War and Peace American film copy\": [\"Old Movies\"],  # Perry\n    \"Yarn\": [\"Knitting\"],  # Micah\n    \"One Piece graphic novel\": [\"Manga\"],  # Alex\n    \"War and Peace novel\": [\"Historical Fiction Novels\"],  # Tyson\n    \"Starbucks gift card\": [\"Coffee\"],  # Lucy\n    \"Foam exercise mat\": [\"Yoga\"],  # Georgette\n}\n\n# Match each gift to a recipient based on their interests\nmatched = {}\nfor gift, interests in gifts.items():\n    for person, likes in employees.items():\n        if any(interest in likes for interest in interests):\n            matched[gift] = person\n            break\n\nprint(\"Gift -> Recipient mapping:\")\nfor gift, recipient in sorted(matched.items()):\n    print(f\"  {gift} -> {recipient}\")\n\n# Now determine who gave which gift and find the unassigned giver\ngiver_gifts = {}\nfor giver, recipient in assignments.items():\n    if recipient in matched.values():\n        # Find which gift matches this recipient's interests\n        for gift, person in matched.items():\n            if person == recipient:\n                giver_gifts[giver] = gift\n                break\n\nprint(\"\\nGiver -> Gift mapping:\")\nfor giver, gift in sorted(giver_gifts.items()):\n    print(f\"  {giver} gave: {gift}\")\n\n# Find who did NOT give a gift\nall_givers = set(assignments.keys())\ngiving_givers = set(giver_gifts.keys())\nunassigned = all_givers - giving_givers\nprint(f\"\\nUnassigned giver(s): {unassigned}\")"
+          },
+          "output_preview": "Gift -> Recipient mapping:\n  Chisel set -> Jun\n  Custom dice -> Lucy\n  Fishing reel -> Harry\n  Foam exercise mat -> Georgette\n  Galileo Galilei biography -> Miguel\n  One Piece graphic novel -> Alex\n  Raku programming guide -> Jun\n  Starbucks gift card -> Lucy\n  War and Peace American film copy -> Pe",
+          "spill_path": "/tmp/jit_tools/python_exec_cffe0e32-c9a6-4c52-9877-78ceb4aaa9fb_1790426700156_326813cf71a1.raw",
+          "status": "SUCCESS"
+        },
+        {
+          "tool": "python_exec",
+          "input": {
+            "code": "# Let me reconsider. The problem says 12 employees, only 11 gifts given.\n# Each employee was assigned one other employee to give a gift to.\n# Only 11 gifts were actually given (one person didn't give).\n\nemployees = {\n    \"Harry\": [\"Fishing\", \"Camping\", \"Wine\"],\n    \"Rebecca\": [\"Cars\", \"Dogs\", \"Chocolate\"],\n    \"Georgette\": [\"Yoga\", \"Cooking\", \"Green Energy\"],\n    \"Micah\": [\"Knitting\", \"Rainy Weather\", \"Books\"],\n    \"Perry\": [\"Old Movies\", \"Rats\", \"Journaling\"],\n    \"Tyson\": [\"Historical Fiction Novels\", \"Biking\", \"Parakeets\"],\n    \"Lucy\": [\"Coffee\", \"Physics\", \"Board Games\"],\n    \"Jun\": [\"Woodworking\", \"Barbecue\", \"JavaScript\"],\n    \"Sara\": [\"Tabletop RPGs\", \"Spas\", \"Music\"],\n    \"Miguel\": [\"Astronomy\", \"Decorative Washi Tape\", \"Ketchup\"],\n    \"Fred\": [\"Chemistry\", \"Perl\", \"Cats\"],\n    \"Alex\": [\"Surfing\", \"Audrey Hepburn\", \"Manga\"]\n}\n\nassignments = {\n    \"Harry\": \"Miguel\",\n    \"Rebecca\": \"Micah\",\n    \"Georgette\": \"Lucy\",\n    \"Micah\": \"Jun\",\n    \"Perry\": \"Georgette\",\n    \"Tyson\": \"Fred\",\n    \"Lucy\": \"Alex\",\n    \"Jun\": \"Harry\",\n    \"Sara\": \"Perry\",\n    \"Fred\": \"Rebecca\",\n    \"Miguel\": \"Sara\",\n    \"Alex\": \"Tyson\"\n}\n\ngifts = {\n    \"Galileo Galilei biography\": [\"Astronomy\"],\n    \"Fishing reel\": [\"Fishing\"],\n    \"Raku programming guide\": [\"JavaScript\", \"Perl\"],\n    \"Chisel set\": [\"Woodworking\"],\n    \"Custom dice\": [\"Tabletop RPGs\", \"Board Games\"],\n    \"War and Peace American film copy\": [\"Old Movies\"],\n    \"Yarn\": [\"Knitting\"],\n    \"One Piece graphic novel\": [\"Manga\"],\n    \"War and Peace novel\": [\"Historical Fiction Novels\"],\n    \"Starbucks gift card\": [\"Coffee\"],\n    \"Foam exercise mat\": [\"Yoga\"]\n}\n\n# For each giver, check if their assigned recipient has interests matching any gift\ngiver_gifts = {}\nfor giver, recipient in assignments.items():\n    recipient_interests = employees[recipient]\n    matched_gift = None\n    for gift_name, required_interests in gifts.items():\n        # Check if the recipient has at least one of the required interests\n        if any(interest in recipient_interests for interest in required_interests):\n            matched_gift = gift_name\n            break\n    \n    if matched_gift:\n        giver_gifts[giver] = matched_gift\n\nprint(\"Givers who gave a gift (with their assigned recipient and matching gift):\")\nfor giver, gift in sorted(giver_gifts.items()):\n    print(f\"  {giver} -> {assignments[giver]} received: {gift}\")\n\nunassigned = set(assignments.keys()) - set(giver_gifts.keys())\nprint(f\"\\nUnassigned givers (did not give a gift): {sorted(unassigned)}\")"
+          },
+          "output_preview": "Givers who gave a gift (with their assigned recipient and matching gift):\n  Alex -> Tyson received: War and Peace novel\n  Georgette -> Lucy received: Custom dice\n  Harry -> Miguel received: Galileo Galilei biography\n  Jun -> Harry received: Fishing reel\n  Lucy -> Alex received: One Piece graphic nov",
+          "spill_path": "/tmp/jit_tools/python_exec_cffe0e32-c9a6-4c52-9877-78ceb4aaa9fb_1790426760198_0a6e7d278b48.raw",
+          "status": "SUCCESS"
+        }
+      ],
+      "worker_used": "qwen3.8:jit",
+      "sensory": {
+        "intent": "direct_execution",
+        "target_entity": "unknown",
+        "output_format": "scalar",
+        "recommended_tools": [
+          "file_read",
+          "python_exec",
+          "web_search"
+        ],
+        "observations": [],
+        "hypotheses": [],
+        "required_modalities": [
+          "document",
+          "text"
+        ],
+        "duration_ms": 0.0
+      },
+      "plan": "Ego directly executes and investigates with tools."
+    },
+    {
+      "task_id": "2d83110e-a098-4ebb-9987-066c06fa42d0",
+      "attempt_id": "att_2d83110e_1790426851",
+      "question": ".rewsna eht sa \"tfel\" drow eht fo etisoppo eht etirw ,ecnetnes siht dnatsrednu uoy fI",
+      "ground_truth": "Right",
+      "candidate_answer": "right",
+      "model_answer": "right",
+      "gate_decision": "VERIFIED",
+      "gate_reason": "GATE_PASSED:COMPUTED",
+      "repair_ticket": null,
+      "is_clean_match": true,
+      "is_verified_match": true,
+      "has_prior_used": false,
+      "duration_s": 22.933998107910156,
+      "tools_count": 1,
+      "turns_budget": 15,
+      "loop_guard_skips": 0,
+      "forced_answer": false,
+      "rozwaga": null,
+      "tool_events": [
+        {
+          "tool": "python_exec",
+          "input": {
+            "code": "text = \".rewsna eht sa \\\"tfel\\\" drow eht fo etisoppo eht etirw ,ecnetnes siht dnatsrednu uoy fI\"\nreversed_text = text[::-1]\nprint(reversed_text)"
+          },
+          "output_preview": "If you understand this sentence, write the opposite of the word \"left\" as the answer.",
+          "spill_path": "/tmp/jit_tools/python_exec_2d83110e-a098-4ebb-9987-066c06fa42d0_1790426844889_ee5157954176.raw",
+          "status": "SUCCESS"
+        }
+      ],
+      "worker_used": "qwen3.8:jit",
+      "sensory": {
+        "intent": "direct_execution",
+        "target_entity": "unknown",
+        "output_format": "scalar",
+        "recommended_tools": [
+          "python_exec",
+          "web_search"
+        ],
+        "observations": [],
+        "hypotheses": [],
+        "required_modalities": [
+          "text"
+        ],
+        "duration_ms": 0.0
+      },
+      "plan": "Ego directly executes and investigates with tools."
+    },
+    {
+      "task_id": "5cfb274c-0207-4aa7-9575-6ac0bd95d9b2",
+      "attempt_id": "att_5cfb274c_1790426986",
+      "question": "Each cell in the attached spreadsheet represents a plot of land. The color of the cell indicates who owns that plot. Green cells are plots owned by Earl Smith. Can Earl walk through every plot he owns (and no other plots) and return to his starting plot without backtracking? For this question, consider backtracking to be any instance where Earl would enter a plot of land he had already entered since leaving his starting plot.",
+      "ground_truth": "No",
+      "candidate_answer": "",
+      "model_answer": "",
+      "gate_decision": "REJECTED",
+      "gate_reason": "NO_CANDIDATE_ANSWER",
+      "repair_ticket": {
+        "claim_id": "root",
+        "error_type": "MISSING_EVIDENCE",
+        "required_action": "Worker must propose a grounded candidate answer",
+        "required_proof": {
+          "type": "candidate_answer",
+          "non_empty": true
+        },
+        "attempt_count": 1
+      },
+      "is_clean_match": false,
+      "is_verified_match": false,
+      "has_prior_used": false,
+      "duration_s": 134.73539185523987,
+      "tools_count": 1,
+      "turns_budget": 15,
+      "loop_guard_skips": 0,
+      "forced_answer": false,
+      "rozwaga": null,
+      "tool_events": [
+        {
+          "tool": "file_read",
+          "input": {
+            "file_path": "/tmp/gaia/files/5cfb274c-0207-4aa7-9575-6ac0bd95d9b2.xlsx"
+          },
+          "output_preview": "--- SHEET: Sheet1 ---\n[color:4A86E8] | [color:4A86E8] | [color:00FF00] | [color:00FF00] | [color:4A86E8] | [color:4A86E8] | [color:9900FF]\n[color:4A86E8] | [color:00FF00] | [color:00FF00] | [color:4A86E8] | [color:4A86E8] | [color:4A86E8] | [color:9900FF]\n[color:4A86E8] | [color:00FF00] | [color:FF0",
+          "spill_path": "/tmp/jit_tools/file_read_5cfb274c-0207-4aa7-9575-6ac0bd95d9b2_1790426862011_cfbc3d2de63b.raw",
+          "status": "SUCCESS"
+        }
+      ],
+      "worker_used": "qwen3.8:jit",
+      "sensory": {
+        "intent": "direct_execution",
+        "target_entity": "unknown",
+        "output_format": "scalar",
+        "recommended_tools": [
+          "file_read",
+          "python_exec",
+          "web_search"
+        ],
+        "observations": [],
+        "hypotheses": [],
+        "required_modalities": [
+          "spreadsheet",
+          "text"
+        ],
+        "duration_ms": 0.0
+      },
+      "plan": "Ego directly executes and investigates with tools."
+    }
+  ]
+}

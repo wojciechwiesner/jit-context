@@ -17,8 +17,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `tool_routing` telemetry table comparing recommended vs used tools; the tool-call counter is now populated.
 
 ### Changed
+- Rozwaga runs for any worker: OpenAI-compatible (Ollama) workers get the second attempt at temperature 0.7 and the same local model as a tool-less judge. It was Gemini-only before, so earlier local-model runs had no judge.
+- GAIA result provenance reads the real `git rev-parse` SHA (with `-dirty`), the `pyproject.toml` version and `judge_enabled`. It was hardcoded to `71cb284` / `0.2.8`.
+- OpenAI-compatible worker errors print the HTTP response body, so a 400 shows its cause.
 - GAIA runner sends the question once and omits an empty COGNITIVE BUS block.
 - List answers are scored element-wise (a fraction list no longer passes on a prefix match).
+
+### Measured (GAIA validation, N=53, gemini-3.8-flash, STANDARD + Sumienie + Rozwaga `--judge`, 15 turns, single run)
+- 47/53 exact after normalization (49/53 by the runner's clean scorer), 39/53 VERIFIED by Sumienie, avg 62 s per task (36 s without the judge).
+- Against the 15-turn run without the judge (45 exact): +4 / -2 tasks. Rozwaga ran on 16 tasks and changed the answer 3 times (2 to correct, 1 to wrong). Most of the +2 is not attributable to the judge in a single run.
 
 ### Measured (8 previously failing GAIA L1 tasks, gemini-3.8-flash, `--judge`, single run)
 - 5/8 now correct with the element-wise scorer (the runner log reports 6/8 with the old scorer). All 3 judge rescues were cases where Sumienie verified exactly one of two candidates. This is a failure-slice probe, not a benchmark score.
