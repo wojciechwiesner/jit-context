@@ -29,6 +29,37 @@ from context.compactor import compact_turn_history, is_compaction_needed, estima
 from config import COMPACTION_TRIGGER_TOKENS, CONTEXT_COMPACTION_THRESHOLD_RATIO, GEMINI_CONTEXT_WINDOW_TOKENS
 from cognitive.contracts import CognitionConfig, CognitionMode
 from cognitive.bus import CognitiveBus
+from cognitive.loop_guard import LoopGuard
+import urllib.error
+
+# Raised from 8: 14/17 GAIA failures exhausted 8 turns without an answer (2026-09-26 A/B).
+DEFAULT_MAX_TURNS = int(os.environ.get("GAIA_MAX_TURNS", "15"))
+
+_PLACEHOLDER_ANSWERS = {"", "<value>", "<exact_answer>", "<exact concise answer>", "final answer", "value"}
+
+
+def extract_final_answer(text: str, allow_last_line: bool = False) -> Optional[str]:
+    """Extract the value after the LAST non-placeholder 'FINAL ANSWER:' marker.
+
+    The old parser took split()[-1] and returned the literal 'FINAL ANSWER' when the model
+    echoed the instruction ('End with: FINAL ANSWER: <value>') or wrapped it in markdown.
+    """
+    if not text:
+        return None
+    clean = text.replace("**", "").replace("__", "")
+    for m in reversed(list(re.finditer(r"FINAL ANSWER\s*:\s*([^\n]*)", clean, re.IGNORECASE))):
+        val = m.group(1).strip().strip("`").strip()
+        if val.lower().rstrip(".") not in _PLACEHOLDER_ANSWERS and "<" not in val[:1]:
+            return val
+    m = re.search(r"the answer is[:\s]+([^\n]+)", clean, re.IGNORECASE)
+    if m:
+        return m.group(1).rstrip(".").strip()
+    if allow_last_line:
+        lines = [l.strip() for l in clean.split("\n") if l.strip()]
+        lines = [l for l in lines if "final answer" not in l.lower()]
+        if lines and lines[-1].lower().rstrip(":") not in _PLACEHOLDER_ANSWERS:
+            return lines[-1]
+    return None
 
 # Load Google API Key from ~/.hermes/.env
 ENV_PATH = Path.home() / ".hermes" / ".env"
@@ -792,7 +823,7 @@ def execute_worker_turn_gemini(
     question: str,
     capsule: str,
     model_name: str = "gemini-3.8-flash",
-    max_turns: int = 8,
+    max_turns: int = DEFAULT_MAX_TURNS,
     attached_file: Optional[str] = None
 ) -> Tuple[Optional[str], int, List[Dict[str, Any]]]:
     if not GOOGLE_API_KEY:
@@ -875,6 +906,8 @@ def execute_worker_turn_gemini(
     final_answer = None
     history_queries: Set[str] = set()
     tool_events: List[Dict[str, Any]] = []
+    guard = LoopGuard(max_turns=max_turns)
+    force_answer = False
 
     for turn in range(1, max_turns + 1):
         payload = {
@@ -899,6 +932,9 @@ def execute_worker_turn_gemini(
                 "thinkingConfig": {"thinkingBudget": 0}
             }
         }
+        if force_answer:
+            # Tools stay declared (history contains functionCall parts) but calling is disabled.
+            payload["toolConfig"] = {"functionCallingConfig": {"mode": "NONE"}}
         req = urllib.request.Request(
             url,
             data=json.dumps(payload).encode("utf-8"),
@@ -939,13 +975,7 @@ def execute_worker_turn_gemini(
         full_text = " ".join(text_parts).strip()
 
         if full_text:
-            ans_candidate = None
-            if "FINAL ANSWER:" in full_text:
-                ans_candidate = full_text.split("FINAL ANSWER:")[-1].split("\n")[0].strip()
-            elif "the answer is" in full_text.lower():
-                m = re.search(r'the answer is[:\s]+([^\n]+)', full_text, re.IGNORECASE)
-                if m:
-                    ans_candidate = m.group(1).rstrip('.').strip()
+            ans_candidate = extract_final_answer(full_text)
 
             if ans_candidate:
                 from cognitive.contracts import extract_epistemic_obligations
@@ -976,9 +1006,20 @@ def execute_worker_turn_gemini(
             fname = fc.get("name")
             fargs = fc.get("args", {})
             tool_calls_count += 1
-            out, processed_out, ev = dispatch_tool_call(
-                fname, fargs, attached_file, question, task_id, history_queries, turn
-            )
+            repeat = guard.classify_call(fname, fargs)
+            if repeat == "exact_repeat":
+                processed_out = (
+                    f"[LOOP GUARD] Identical {fname} call already executed earlier with the same "
+                    f"arguments. Its output is above. Do not repeat it; use a different approach."
+                )
+                ev = {"tool": fname, "input": fargs, "output_preview": processed_out[:300],
+                      "status": "SKIPPED_REPEAT"}
+                print(f"  [Turn {turn}] Loop Guard: skipped exact repeat of {fname}")
+            else:
+                out, processed_out, ev = dispatch_tool_call(
+                    fname, fargs, attached_file, question, task_id, history_queries, turn
+                )
+            guard.observe_output(turn, fname, processed_out, repeat)
             tool_events.append(ev)
             response_parts.append({
                 "functionResponse": {
@@ -986,6 +1027,13 @@ def execute_worker_turn_gemini(
                     "response": {"output": processed_out}
                 }
             })
+
+        verdict = guard.after_turn(turn)
+        if verdict.action != "continue":
+            print(f"  [Turn {turn}] Loop Guard: {verdict.action} ({verdict.reason})")
+            # Gemini accepts text parts alongside functionResponse parts in the same user turn.
+            response_parts.append({"text": verdict.message})
+            force_answer = verdict.action == "force_answer"
 
         contents.append({"role": "user", "parts": response_parts})
 
@@ -1008,6 +1056,8 @@ def execute_worker_turn_gemini(
         })
         payload = {
             "contents": synthesis_contents,
+            "tools": tools_def,
+            "toolConfig": {"functionCallingConfig": {"mode": "NONE"}},
             "generationConfig": {"temperature": 0.0, "maxOutputTokens": 300}
         }
         req = urllib.request.Request(
@@ -1020,13 +1070,13 @@ def execute_worker_turn_gemini(
                 data = json.loads(resp.read().decode("utf-8"))
                 cand = data.get("candidates", [{}])[0]
                 text = " ".join(p.get("text", "") for p in cand.get("content", {}).get("parts", [])).strip()
-                if "FINAL ANSWER:" in text:
-                    final_answer = text.split("FINAL ANSWER:")[-1].split("\n")[0].strip()
-                elif text:
-                    lines = [l.strip() for l in text.split("\n") if l.strip()]
-                    final_answer = lines[-1]
-        except Exception:
-            pass
+                final_answer = extract_final_answer(text, allow_last_line=True)
+                if not final_answer:
+                    print(f"  [Synthesis] empty response, finishReason={cand.get('finishReason')} raw={json.dumps(cand)[:400]} usage={data.get('usageMetadata')}")
+        except urllib.error.HTTPError as e:
+            print(f"  [Synthesis] HTTP {e.code}: {e.read().decode('utf-8', 'replace')[:300]}")
+        except Exception as e:
+            print(f"  [Synthesis] error: {e}")
 
     return final_answer, tool_calls_count, tool_events
 
@@ -1038,7 +1088,7 @@ def execute_worker_turn_openai(
     model_name: str,
     endpoint: str,
     api_key: Optional[str] = None,
-    max_turns: int = 8,
+    max_turns: int = DEFAULT_MAX_TURNS,
     attached_file: Optional[str] = None
 ) -> Tuple[Optional[str], int, List[Dict[str, Any]]]:
     file_prompt = f"\n\n[ATTACHED FILE: {attached_file}] (Inspect this file using file_read or python_exec)." if attached_file else ""
@@ -1060,6 +1110,8 @@ def execute_worker_turn_openai(
     final_answer = None
     history_queries: Set[str] = set()
     tool_events: List[Dict[str, Any]] = []
+    guard = LoopGuard(max_turns=max_turns)
+    force_answer = False
 
     headers = {"Content-Type": "application/json"}
     if api_key:
@@ -1073,6 +1125,8 @@ def execute_worker_turn_openai(
             "temperature": 0.0,
             "max_tokens": 2048
         }
+        if force_answer:
+            payload["tool_choice"] = "none"
         req = urllib.request.Request(
             endpoint,
             data=json.dumps(payload).encode("utf-8"),
@@ -1122,8 +1176,9 @@ def execute_worker_turn_openai(
                 continue
 
         if not tool_calls:
-            if "FINAL ANSWER:" in raw_text:
-                final_answer = raw_text.split("FINAL ANSWER:")[-1].split("\n")[0].strip()
+            parsed = extract_final_answer(raw_text)
+            if parsed:
+                final_answer = parsed
                 break
             elif turn >= 2 and raw_text:
                 lines = [l.strip() for l in raw_text.split("\n") if l.strip()]
@@ -1152,9 +1207,20 @@ def execute_worker_turn_openai(
             else:
                 fargs = raw_args
 
-            out, processed_out, ev = dispatch_tool_call(
-                fname, fargs, attached_file, question, task_id, history_queries, turn
-            )
+            repeat = guard.classify_call(fname, fargs)
+            if repeat == "exact_repeat":
+                processed_out = (
+                    f"[LOOP GUARD] Identical {fname} call already executed earlier with the same "
+                    f"arguments. Its output is above. Do not repeat it; use a different approach."
+                )
+                ev = {"tool": fname, "input": fargs, "output_preview": processed_out[:300],
+                      "status": "SKIPPED_REPEAT"}
+                print(f"  [Turn {turn}] Loop Guard: skipped exact repeat of {fname}")
+            else:
+                out, processed_out, ev = dispatch_tool_call(
+                    fname, fargs, attached_file, question, task_id, history_queries, turn
+                )
+            guard.observe_output(turn, fname, processed_out, repeat)
             tool_events.append(ev)
 
             messages.append({
@@ -1163,6 +1229,13 @@ def execute_worker_turn_openai(
                 "name": fname,
                 "content": processed_out
             })
+
+        if tool_calls:
+            verdict = guard.after_turn(turn)
+            if verdict.action != "continue":
+                print(f"  [Turn {turn}] Loop Guard: {verdict.action} ({verdict.reason})")
+                messages.append({"role": "user", "content": verdict.message})
+                force_answer = verdict.action == "force_answer"
 
         session_id = f"gaia_{task_id[:12]}"
         messages, comp_telemetry = compact_turn_history(
@@ -1196,13 +1269,9 @@ def execute_worker_turn_openai(
             with urllib.request.urlopen(req, timeout=30) as resp:
                 data = json.loads(resp.read().decode("utf-8"))
                 text = data.get("choices", [{}])[0].get("message", {}).get("content", "") or ""
-                if "FINAL ANSWER:" in text:
-                    final_answer = text.split("FINAL ANSWER:")[-1].split("\n")[0].strip()
-                elif text:
-                    lines = [l.strip() for l in text.split("\n") if l.strip()]
-                    final_answer = lines[-1]
-        except Exception:
-            pass
+                final_answer = extract_final_answer(text, allow_last_line=True)
+        except Exception as e:
+            print(f"  [Synthesis] error: {e}")
 
     return final_answer, tool_calls_count, tool_events
 
@@ -1241,7 +1310,7 @@ def execute_worker_turn(
     task_id: str,
     question: str,
     capsule: str,
-    max_turns: int = 8,
+    max_turns: int = DEFAULT_MAX_TURNS,
     attached_file: Optional[str] = None,
     worker_model: Optional[str] = None,
     modalities: Optional[List[Any]] = None
@@ -1397,7 +1466,8 @@ def run_cognitive_system_benchmark(
     task_ids: Optional[str] = None,
     mode: str = "COGNITIVE",
     output_path: str = "/tmp/gaia_cognitive_system_results.json",
-    worker_model: Optional[str] = None
+    worker_model: Optional[str] = None,
+    max_turns: int = DEFAULT_MAX_TURNS
 ):
     val_json_path = "/tmp/gaia/validation_metadata.json"
     with open(val_json_path, "r", encoding="utf-8") as f:
@@ -1458,7 +1528,8 @@ def run_cognitive_system_benchmark(
         
         # 5. Worker Tool Execution (Ego Runtime)
         raw_ans, tools_used, tool_events, worker_used = execute_worker_turn(
-            tid, q, capsule, attached_file=attached_path, worker_model=worker_model, modalities=task_state.modalities
+            tid, q, capsule, attached_file=attached_path, worker_model=worker_model, modalities=task_state.modalities,
+            max_turns=max_turns
         )
         
         # 6. Bus: Step Conscience Gate (Option D Deterministic Verification)
@@ -1512,6 +1583,8 @@ def run_cognitive_system_benchmark(
             "has_prior_used": has_prior,
             "duration_s": dur,
             "tools_count": tools_used,
+            "turns_budget": max_turns,
+            "loop_guard_skips": sum(1 for e in tool_events if e.get("status") == "SKIPPED_REPEAT"),
             "tool_events": tool_events,
             "worker_used": worker_used,
             "sensory": intuition_proposal.to_dict(),
@@ -1558,11 +1631,13 @@ if __name__ == "__main__":
     parser.add_argument("--mode", type=str, default="COGNITIVE", choices=["MINIMAL", "STANDARD", "COGNITIVE", "COLLECTIVE"])
     parser.add_argument("--output", default="/tmp/gaia_cognitive_system_results.json")
     parser.add_argument("--worker", type=str, default=None, help="Worker engine: 'routed' (default), 'qwen' (local Ollama), 'lfm' (OpenRouter), or 'gemini-3.8-flash'")
+    parser.add_argument("--max_turns", type=int, default=DEFAULT_MAX_TURNS, help="Worker tool-loop turn budget (last turn is reserved for a forced answer)")
     args = parser.parse_args()
     run_cognitive_system_benchmark(
         limit=args.limit,
         task_ids=args.task_ids,
         mode=args.mode,
         output_path=args.output,
-        worker_model=args.worker
+        worker_model=args.worker,
+        max_turns=args.max_turns
     )

@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased] - 2026-09-26
+
+### Added
+- `src/cognitive/loop_guard.py`: deterministic in-loop controller for the GAIA worker (Gemini and OpenAI-compatible loops). It skips exact-repeat tool calls, detects near-repeat searches and no-progress streaks (novelty < 10% for 3 calls), nudges a strategy change, warns 2 turns before the budget ends and disables tools on the reserved last turn so the model must answer.
+- `--max_turns` / `GAIA_MAX_TURNS` for the cognitive GAIA runner (default 15, was a hardcoded 8 that was never passed to the worker).
+
+### Fixed
+- Post-loop synthesis sent the history without tool declarations; Gemini answered with a functionCall and `except: pass` hid it, producing 14/53 empty answers. Synthesis and forced turns now declare tools with `functionCallingConfig: NONE` and log failures.
+- Final-answer parsing returned the literal `FINAL ANSWER` when the model echoed the instruction; `extract_final_answer()` takes the last non-placeholder marker and strips markdown.
+
+### Measured (GAIA validation, N=53, gemini-3.8-flash, STANDARD mode, single run each)
+- Before: 36/53 (14 empty answers). Same 8 turns with the fixes: 42/53 (0 empty). 15 turns: 47/53 (88.7%, 0 empty; +11 / -0 vs before).
+- The cognitive pre-pipeline (LFM2 sensory + planner) measured 36/53 vs STANDARD 36/53, with 4 tasks flipping each way. The gain comes from harness fixes, not from the cognitive layers.
+
 ## [Unreleased] - 2026-09-24
 
 ### Added
