@@ -36,6 +36,7 @@ Repository = "https://github.com/wojciechwiesner/jit-context"
 jit = "init:main"
 jit-doctor = "health.doctor:main"
 jit-observatory = "health.server:main"
+jit-livestream = "health.livestream:main"
 
 [tool.setuptools]
 package-dir = {"" = "src"}

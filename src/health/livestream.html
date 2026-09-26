@@ -1,0 +1,198 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>JIT Livestream</title>
+<link rel="stylesheet" href="/static/livestream.css">
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="brand">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#5eead4" stroke-width="1.6"><circle cx="12" cy="12" r="3"/><circle cx="12" cy="12" r="7.5" stroke-opacity=".45"/><path d="M12 1.5v3M12 19.5v3M1.5 12h3M19.5 12h3" stroke-opacity=".7"/></svg>
+      JIT Livestream <small>JIT · JEV · Cognition OS</small>
+    </div>
+    <nav class="tabs"><a id="tab-session" href="/live">Session</a><a id="tab-bench" href="/?mode=bench">Benchmark</a></nav>
+    <span id="status" class="pill stale"><i></i>CONNECTING</span>
+    <div class="hmeta" id="hmeta"></div>
+    <div class="sp"></div>
+    <div id="err" class="err-banner"></div>
+    <label class="sel" id="picker-label"><span id="picker-name">session</span> <select id="picker"></select></label>
+  </header>
+  <div class="strip" id="strip"></div>
+  <div class="grid" id="grid"></div>
+</div>
+<div class="tip" id="tip"></div>
+
+<!-- shared JIT telemetry card body -->
+<template id="tpl-jit">
+  <div class="tele">
+    <div class="tile"><div class="s">L0 hot-path</div><div class="v" id="j-l0">-</div><div class="spark"><svg id="sp-l0" viewBox="0 0 100 34" preserveAspectRatio="none"></svg></div></div>
+    <div class="tile"><div class="s">L1 scope + AST</div><div class="v" id="j-l1">-</div><div class="spark"><svg id="sp-l1" viewBox="0 0 100 34" preserveAspectRatio="none"></svg></div></div>
+    <div class="tile"><div class="s">L2 deep-path</div><div class="v" id="j-l2">-</div><div class="spark"><svg id="sp-l2" viewBox="0 0 100 34" preserveAspectRatio="none"></svg></div></div>
+    <div class="tile"><div class="s">tokens avoided</div><div class="v" id="j-av" style="color:var(--cyan)">-</div><div class="s" id="j-av2" style="margin-top:6px"></div></div>
+  </div>
+  <div class="funnel">
+    <div class="lbl">Capsule vs haystack · last turn</div>
+    <div class="row"><span>haystack</span><div class="bar"><b id="f-hay" style="background:#3b4152;width:100%"></b></div><b id="f-hayv">-</b></div>
+    <div class="row"><span>capsule</span><div class="bar"><b id="f-cap" style="background:linear-gradient(90deg,var(--cyan),var(--vio))"></b></div><b id="f-capv">-</b></div>
+    <div class="row"><span>compression</span><div class="bar"><b id="f-cr" style="background:#5eead455"></b></div><b id="f-crv">-</b></div>
+  </div>
+</template>
+
+<!-- SESSION MODE: any Hermes session (normal tasks) -->
+<template id="tpl-session">
+  <section class="card">
+    <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg>Session<span class="src" id="src-meta">state.db</span></h3>
+    <div class="body">
+      <div class="task" style="margin-top:0"><div class="lbl" style="margin-bottom:6px">Current goal · last user message</div><div class="q" id="s-goal">-</div></div>
+      <div class="kv" style="margin-top:12px">
+        <span>session</span><b id="s-id">-</b>
+        <span>project</span><b id="s-proj">-</b>
+        <span>model</span><b id="s-model">-</b>
+        <span>branch</span><b id="s-branch">-</b>
+        <span>messages</span><b id="s-msgs">-</b>
+        <span>tool calls</span><b id="s-calls">-</b>
+        <span>api calls</span><b id="s-api">-</b>
+        <span>tokens in / out</span><b id="s-tok">-</b>
+        <span>cache read</span><b id="s-cache" style="color:var(--cyan)">-</b>
+        <span>activity</span><b id="s-act">-</b>
+      </div>
+      <div class="lbl" style="margin-top:12px">Working set · files touched</div>
+      <div class="files" id="files"></div>
+      <div class="lbl" style="margin-top:12px">Tool mix</div>
+      <div class="hbars" id="tools" style="margin-top:6px"></div>
+    </div>
+  </section>
+  <section class="card">
+    <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="2.5"/><ellipse cx="12" cy="12" rx="10" ry="4.5"/><ellipse cx="12" cy="12" rx="4.5" ry="10"/></svg>Agent orbit<span class="src" id="src-orbit">tool gravity · last 600 calls</span></h3>
+    <div class="body" style="display:flex;flex-direction:column">
+      <div class="orbit"><svg id="orbit" viewBox="0 0 600 230"></svg></div>
+      <div class="lbl" style="margin-top:4px">Rhythm · every tool call and prompt over time</div>
+      <div class="rhythm"><svg id="rhythm" viewBox="0 0 600 64" preserveAspectRatio="none"></svg></div>
+      <div class="legend" id="rhythm-legend"></div>
+    </div>
+  </section>
+  <section class="card span2r">
+    <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 17l6-5-6-5M12 19h8"/></svg>Terminal stream<span class="src" id="src-log">SSE · state.db</span></h3>
+    <div class="tbar"><span id="t-state">connecting…</span><span class="sp"></span><button id="t-results">results: shown</button><button id="t-follow">follow: on</button></div>
+    <div class="term" id="term"></div>
+  </section>
+  <section class="card">
+    <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3 8-8"/><path d="M20 12v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h9"/></svg>Autochecker · per turn<span class="src" id="src-audit">-</span></h3>
+    <div class="body">
+      <div class="lbl">Turn score · goal → prompt → spec → capsule → output</div>
+      <div class="scores" id="a-scores"></div>
+      <div class="chain" id="a-chain"></div>
+      <div class="lbl" style="margin-top:10px">jitjevmods backlog · <span id="a-open" style="color:var(--amb)">-</span></div>
+      <div class="mods" id="a-mods"></div>
+      <div class="note" id="a-path"></div>
+    </div>
+  </section>
+  <section class="card">
+    <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v6M12 16v6M4.9 4.9l4.2 4.2M14.9 14.9l4.2 4.2M2 12h6M16 12h6"/></svg>JIT Context OS<span class="src" id="src-jit">-</span></h3>
+    <div class="body"><div data-slot="jit"></div>
+      <div class="lbl" style="margin-top:10px">Per turn · capsule vs hook latency</div>
+      <div class="rhythm" style="height:74px"><svg id="turns" viewBox="0 0 600 72" preserveAspectRatio="none"></svg></div>
+      <div class="legend" id="turns-legend"></div>
+      <div class="note" id="jit-note"></div></div>
+  </section>
+</template>
+
+<!-- BENCHMARK MODE: GAIA cognitive runs -->
+<template id="tpl-bench">
+  <section class="card">
+    <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h4l3 8 4-16 3 8h4"/></svg>Score<span class="src" id="src-res">res.json</span></h3>
+    <div class="body">
+      <div class="score">
+        <div class="rings">
+          <svg viewBox="0 0 150 150">
+            <circle cx="75" cy="75" r="66" stroke="#161b24" stroke-width="9" fill="none"/>
+            <circle id="r-clean" cx="75" cy="75" r="66" stroke="#2f8f5c" stroke-width="9" fill="none" stroke-linecap="round" stroke-dasharray="0 999"/>
+            <circle cx="75" cy="75" r="52" stroke="#161b24" stroke-width="9" fill="none"/>
+            <circle id="r-ver" cx="75" cy="75" r="52" stroke="#4ade80" stroke-width="9" fill="none" stroke-linecap="round" stroke-dasharray="0 999"/>
+            <circle cx="75" cy="75" r="38" stroke="#161b24" stroke-width="5" fill="none"/>
+            <circle id="r-prog" cx="75" cy="75" r="38" stroke="#5eead4" stroke-width="5" fill="none" stroke-linecap="round" stroke-dasharray="0 999" stroke-opacity=".8"/>
+          </svg>
+          <div class="c"><div class="big" id="s-clean">-</div><div class="lbl">clean</div></div>
+        </div>
+        <div class="kv">
+          <span>completed</span><b id="s-done">-</b>
+          <span>clean pass</span><b id="s-cleann" style="color:#86efac">-</b>
+          <span>verified</span><b id="s-ver" style="color:var(--grn)">-</b>
+          <span>fail</span><b id="s-fail" style="color:var(--red)">-</b>
+          <span>avg / task</span><b id="s-avg">-</b>
+          <span>api errors</span><b id="s-apierr">-</b>
+        </div>
+      </div>
+      <div class="lv" id="levels"></div>
+      <div class="traj"><svg id="traj" viewBox="0 0 300 92" preserveAspectRatio="none"></svg></div>
+      <div class="legend"><span><i style="background:#86efac"></i>clean accuracy</span><span><i style="background:#4ade80"></i>verified accuracy</span><span><i style="background:#2a3040"></i>task duration</span></div>
+      <div class="note">Runner scoring (lenient). Official GAIA exact-match is computed separately after the run.</div>
+    </div>
+  </section>
+  <section class="card">
+    <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="5" cy="12" r="2"/><circle cx="19" cy="6" r="2"/><circle cx="19" cy="18" r="2"/><path d="M7 12h5l5-6M12 12l5 6"/></svg>Cognition pipeline<span class="src" id="src-cur">run.log</span></h3>
+    <div class="body" style="display:flex;flex-direction:column">
+      <div class="pipe"><svg id="pipe" viewBox="0 0 600 190"></svg></div>
+      <div class="task">
+        <div class="meta" style="margin-top:0;margin-bottom:6px"><span>task <b id="c-idx">-</b></span><span>id <b id="c-id">-</b></span><span>level <b id="c-lvl">-</b></span><span>stage <b id="c-stage" style="color:var(--cyan)">-</b></span></div>
+        <div class="q" id="c-q">-</div>
+        <div class="turnbar" id="c-turns"></div>
+        <div class="meta"><span>turns <b id="c-turn">-</b> / 15</span><span>ground truth hidden until the task completes</span></div>
+      </div>
+    </div>
+  </section>
+  <section class="card span2r">
+    <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 17l6-5-6-5M12 19h8"/></svg>Terminal stream<span class="src" id="src-log">SSE · run.log</span></h3>
+    <div class="tbar"><span id="t-state">connecting…</span><span class="sp"></span><button id="t-follow">follow: on</button><button id="t-compact">spill paths: hidden</button></div>
+    <div class="term" id="term"></div>
+  </section>
+  <section class="card">
+    <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>Task matrix<span class="src" id="src-plan">-</span></h3>
+    <div class="body">
+      <div class="matrix" id="matrix"></div>
+      <div class="mlegend"><span><i style="background:var(--grn)"></i>verified</span><span><i style="background:#1f6b44"></i>clean (not verified)</span><span><i style="background:#7f1d1d"></i>fail</span><span><i style="border:1.5px solid var(--cyan)"></i>running</span><span><i style="background:#161a22;border:1px solid #2a3040"></i>pending</span><span>dark core = attachment</span></div>
+      <div class="cols">
+        <div><div class="lbl" style="margin-bottom:6px">Conscience gate</div><div class="hbars" id="gates"></div></div>
+        <div><div class="lbl" style="margin-bottom:6px">Tool calls</div><div class="hbars" id="tools"></div></div>
+      </div>
+    </div>
+  </section>
+  <section class="card">
+    <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v6M12 16v6M4.9 4.9l4.2 4.2M14.9 14.9l4.2 4.2M2 12h6M16 12h6"/></svg>JIT · JEV · Deliberation<span class="src" id="src-jit">-</span></h3>
+    <div class="body">
+      <div data-slot="jit"></div>
+      <div class="cols">
+        <div>
+          <div class="lbl" style="margin-bottom:6px">Deliberation · A/B duels</div>
+          <div class="duel" id="duel"></div>
+          <div class="lbl" style="margin:10px 0 6px">Loop guard</div>
+          <div class="hbars" id="guards"></div>
+        </div>
+        <div>
+          <div class="lbl">JEV decision scorer</div>
+          <div class="jev" id="jev"></div>
+          <div class="note" id="jev-meta"></div>
+          <div class="lbl" style="margin-top:10px">Experience memory</div>
+          <div class="hbars" id="mem" style="margin-top:6px"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+</template>
+
+<script src="/static/livestream_common.js"></script>
+<script>
+  // Mode routing: ?run=<id> or ?mode=bench -> benchmark view; everything else (/, /live?session=<id>) -> session view.
+  const MODE = params.has("run") || params.get("mode") === "bench" ? "bench" : "session";
+  $("grid").appendChild($(MODE === "bench" ? "tpl-bench" : "tpl-session").content.cloneNode(true));
+  document.querySelector('[data-slot="jit"]').replaceWith($("tpl-jit").content.cloneNode(true));
+  $(MODE === "bench" ? "tab-bench" : "tab-session").classList.add("on");
+  const s = document.createElement("script");
+  s.src = `/static/livestream_${MODE}.js`;  // MODE is one of two constants, never user input
+  document.body.appendChild(s);
+</script>
+</body>
+</html>
