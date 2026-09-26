@@ -22,6 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `.cmux/dock.json`: cmux dock controls for the JIT Livestream panel and its server.
 
 ### Fixed
+- `config.livestream_session_url` used `str | None`, which crashed the Observatory (`/usr/bin/python3` 3.9) on import; now `Optional[str]`.
 - GAIA OpenAI-compatible loop: local workers get `max_tokens` 6144 (was 2048) and a 400 s timeout; a tool call cut off before its JSON closed ("invalid tool call arguments") is retried up to twice with a request for a shorter call instead of ending the task with an empty answer.
 - GAIA L1 qwen3.8:jit rerun (first 10 tasks, 15 turns, `--judge`, commit `7fe938d`): 8/10 exact, 8/10 verified, 0 HTTP 400, 4 HTTP 500 from llama-server (truncated tool-call JSON). Before the history fix and without the judge: 3/10. Raw files: `benchmarks/results/gaia_loop_guard/qwen38jit_t15_judge_10.{json,log}`.
 - `src/cognitive/loop_guard.py`: deterministic in-loop controller for the GAIA worker (Gemini and OpenAI-compatible loops). It skips exact-repeat tool calls, detects near-repeat searches and no-progress streaks (novelty < 10% for 3 calls), nudges a strategy change, warns 2 turns before the budget ends and disables tools on the reserved last turn so the model must answer.
