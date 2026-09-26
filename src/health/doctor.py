@@ -11,10 +11,9 @@ import sqlite3
 import urllib.request
 from pathlib import Path
 
-# Add plugin to sys.path
-PLUGIN_DIR = Path(os.path.expanduser("~/.hermes/plugins/ona-context"))
-if str(PLUGIN_DIR) not in sys.path:
-    sys.path.insert(0, str(PLUGIN_DIR))
+# Inspect the configured Hermes installation without shadowing the installed package.
+HERMES_HOME = Path(os.environ.get("HERMES_HOME", Path.home() / ".hermes"))
+PLUGIN_DIR = HERMES_HOME / "plugins" / "ona-context"
 
 from l0.db import get_db, init_db, DB_PATH
 from l0.overlay import append_event, ensure_session, get_active_overlays
@@ -127,24 +126,29 @@ def run_doctor() -> bool:
         conn = get_db()
         inv_eval = evaluate_all_invariants(conn)
         failed_invs = [k for k, v in inv_eval.items() if (getattr(v, 'value', v) or '').lower() != "pass"]
-        if not failed_invs:
+        if len(inv_eval) == 11 and not failed_invs:
             results["Invariants I1–I11"] = ("PASS", "11/11 Invariants PASS")
         else:
-            results["Invariants I1–I11"] = ("FAIL", f"Failed: {failed_invs}")
+            results["Invariants I1–I11"] = ("FAIL", f"Evaluated {len(inv_eval)}/11; failed: {failed_invs}")
         conn.close()
     except Exception as e:
         results["Invariants I1–I11"] = ("FAIL", str(e))
         
     # 8. Live Health & Observatory Server (:8765)
     try:
-        req = urllib.request.urlopen("http://127.0.0.1:8765/health", timeout=1.0)
+        url = f"http://{os.environ.get('JIT_HEALTH_HOST', '127.0.0.1')}:{os.environ.get('JIT_HEALTH_PORT', '8765')}/health"
+        req = urllib.request.urlopen(url, timeout=1.0)
         if req.status == 200:
             data = json.loads(req.read().decode())
-            results["Observatory Daemon"] = ("PASS", f"listening on :8765 (status={data.get('status')})")
+            daemon_status = data.get("status")
+            results["Observatory Daemon"] = (
+                "PASS" if daemon_status == "healthy" else "FAIL",
+                f"{url} (status={daemon_status})",
+            )
         else:
-            results["Observatory Daemon"] = ("WARN", f"status code {req.status}")
+            results["Observatory Daemon"] = ("FAIL", f"{url} returned HTTP {req.status}")
     except Exception as e:
-        results["Observatory Daemon"] = ("FAIL", f"not responding on :8765 ({e})")
+        results["Observatory Daemon"] = ("FAIL", f"not responding ({e})")
 
     # 9. JEV Decision Engine (Alpha API & Hybrid Invariant I6)
     try:
@@ -168,34 +172,32 @@ def run_doctor() -> bool:
     # Print report
     print("\nDIAGNOSTIC RESULTS:")
     print("-" * 60)
-    all_ok = True
+    all_ok = all(status == "PASS" for status, _ in results.values())
     for item, (status, detail) in results.items():
         color = "\033[92m" if status == "PASS" else ("\033[93m" if status == "WARN" else "\033[91m")
         reset = "\033[0m"
         print(f" {item:<24} [{color}{status}{reset}]  {detail}")
-        if status == "FAIL":
-            all_ok = False
-            
+
     print("-" * 60)
     print("\nONA CONTEXT OS SUMMARY")
     print("────────────────────────────────────────")
-    print(f"Plugin                 PASS")
-    print(f"SQLite WAL             PASS")
-    print(f"L0 (Hot-Path RYOW)     PASS")
-    print(f"L1 (Scope Hysteresis)  PASS")
-    print(f"L2 (Circuit Breaker)   PASS")
-    print(f"Telemetry & Daemon     PASS")
-    print(f"JEV Decision Engine    PASS")
-    print(f"Invariants I1–I11      11/11 PASS")
+    for item, (status, _) in results.items():
+        print(f"{item:<24} {status}")
+    passed = sum(status == "PASS" for status, _ in results.values())
+    print(f"Checks                   {passed}/{len(results)} PASS")
     print("────────────────────────────────────────")
-    
+
     if all_ok:
-        print("\033[92m🟢 READY FOR ACTIVE (Canary v0.1)\033[0m\n")
+        print("READY FOR ACTIVE\n")
     else:
-        print("\033[91m🔴 BLOCKED — CHECK FAILURES ABOVE\033[0m\n")
-        
+        print("BLOCKED — CHECK RESULTS ABOVE\n")
+
     return all_ok
 
+
+def main() -> int:
+    return 0 if run_doctor() else 1
+
+
 if __name__ == "__main__":
-    success = run_doctor()
-    sys.exit(0 if success else 1)
+    sys.exit(main())

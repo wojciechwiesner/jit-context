@@ -850,16 +850,19 @@ def run_health_server(host: str = HEALTH_SERVER_HOST, port: int = HEALTH_SERVER_
         print(f"[ona-context] Port {port} already bound by leader process; running in follower metrics mode.")
         return None
 
-if __name__ == "__main__":
-    import sys
-    plugin_root = str(Path(__file__).resolve().parent.parent)
-    if plugin_root not in sys.path:
-        sys.path.insert(0, plugin_root)
-    print(f"Starting Context OS Observatory on http://{HEALTH_SERVER_HOST}:{HEALTH_SERVER_PORT}")
+def main() -> int:
+    """Run the Observatory in the foreground for the installed CLI."""
     init_db()
     socketserver.TCPServer.allow_reuse_address = True
-    server = socketserver.TCPServer((HEALTH_SERVER_HOST, HEALTH_SERVER_PORT), HealthHTTPHandler)
-    try:
-        server.serve_forever()
-    except KeyboardInterrupt:
-        print("\nObservatory stopped.")
+    with socketserver.TCPServer((HEALTH_SERVER_HOST, HEALTH_SERVER_PORT), HealthHTTPHandler) as server:
+        address = server.server_address
+        print(f"Starting Context OS Observatory on http://{address[0]}:{address[1]}", flush=True)
+        try:
+            server.serve_forever()
+        except KeyboardInterrupt:
+            print("\nObservatory stopped.")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

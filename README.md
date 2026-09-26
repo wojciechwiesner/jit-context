@@ -177,12 +177,13 @@ The [Agent Zero plugin](integrations/agent-zero/README.md) is now available insi
 
 ## Quickstart
 
-### 1. Install via pip
+### 1. Install the Python CLIs (Python 3.11+)
 ```bash
 git clone https://github.com/wojciechwiesner/jit-context.git
 cd jit-context
-pip install -e .
+python3 -m pip install -e .
 ```
+This installs `jit`, `jit-doctor`, and `jit-observatory`. The pip package does not automatically activate the Hermes plugin; `jit-doctor` reports a missing plugin until the Hermes adapter is installed.
 
 ### 2. Configure Your Obsidian Vault (Optional / Auto-detected)
 By default, JIT auto-detects `~/Documents/Vault` or `~/Documents/Wojciech`. You can point to any local Obsidian vault:
@@ -192,22 +193,21 @@ export OBSIDIAN_VAULT="$HOME/Documents/MyVault"
 
 ### 3. Verify System Invariants
 ```bash
-python3 src/health/doctor.py
-# Output: [PASS] 10/10 Epistemic Invariants Verified (<3ms WAL, zero-drift)
+jit-doctor
+# Exits nonzero if any check fails or the Hermes plugin/Observatory is absent.
 ```
 
-### 3. Initialize in Any Project
+### 4. Initialize in Any Project
 Run the JIT profiler in your project directory:
 ```bash
 jit init .
 ```
 This generates the `.planning/STATE.md` working set and configures the project for structured context injection.
 
-### 4. Launch the Live Observatory Dashboard
-Track real-time token savings and epistemic integrity:
+### 5. Launch the Live Observatory Dashboard
 ```bash
-python3 src/telemetry/observatory.py
-# Open http://127.0.0.1:8765 in your browser
+jit-observatory
+# Open http://127.0.0.1:8765 in your browser (or set JIT_HEALTH_PORT).
 ```
 
 ---

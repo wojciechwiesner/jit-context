@@ -9,7 +9,7 @@ description = "JIT-JEV Context OS: Epistemic Context Runtime & System 1 Gate for
 readme = "README.md"
 authors = [{ name = "Wojciech Wiesner", email = "wojciech@theones.io" }]
 license = { text = "MIT" }
-requires-python = ">=3.9"
+requires-python = ">=3.11"
 dependencies = [
     "httpx>=0.27.0",
     "openpyxl>=3.1.5",
@@ -33,8 +33,24 @@ Homepage = "https://doi.org/10.5281/zenodo.22649542"
 Repository = "https://github.com/wojciechwiesner/jit-context"
 
 [project.scripts]
+jit = "init:main"
 jit-doctor = "health.doctor:main"
-jit-observatory = "telemetry.observatory:main"
+jit-observatory = "health.server:main"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+py-modules = ["broker_client", "config", "hooks", "init", "mcp_server", "session_overlay"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+namespaces = true
+include = ["cognitive*", "context*", "health*", "l0*", "l1*", "l2*", "telemetry*"]
+
+[tool.setuptools.package-data]
+health = ["*.html"]
+
+[tool.setuptools.data-files]
+"share/jit-context" = ["src/plugin.yaml"]
 
 [tool.pytest.ini_options]
 testpaths = ["src/tests"]

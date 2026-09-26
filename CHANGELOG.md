@@ -9,10 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - Added the independently versioned Agent Zero v0.4.0 JIT/JEV plugin under `integrations/agent-zero/` with its Apache-2.0 license, host-specific install guidance, isolated adapter tests and dual-suite CI. The deployment record and Hermes upstream PR status are documented separately in `docs/plans/2026-09-24-agent-zero-integration.md`.
+- Added a wheel-level distribution test that installs the CLI in a separate virtual environment, probes an ephemeral localhost Observatory, verifies bundled HTML/manifest files, and asserts a missing Hermes plugin yields a nonzero doctor exit.
 
 ### Fixed
 - `jit init` no longer strips a trailing `-vN` from the dossier name and no longer overwrites an existing Obsidian note. The written stem matches runtime lookup. A legacy stripped file is kept and used only when the canonical note is missing.
 - Declared `httpx` and `pydantic` as core runtime dependencies after the clean-environment CI run exposed missing imports.
+- Corrected the `jit`, `jit-doctor` and `jit-observatory` wheel entrypoints; explicitly ship dashboard HTML and the plugin manifest, exclude test modules from the wheel, and align the advertised Python minimum with CI (3.11).
+- Doctor summaries now reflect measured checks instead of unconditional PASS lines; WARN/degraded/absent checks block readiness, and the CLI exits nonzero when the plugin or Observatory is unavailable.
 
 ## [0.2.11] - 2026-09-23
 
