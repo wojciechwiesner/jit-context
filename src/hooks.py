@@ -314,6 +314,11 @@ def pre_llm_call(ctx: Dict[str, Any]) -> Dict[str, Any]:
         intent_label = intent_map.get(intent_raw, intent_raw)
 
         live_url = f"http://127.0.0.1:8765/live?session={session_id}" if session_id and session_id != "default" else "http://127.0.0.1:8765/live"
+        try:
+            from config import livestream_session_url
+            livestream_url = livestream_session_url(session_id)
+        except Exception:
+            livestream_url = live_url
         # Write fast atomic live status for CLI Status Bar and Live Web Inspector
         try:
             live_payload = {
@@ -337,6 +342,7 @@ def pre_llm_call(ctx: Dict[str, Any]) -> Dict[str, Any]:
                 "obsidian_status": obsidian_status,
                 "capsule": capsule,
                 "live_url": live_url,
+                "livestream_url": livestream_url,
                 "ts": time.time(),
                 "updated_at": time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
             }
@@ -462,7 +468,7 @@ def pre_llm_call(ctx: Dict[str, Any]) -> Dict[str, Any]:
             state_items.append(f"Pliki robocze: {', '.join(file_names)}{more}")
 
         status_lines.append(f"   • Stan: {' • '.join(state_items)}")
-        status_lines.append(f"   • Live Stream: {c_cyan}jit stream{c_reset} (terminal) | Web: {c_cyan}{live_url}{c_reset}")
+        status_lines.append(f"   • Live Stream: {c_cyan}{livestream_url}{c_reset} | Observatory: {live_url} | terminal: jit stream")
         try:
             from cli import _cprint
             _cprint("\n" + "\n".join(status_lines) + "\n")
@@ -651,5 +657,16 @@ pre_llm = pre_llm_call
 session_start = on_session_start
 
 def post_llm(ctx: Dict[str, Any]) -> Dict[str, Any]:
-    """Post-LLM call hook: Optional post-turn cleanup/sync."""
+    """Post-turn hook: runs the deterministic turn autochecker off the hot path (daemon thread, fail-open)."""
+    if os.environ.get("JIT_TURN_AUDIT", "1") != "0":
+        import threading
+
+        def _run() -> None:
+            try:
+                from telemetry.turn_audit import audit_live_turn
+                audit_live_turn(ctx)
+            except Exception as e:  # never break the user's turn over an audit
+                print(f"[ona-context:error] turn_audit: {e}", file=sys.stderr)
+
+        threading.Thread(target=_run, name="jit-turn-audit", daemon=True).start()
     return {}

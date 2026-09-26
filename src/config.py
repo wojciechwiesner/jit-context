@@ -104,6 +104,14 @@ BORG_GATEWAY_KEY = os.environ.get("BORG_GATEWAY_KEY", "")
 # Local Health Server
 HEALTH_SERVER_HOST = os.environ.get("JIT_HEALTH_HOST", "127.0.0.1")
 HEALTH_SERVER_PORT = int(os.environ.get("JIT_HEALTH_PORT", "8765"))
+LIVESTREAM_URL = os.environ.get("JIT_LIVESTREAM_URL", "http://127.0.0.1:8766")
+
+
+def livestream_session_url(session_id: str | None) -> str:
+    """Official per-session live panel link (printed in the JIT status block at every turn)."""
+    if session_id and session_id != "default":
+        return f"{LIVESTREAM_URL}/live?session={session_id}"
+    return f"{LIVESTREAM_URL}/live"
 
 # Context Compaction Settings (0.4 input context window threshold, ~400k tokens for Gemini)
 CONTEXT_COMPACTION_THRESHOLD_RATIO = float(os.environ.get("JIT_COMPACTION_THRESHOLD", "0.4"))
