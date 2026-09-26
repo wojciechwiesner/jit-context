@@ -20,6 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Rozwaga runs for any worker: OpenAI-compatible (Ollama) workers get the second attempt at temperature 0.7 and the same local model as a tool-less judge. It was Gemini-only before, so earlier local-model runs had no judge.
 - GAIA result provenance reads the real `git rev-parse` SHA (with `-dirty`), the `pyproject.toml` version and `judge_enabled`. It was hardcoded to `71cb284` / `0.2.8`.
 - OpenAI-compatible worker errors print the HTTP response body, so a 400 shows its cause.
+- A plain-text worker turn (no tool call, no parsable answer) is followed by a short user continuation. Without it Ollama rejected the next request with HTTP 400 ("Cannot have 2 or more assistant messages at the end of the list") and the task ended early; this affected the earlier qwen3.8:jit run.
 - GAIA runner sends the question once and omits an empty COGNITIVE BUS block.
 - List answers are scored element-wise (a fraction list no longer passes on a prefix match).
 

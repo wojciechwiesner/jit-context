@@ -124,6 +124,23 @@ The older table below is a separate run. Its `jit_z_jev` column did not record l
 | **Decision Cost** | not recorded | not recorded | **not recorded in the agent log** | Do not cite a dollar figure for this run |
 | **Fault Tolerance (I6)** | N/A | Heuristic only | **not measured here** | Agent loop did not log live JEV vs fallback |
 
+---
+
+### 4. GAIA Level 1 validation (N=53): harness fixes, Sumienie and Rozwaga (2026-09-26)
+Worker `gemini-3.8-flash`, STANDARD mode, one run per row, same 53 validation tasks. "Exact" is a normalized string match against the ground truth; the runner's own "clean" scorer is more lenient and is shown in brackets. The harness was tuned on these same 53 tasks, so this is a development-set number, not a held-out score.
+
+| Run | Exact | Avg time / task | What changed |
+| :--- | :---: | :---: | :--- |
+| Before fixes (8 turns) | 34/53 (36) | 29 s | 14 answers were empty: synthesis sent history without tool declarations |
+| Cognitive pre-pipeline (LFM2 sensory + planner) | 33/53 (36) | 31 s | No gain over STANDARD; 4 tasks flipped each way |
+| Loop guard + forced final answer, 8 turns | 40/53 (42) | 26 s | 0 empty answers |
+| Same, 15 turns | 45/53 (47) | 36 s | Turn budget was hardcoded to 8 and never passed to the worker |
+| + Sumienie gate + Rozwaga judge (`--judge`) | **47/53 (49)** | 62 s | 39/53 verified by Sumienie; judge ran on 16 tasks, changed 3 answers (2 right, 1 wrong) |
+
+What the numbers say: almost all of the gain (34 to 45) came from deterministic harness fixes: tool declarations on the synthesis turn, a loop guard, a forced last-turn answer and a real turn budget. The judge added +4 / -2 tasks against the 15-turn run at 1.7x the time per task, which one run cannot separate from sampling noise. The cognitive pre-pipeline did not help and is scheduled for removal.
+
+Local model, same first 10 tasks, `qwen3.8:jit` (9B, Ollama, Mac mini M2 Pro): 3/10 exact without the judge (Gemini: 10/10 on the same 10). That run hit 4 HTTP 400 errors that ended tasks early. The rerun logged the response body: Ollama rejects a history ending in two assistant messages. That harness bug is fixed in `bba46e5`, so 3/10 likely understates the model. A rerun with Rozwaga is in progress; its result will be added here with the raw JSON. Raw logs: `benchmarks/results/gaia_loop_guard/`.
+
 > 📊 **Explore the Live Telemetry & Architecture:**
 > * **Interactive Benchmark Hub:** [theones.io/benchmark/](https://theones.io/benchmark/) *(fixture-battle logs and other measured runs; not a full SWE-bench Docker sweep)*
 > * **Architectural Deep-Dive:** [theones.io/blog/jit-jev-context-the-first-production-agent-runtime](https://theones.io/blog/jit-jev-context-the-first-production-agent-runtime) *(System 1 routing, Fail-Open Circuit-Breaker, and telemetry)*
