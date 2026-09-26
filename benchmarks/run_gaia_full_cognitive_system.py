@@ -1271,13 +1271,19 @@ def execute_worker_turn_openai(
     if api_key:
         headers["Authorization"] = f"Bearer {api_key}"
 
+    is_local = "localhost" in endpoint
+    # Local models write long python_exec code; a 2048 cap cut tool-call JSON mid-string
+    # and llama-server answered HTTP 500 "unexpected end of JSON input".
+    max_out_tokens = 6144 if is_local else 2048
+    truncation_retries = 0
+
     for turn in range(1, max_turns + 1):
         payload = {
             "model": model_name,
             "messages": messages,
             "tools": OPENAI_TOOLS_SCHEMA,
             "temperature": temperature,
-            "max_tokens": 2048
+            "max_tokens": max_out_tokens
         }
         if force_answer:
             payload["tool_choice"] = "none"
@@ -1286,7 +1292,7 @@ def execute_worker_turn_openai(
             data=json.dumps(payload).encode("utf-8"),
             headers=headers
         )
-        api_timeout = 120 if "localhost" in endpoint else 60
+        api_timeout = 400 if is_local else 60
         try:
             with urllib.request.urlopen(req, timeout=api_timeout) as resp:
                 data = json.loads(resp.read().decode("utf-8"))
@@ -1298,6 +1304,17 @@ def execute_worker_turn_openai(
                 except Exception:
                     body = ""
             print(f"  [Turn {turn}] API error ({model_name}): {e} {body}")
+            if "invalid tool call arguments" in body and truncation_retries < 2:
+                # The tool call was cut off before its JSON closed. Ask for a shorter call
+                # instead of ending the task with an empty answer.
+                truncation_retries += 1
+                messages.append({
+                    "role": "user",
+                    "content": ("Your last tool call was cut off before its arguments were complete. "
+                                "Call the tool again with much shorter code: compute the result, "
+                                "do not write data out by hand, print only what you need."),
+                })
+                continue
             break
 
         choices = data.get("choices", [{}])
@@ -1641,7 +1658,8 @@ def run_cognitive_system_benchmark(
     output_path: str = "/tmp/gaia_cognitive_system_results.json",
     worker_model: Optional[str] = None,
     max_turns: int = DEFAULT_MAX_TURNS,
-    judge_enabled: bool = False
+    judge_enabled: bool = False,
+    levels: str = "1"
 ):
     val_json_path = "/tmp/gaia/validation_metadata.json"
     with open(val_json_path, "r", encoding="utf-8") as f:
@@ -1661,7 +1679,8 @@ def run_cognitive_system_benchmark(
         selected = [tid.strip() for tid in task_ids.split(",")]
         tasks = [t for t in all_tasks if any(t.get("task_id", "").startswith(s) for s in selected)]
     else:
-        tasks = [t for t in all_tasks if str(t.get("Level")) == "1"][:limit]
+        wanted_levels = {lvl.strip() for lvl in levels.split(",") if lvl.strip()}
+        tasks = [t for t in all_tasks if str(t.get("Level")) in wanted_levels][:limit]
     print(f"Starting Full Cognitive System Benchmark on {len(tasks)} tasks (Mode: {mode.upper()}, Worker: {worker_model})...")
     
     config = CognitionConfig.from_mode(mode)
@@ -1850,6 +1869,7 @@ if __name__ == "__main__":
     parser.add_argument("--worker", type=str, default=None, help="Worker engine: 'routed' (default), 'qwen' (local Ollama), 'lfm' (OpenRouter), or 'gemini-3.8-flash'")
     parser.add_argument("--max_turns", type=int, default=DEFAULT_MAX_TURNS, help="Worker tool-loop turn budget (last turn is reserved for a forced answer)")
     parser.add_argument("--judge", action="store_true", help="Rozwaga: second attempt + judge when Sumienie does not verify the first answer")
+    parser.add_argument("--levels", type=str, default="1", help="Comma-separated GAIA levels to run when --task_ids is not given, e.g. '1,2,3'")
     args = parser.parse_args()
     run_cognitive_system_benchmark(
         limit=args.limit,
@@ -1858,5 +1878,6 @@ if __name__ == "__main__":
         output_path=args.output,
         worker_model=args.worker,
         max_turns=args.max_turns,
-        judge_enabled=args.judge
+        judge_enabled=args.judge,
+        levels=args.levels
     )

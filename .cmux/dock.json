@@ -1,0 +1,18 @@
+{
+  "controls": [
+    {
+      "id": "jit-livestream",
+      "title": "JIT Livestream",
+      "type": "browser",
+      "url": "http://127.0.0.1:8766/live",
+      "chrome": false
+    },
+    {
+      "id": "jit-livestream-server",
+      "title": "Livestream server",
+      "command": "curl -fsS http://127.0.0.1:8766/healthz >/dev/null 2>&1 && echo 'JIT Livestream already running (launchd ai.hermes.jit-livestream) -> http://127.0.0.1:8766/' || .venv/bin/jit-livestream --port 8766",
+      "cwd": ".",
+      "height": 90
+    }
+  ]
+}
