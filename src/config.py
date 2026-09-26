@@ -107,7 +107,7 @@ HEALTH_SERVER_PORT = int(os.environ.get("JIT_HEALTH_PORT", "8765"))
 LIVESTREAM_URL = os.environ.get("JIT_LIVESTREAM_URL", "http://127.0.0.1:8766")
 
 
-def livestream_session_url(session_id: str | None) -> str:
+def livestream_session_url(session_id: Optional[str]) -> str:
     """Official per-session live panel link (printed in the JIT status block at every turn)."""
     if session_id and session_id != "default":
         return f"{LIVESTREAM_URL}/live?session={session_id}"
