@@ -8,6 +8,7 @@ import urllib.parse
 import sqlite3
 import http.server
 import socketserver
+from glob import escape as glob_escape
 import threading
 import sys
 from typing import Optional, Dict, Any, List
@@ -18,12 +19,28 @@ _PLUGIN_ROOT = str(Path(__file__).resolve().parent.parent)
 if _PLUGIN_ROOT not in sys.path:
     sys.path.insert(0, _PLUGIN_ROOT)
 
-from config import HEALTH_SERVER_HOST, HEALTH_SERVER_PORT, DB_PATH
+from config import HEALTH_SERVER_HOST, HEALTH_SERVER_PORT, DB_PATH, SESSIONS_DIR
 from l0.db import get_db, init_db
 from health.autocheck import get_health_report
 
 STATE_DB_PATH = Path(os.path.expanduser("~/.hermes/state.db"))
 START_TIMESTAMP = time.time()
+
+
+def telemetry_db_paths(since_epoch: float) -> List[Path]:
+    """Global overlay DB plus every per-session overlay DB modified since ``since_epoch``.
+
+    Hooks write telemetry to sessions/<project>/<session>/overlay_<session>.db
+    (config.get_session_db_path); the global DB only holds pre-isolation history.
+    """
+    paths = [Path(DB_PATH)] if Path(DB_PATH).exists() else []
+    for cand in SESSIONS_DIR.glob("*/*/overlay_*.db"):
+        try:
+            if cand.stat().st_mtime >= since_epoch or Path(f"{cand}-wal").stat().st_mtime >= since_epoch:
+                paths.append(cand)
+        except OSError:
+            continue
+    return paths
 
 # Official Provider Quotas & Rate Limits
 QUOTAS = {
@@ -243,69 +260,6 @@ def _legacy_dashboard_metrics(view_mode: str = "session") -> Dict[str, Any]:
 def get_live_metrics_combined(view_mode: str = "session") -> Dict[str, Any]:
     """Return only measurements emitted by registered Context OS hooks."""
     now = time.time()
-    cutoff = 0 if view_mode == "all" else (START_TIMESTAMP if view_mode == "session" else now - 86400)
-    cutoff_iso = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(cutoff))
-    totals = {"cache": 0, "avoided": 0, "cost": 0.0, "l0": 0.0}
-    usage = {"gemini_tokens": 0, "gemini_requests": 0, "claude_5h": 0, "claude_7d": 0, "glm_24h": 0}
-    recent_turns: List[Dict[str, Any]] = []
-    recent_llm: List[Dict[str, Any]] = []
-
-    try:
-        conn = sqlite3.connect(f"file:{DB_PATH}?mode=ro", uri=True, timeout=0.1)
-        conn.row_factory = sqlite3.Row
-        row = conn.execute(
-            "SELECT COALESCE(SUM(jit_tokens_avoided_est), 0) avoided, COALESCE(AVG(l0_ms), 0) l0 "
-            "FROM turn_telemetry WHERE created_at >= ?", (cutoff_iso,),
-        ).fetchone()
-        totals["avoided"], totals["l0"] = row["avoided"], row["l0"]
-        row = conn.execute(
-            "SELECT COALESCE(SUM(cache_read_tokens), 0) cache, COALESCE(SUM(cost_usd), 0) cost "
-            "FROM llm_metrics WHERE status='success' AND started_at >= ?", (cutoff_iso,),
-        ).fetchone()
-        totals["cache"], totals["cost"] = row["cache"], row["cost"]
-
-        turns_sql = (
-            "SELECT t.turn_id, t.created_at, t.active_scope, t.l0_ms, t.l1_ms, t.capsule_tokens_est, "
-            "t.haystack_tokens_est, t.jit_tokens_avoided_est, t.user_query_hash, "
-            "COALESCE(SUM(l.input_tokens), 0) actual_input_tokens "
-            "FROM turn_telemetry t LEFT JOIN llm_metrics l ON l.session_id=t.session_id AND l.turn_id=t.turn_id "
-            "WHERE t.created_at >= ? GROUP BY t.id ORDER BY t.id DESC LIMIT 15"
-        )
-        for row in conn.execute(turns_sql, (cutoff_iso,)):
-            recent_turns.append({
-                "turn_id": row["turn_id"], "created_at": row["created_at"],
-                "user_query_preview": f"sha256:{row['user_query_hash']}",
-                "active_scope": row["active_scope"], "l0_ms": row["l0_ms"], "l1_ms": row["l1_ms"],
-                "capsule_tokens_est": row["capsule_tokens_est"],
-                "haystack_tokens_est": row["haystack_tokens_est"],
-                "jit_tokens_avoided_est": row["jit_tokens_avoided_est"],
-                "actual_input_tokens": row["actual_input_tokens"],
-            })
-        for row in conn.execute(
-            "SELECT requested_model, response_model, input_tokens, output_tokens, cache_read_tokens, "
-            "duration_ms, status, provider FROM llm_metrics WHERE started_at >= ? ORDER BY id DESC LIMIT 10", (cutoff_iso,),
-        ):
-            recent_llm.append(dict(row))
-
-        def model_usage(model_fragment: str, since: float, *, count: bool = False):
-            value = conn.execute(
-                "SELECT COALESCE(SUM(input_tokens + output_tokens), 0), COUNT(*) FROM llm_metrics "
-                "WHERE status='success' AND requested_model LIKE ? AND started_at >= ?",
-                (f"%{model_fragment}%", time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(since))),
-            ).fetchone()
-            return (value[0], value[1]) if count else value[0]
-
-        usage["gemini_tokens"], usage["gemini_requests"] = model_usage("gemini", now - 60, count=True)
-        usage["claude_5h"] = model_usage("claude", now - 18000)
-        usage["claude_7d"] = model_usage("claude", now - 604800)
-        usage["glm_24h"] = model_usage("glm", now - 86400)
-        conn.close()
-    except Exception as exc:
-        print(f"[ona-context:metrics] Error reading Context OS telemetry: {exc}")
-
-    gemini_headroom = round(max(0.0, 1 - usage["gemini_tokens"] / QUOTAS["gemini-3.7-flash"]["tpm_limit"]) * 100, 2)
-    claude_headroom = round(max(0.0, 1 - usage["claude_5h"] / QUOTAS["claude-opus-5"]["window_5h_limit"]) * 100, 2)
-
     live_jit = {}
     try:
         live_p = "/tmp/hermes-jit-live.json"
@@ -314,6 +268,95 @@ def get_live_metrics_combined(view_mode: str = "session") -> Dict[str, Any]:
                 live_jit = json.load(lf)
     except Exception:
         pass
+    # "session" = the Hermes session that produced the latest turn, not the server uptime.
+    live_session = str(live_jit.get("session_id") or "") if view_mode == "session" else ""
+    if live_session:
+        cutoff = 0
+    else:
+        cutoff = 0 if view_mode == "all" else (START_TIMESTAMP if view_mode == "session" else now - 86400)
+    cutoff_iso = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(cutoff))
+    totals = {"cache": 0, "avoided": 0, "cost": 0.0, "l0": 0.0}
+    usage = {"gemini_tokens": 0, "gemini_requests": 0, "claude_5h": 0, "claude_7d": 0, "glm_24h": 0}
+    recent_turns: List[Dict[str, Any]] = []
+    recent_llm: List[Dict[str, Any]] = []
+
+    turn_rows: List[Dict[str, Any]] = []
+    llm_rows: List[Dict[str, Any]] = []
+    l0_sum, l0_count = 0.0, 0
+    windows = {"gemini": now - 60, "claude_5h": now - 18000, "claude_7d": now - 604800, "glm": now - 86400}
+    since_iso = {k: time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(v)) for k, v in windows.items()}
+    if live_session:
+        db_paths = list(SESSIONS_DIR.glob(f"*/{glob_escape(live_session)}/overlay_*.db"))
+    else:
+        db_paths = telemetry_db_paths(min(cutoff, windows["claude_7d"]))
+    for db_path in db_paths:
+        try:
+            # mode=ro fails on WAL databases whose -shm file is gone; query_only keeps it read-only.
+            conn = sqlite3.connect(str(db_path), timeout=0.1)
+            conn.execute("PRAGMA query_only=ON")
+            conn.row_factory = sqlite3.Row
+            try:
+                row = conn.execute(
+                    "SELECT COALESCE(SUM(jit_tokens_avoided_est), 0) avoided, COALESCE(SUM(l0_ms), 0) l0_sum, "
+                    "COUNT(l0_ms) l0_n FROM turn_telemetry WHERE created_at >= ?", (cutoff_iso,),
+                ).fetchone()
+                totals["avoided"] += row["avoided"]
+                l0_sum += row["l0_sum"]
+                l0_count += row["l0_n"]
+                row = conn.execute(
+                    "SELECT COALESCE(SUM(cache_read_tokens), 0) cache, COALESCE(SUM(cost_usd), 0) cost "
+                    "FROM llm_metrics WHERE status='success' AND started_at >= ?", (cutoff_iso,),
+                ).fetchone()
+                totals["cache"] += row["cache"]
+                totals["cost"] += row["cost"]
+                turns_sql = (
+                    "SELECT t.turn_id, t.created_at, t.active_scope, t.l0_ms, t.l1_ms, t.capsule_tokens_est, "
+                    "t.haystack_tokens_est, t.jit_tokens_avoided_est, t.user_query_hash, "
+                    "COALESCE(SUM(l.input_tokens), 0) actual_input_tokens "
+                    "FROM turn_telemetry t LEFT JOIN llm_metrics l ON l.session_id=t.session_id AND l.turn_id=t.turn_id "
+                    "WHERE t.created_at >= ? GROUP BY t.id ORDER BY t.id DESC LIMIT 15"
+                )
+                for row in conn.execute(turns_sql, (cutoff_iso,)):
+                    turn_rows.append({
+                        "turn_id": row["turn_id"], "created_at": row["created_at"],
+                        "user_query_preview": f"sha256:{row['user_query_hash']}",
+                        "active_scope": row["active_scope"], "l0_ms": row["l0_ms"], "l1_ms": row["l1_ms"],
+                        "capsule_tokens_est": row["capsule_tokens_est"],
+                        "haystack_tokens_est": row["haystack_tokens_est"],
+                        "jit_tokens_avoided_est": row["jit_tokens_avoided_est"],
+                        "actual_input_tokens": row["actual_input_tokens"],
+                    })
+                for row in conn.execute(
+                    "SELECT started_at, requested_model, response_model, input_tokens, output_tokens, cache_read_tokens, "
+                    "duration_ms, status, provider FROM llm_metrics WHERE started_at >= ? ORDER BY id DESC LIMIT 10", (cutoff_iso,),
+                ):
+                    llm_rows.append(dict(row))
+
+                def model_usage(model_fragment: str, window: str) -> tuple:
+                    value = conn.execute(
+                        "SELECT COALESCE(SUM(input_tokens + output_tokens), 0), COUNT(*) FROM llm_metrics "
+                        "WHERE status='success' AND requested_model LIKE ? AND started_at >= ?",
+                        (f"%{model_fragment}%", since_iso[window]),
+                    ).fetchone()
+                    return value[0], value[1]
+
+                gem_tok, gem_req = model_usage("gemini", "gemini")
+                usage["gemini_tokens"] += gem_tok
+                usage["gemini_requests"] += gem_req
+                usage["claude_5h"] += model_usage("claude", "claude_5h")[0]
+                usage["claude_7d"] += model_usage("claude", "claude_7d")[0]
+                usage["glm_24h"] += model_usage("glm", "glm")[0]
+            finally:
+                conn.close()
+        except sqlite3.Error as exc:
+            # A session DB without telemetry tables (or locked) must not hide the others.
+            print(f"[ona-context:metrics] Skipping {db_path.name}: {exc}")
+    totals["l0"] = l0_sum / l0_count if l0_count else 0.0
+    recent_turns = sorted(turn_rows, key=lambda r: r["created_at"] or "", reverse=True)[:15]
+    recent_llm = sorted(llm_rows, key=lambda r: r.get("started_at") or "", reverse=True)[:10]
+
+    gemini_headroom = round(max(0.0, 1 - usage["gemini_tokens"] / QUOTAS["gemini-3.7-flash"]["tpm_limit"]) * 100, 2)
+    claude_headroom = round(max(0.0, 1 - usage["claude_5h"] / QUOTAS["claude-opus-5"]["window_5h_limit"]) * 100, 2)
 
     return {
         "view_mode": view_mode,
