@@ -13,6 +13,7 @@ import glob
 import json
 import re
 import sqlite3
+from contextlib import closing
 import time
 from collections import Counter
 from pathlib import Path
@@ -116,7 +117,7 @@ def session_files(session_id: str) -> Dict[str, Any]:
 def session_cwd(session_id: str) -> Optional[str]:
     if not STATE_DB.exists():
         return None
-    with sqlite3.connect(f"file:{STATE_DB}?mode=ro", uri=True, timeout=1.0) as con:
+    with closing(sqlite3.connect(f"file:{STATE_DB}?mode=ro", uri=True, timeout=1.0)) as con:
         row = con.execute("SELECT cwd FROM sessions WHERE id = ?", (session_id,)).fetchone()
     return row[0] if row and row[0] else None
 
@@ -149,7 +150,7 @@ def parse_capsule(capsule: str) -> Dict[str, Any]:
 def telemetry_row(db: Optional[Path], turn_id: Optional[str], since: float, until: float) -> Dict[str, Any]:
     if not db:
         return {}
-    with sqlite3.connect(f"file:{db}?mode=ro", uri=True, timeout=1.0) as con:
+    with closing(sqlite3.connect(f"file:{db}?mode=ro", uri=True, timeout=1.0)) as con:
         con.row_factory = sqlite3.Row
         row = con.execute("SELECT * FROM turn_telemetry WHERE turn_id = ? ORDER BY id DESC LIMIT 1", (turn_id,)).fetchone() if turn_id else None
         if row is None:
@@ -214,7 +215,7 @@ def audit_live_turn(ctx: Dict[str, Any]) -> Optional[Dict[str, Any]]:
 
 def backfill(session_id: str, last: int = 10) -> List[Dict[str, Any]]:
     """Audit the last N finished turns of a session from state.db (capsule text is not retained per turn)."""
-    with sqlite3.connect(f"file:{STATE_DB}?mode=ro", uri=True, timeout=2.0) as con:
+    with closing(sqlite3.connect(f"file:{STATE_DB}?mode=ro", uri=True, timeout=2.0)) as con:
         con.row_factory = sqlite3.Row
         rows = [dict(r) for r in con.execute(
             "SELECT id, role, content, tool_calls, tool_call_id, tool_name, timestamp FROM messages "

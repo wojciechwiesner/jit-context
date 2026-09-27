@@ -13,8 +13,9 @@ import re
 import sqlite3
 import time
 from collections import Counter
+from contextlib import contextmanager
 from pathlib import Path
-from typing import Any
+from typing import Any, Iterator
 
 HOME = Path.home()
 REPO = Path(__file__).resolve().parents[2]
@@ -115,10 +116,16 @@ def _planned_order(total: int, done_ids: list[str], levels: dict[str, dict[str, 
     return [{"id": d, "level": levels.get(d, {}).get("level", "?")} for d in done_ids]
 
 
-def _ro(db: Path) -> sqlite3.Connection:
+@contextmanager
+def _ro(db: Path) -> Iterator[sqlite3.Connection]:
+    # `with sqlite3.connect(...)` only commits; it never closes, and the panel polls
+    # every few seconds, so leaked handles hit EMFILE (Errno 24) within hours.
     con = sqlite3.connect(f"file:{db}?mode=ro", uri=True, timeout=1.0)
     con.row_factory = sqlite3.Row
-    return con
+    try:
+        yield con
+    finally:
+        con.close()
 
 
 def _parse_log(text: str) -> dict[str, Any]:
