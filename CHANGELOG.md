@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `.cmux/dock.json`: cmux dock controls for the JIT Livestream panel and its server.
 
 ### Fixed
+- Observatory showed zeros and an empty turn timeline: since per-session isolation (2026-09-17) hooks write `turn_telemetry` / `llm_metrics` to `sessions/<project>/<session>/overlay_<session>.db`, while `/api/metrics` still read only the global `session_overlay.db`. It now aggregates the global DB plus per-session DBs touched in the window; the Session tab means the Hermes session of the latest turn (not the server uptime), and DBs open with `PRAGMA query_only` because `mode=ro` failed on WAL files without `-shm`.
 - `config.livestream_session_url` used `str | None`, which crashed the Observatory (`/usr/bin/python3` 3.9) on import; now `Optional[str]`.
 - GAIA OpenAI-compatible loop: local workers get `max_tokens` 6144 (was 2048) and a 400 s timeout; a tool call cut off before its JSON closed ("invalid tool call arguments") is retried up to twice with a request for a shorter call instead of ending the task with an empty answer.
 - GAIA L1 qwen3.8:jit rerun (first 10 tasks, 15 turns, `--judge`, commit `7fe938d`): 8/10 exact, 8/10 verified, 0 HTTP 400, 4 HTTP 500 from llama-server (truncated tool-call JSON). Before the history fix and without the judge: 3/10. Raw files: `benchmarks/results/gaia_loop_guard/qwen38jit_t15_judge_10.{json,log}`.
