@@ -1,0 +1,51 @@
+{
+  "name": "opencode-plugin-jit-context",
+  "version": "0.1.0",
+  "description": "JIT Context OS for OpenCode: lean per-project context capsule, L0 SQLite WAL observations, fail-open by design.",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "CHANGELOG.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "rm -rf dist && bun build src/index.ts --outdir dist --target bun --external @opencode-ai/plugin && tsc -p tsconfig.build.json",
+    "typecheck": "tsc --noEmit",
+    "test": "bun test",
+    "check": "bun run typecheck && bun test && bun run build",
+    "prepublishOnly": "bun run check"
+  },
+  "keywords": [
+    "opencode",
+    "opencode-plugin",
+    "context-engineering",
+    "jit-context",
+    "ai-agents"
+  ],
+  "author": "Wojciech Wiesner <wojciech@theones.io>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/wojciechwiesner/opencode-plugin-jit-context.git"
+  },
+  "peerDependencies": {
+    "@opencode-ai/plugin": ">=1.17.0"
+  },
+  "devDependencies": {
+    "@opencode-ai/plugin": "^1.18.32",
+    "@types/bun": "latest",
+    "typescript": "^5.6.0"
+  },
+  "engines": {
+    "bun": ">=1.1.0"
+  }
+}
