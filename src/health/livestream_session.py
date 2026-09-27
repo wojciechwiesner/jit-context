@@ -11,8 +11,9 @@ import re
 import sqlite3
 import time
 from collections import Counter
+from contextlib import contextmanager
 from pathlib import Path
-from typing import Any
+from typing import Any, Iterator
 
 STATE_DB = Path(os.environ.get("HERMES_STATE_DB", Path.home() / ".hermes" / "state.db"))
 LIVE_WINDOW_S = 600
@@ -22,10 +23,15 @@ PATH_KEYS = ("path", "file_path", "target_file")
 WRITE_TOOLS = {"write_file", "patch", "save_patch", "street_write_file"}
 
 
-def _ro() -> sqlite3.Connection:
+@contextmanager
+def _ro() -> Iterator[sqlite3.Connection]:
+    # Closes on exit; a bare `with sqlite3.connect()` leaks the handle (EMFILE under polling).
     con = sqlite3.connect(f"file:{STATE_DB}?mode=ro", uri=True, timeout=1.0)
     con.row_factory = sqlite3.Row
-    return con
+    try:
+        yield con
+    finally:
+        con.close()
 
 
 def _tool_name(raw: str | None) -> str:

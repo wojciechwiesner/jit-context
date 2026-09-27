@@ -22,6 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `.cmux/dock.json`: cmux dock controls for the JIT Livestream panel and its server.
 
 ### Fixed
+- Live panel stopped listing runs after a few hours (`OSError: [Errno 24] Too many open files`): `with sqlite3.connect()` commits but never closes, so every 2 s poll leaked handles. `_ro()` in `livestream_data.py` / `livestream_session.py` and the three reads in `telemetry/turn_audit.py` (runs inside the gateway) now close their connections; 30 snapshots keep the fd count flat.
 - Observatory showed zeros and an empty turn timeline: since per-session isolation (2026-09-17) hooks write `turn_telemetry` / `llm_metrics` to `sessions/<project>/<session>/overlay_<session>.db`, while `/api/metrics` still read only the global `session_overlay.db`. It now aggregates the global DB plus per-session DBs touched in the window; the Session tab means the Hermes session of the latest turn (not the server uptime), and DBs open with `PRAGMA query_only` because `mode=ro` failed on WAL files without `-shm`.
 - `config.livestream_session_url` used `str | None`, which crashed the Observatory (`/usr/bin/python3` 3.9) on import; now `Optional[str]`.
 - GAIA OpenAI-compatible loop: local workers get `max_tokens` 6144 (was 2048) and a 400 s timeout; a tool call cut off before its JSON closed ("invalid tool call arguments") is retried up to twice with a request for a shorter call instead of ending the task with an empty answer.
