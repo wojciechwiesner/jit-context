@@ -17,6 +17,7 @@ import json
 import os
 import sqlite3
 import sys
+import urllib.parse
 import urllib.request
 from pathlib import Path
 from typing import Any, Dict, List, Optional
@@ -30,12 +31,16 @@ L0_DB_PATH = Path(
 
 
 def _call_observatory_live_context(scope: str = "", task_intent: str = "") -> Optional[Dict[str, Any]]:
-    """Query live Observatory endpoint on localhost:8765."""
+    """Query live Observatory endpoint on localhost:8765.
+
+    The Observatory selects by `project` (not `scope`). Without it, it returns
+    the capsule of whatever Hermes session is active right now.
+    """
     try:
         url = f"{OBSERVATORY_URL}/api/context/live"
         params = []
         if scope:
-            params.append(f"scope={urllib.parse.quote(scope)}")
+            params.append(f"project={urllib.parse.quote(scope)}")
         if task_intent:
             params.append(f"intent={urllib.parse.quote(task_intent)}")
         if params:
@@ -99,8 +104,10 @@ def _fallback_l0_direct_read(scope: str = "") -> str:
 def tool_get_jit_context(scope: str = "", task_intent: str = "") -> str:
     """Retrieve compiled JIT context capsule (<1.5k tokens)."""
     live = _call_observatory_live_context(scope=scope, task_intent=task_intent)
-    if live and "capsule" in live:
-        return live["capsule"]
+    if live and live.get("capsule"):
+        # Scope guard: never hand one project's capsule to another project.
+        if not scope or live.get("scope") == scope:
+            return live["capsule"]
 
     return _fallback_l0_direct_read(scope=scope)
 

@@ -763,6 +763,29 @@ class HealthHTTPHandler(http.server.BaseHTTPRequestHandler):
                                 except Exception:
                                     pass
 
+                # 1b. Project-only request: newest session of that project. Never
+                # fall through to the global live file, which belongs to whatever
+                # session Hermes is running now (cross-project leak).
+                if not data and req_project and not req_session:
+                    clean_proj = re.sub(r'[^a-zA-Z0-9_\-]', '_', str(req_project)).strip()
+                    cands = sorted(
+                        (SESSIONS_DIR / clean_proj).glob("*/session_*.json"),
+                        key=lambda p: p.stat().st_mtime,
+                        reverse=True,
+                    )
+                    for cand in cands:
+                        try:
+                            data = json.loads(cand.read_text(encoding="utf-8"))
+                            break
+                        except Exception:
+                            continue
+                    if not data:
+                        data = {
+                            "status": "no_project_session",
+                            "scope": clean_proj,
+                            "message": f"No Hermes session recorded for project '{clean_proj}'",
+                        }
+
                 # 2. Fallback to /tmp/hermes-jit-live.json if no specific session found
                 if not data:
                     live_path = Path("/tmp/hermes-jit-live.json")
