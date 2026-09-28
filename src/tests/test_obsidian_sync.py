@@ -71,6 +71,10 @@ def test_sync_obsidian_on_commit(temp_vault_and_repo):
     assert "fix(core): resolve race condition in pipeline" in content
     assert "Ostatnia synchronizacja:" in content
 
+    # REGRESSION INVARIANT: repeated syncs keep exactly one sync line.
+    sync_obsidian_on_commit("my_project", str(repo_dir))
+    assert dossier.read_text().count("Ostatnia synchronizacja:") == 1
+
 def test_check_obsidian_staleness(temp_vault_and_repo):
     vault_dir, repo_dir, dossier = temp_vault_and_repo
     

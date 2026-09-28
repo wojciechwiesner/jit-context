@@ -87,10 +87,10 @@ def sync_obsidian_on_commit(scope: str, cwd: str, commit_sha: str = "", commit_m
         # 1. Update or insert 'Ostatni Commit' and 'Ostatnia synchronizacja'
         sync_line = f"- **Ostatnia synchronizacja:** `{now_str}`"
         commit_entry = f"- **Ostatni Commit:** `{commit_sha}` {commit_msg}\n{sync_line}"
+        # Drop the old sync line first; commit_entry carries the new one (else it duplicates).
+        content = re.sub(r"-\s+\*\*Ostatnia synchronizacja:\*\*[^\n]*\n?", "", content)
         if re.search(r"-\s+\*\*Ostatni Commit:\*\*.*", content):
             content = re.sub(r"-\s+\*\*Ostatni Commit:\*\*.*", commit_entry, content)
-            if "- **Ostatnia synchronizacja:**" in content:
-                content = re.sub(r"-\s+\*\*Ostatnia synchronizacja:\*\*.*", sync_line, content)
         else:
             header_match = re.search(r"(#\s+(?:Projekt|Project Dossier):[^\n]*\n)", content)
             if header_match:
