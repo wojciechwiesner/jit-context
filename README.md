@@ -29,7 +29,26 @@ Storage is a local SQLite WAL (`session_overlay` table). The schema matches the 
 | Agent answers a question whose answer exists only in `.planning/STATE.md`, with no tool calls | Plugin on: correct answer. `JIT_INJECT=0`: `UNKNOWN` |
 | `record_jit_observation` called by the agent | Row written to L0 with `source=opencode:build` |
 | Agent edits via `apply_patch` | `File modified via apply_patch: notes.txt` auto-recorded |
-| Unit tests (`bun test`) | 14 pass, including timeout fail-open and cross-scope rejection |
+| Unit tests (`bun test`) | 15 pass, including timeout fail-open and cross-scope rejection |
+
+## A/B test: same task, with and without the plugin
+
+`bench/ab.py` runs one OpenCode task in the same repo, with the same model (gpt-5.5, OpenCode 1.17.8), with the plugin and with `opencode run --pure` (external plugins disabled). Runs alternate between the two variants, 4 per variant. All metrics come from `--format json` runtime events.
+
+Task: *"Where is the payment webhook handled, what is the current blocker, and which env var must hold the webhook secret?"* The fixture repo hides the handler behind a non-obvious route (`/integrations/incoming`) and records the blocker in `.planning/STATE.md`. The env var decision exists only as an observation recorded by an earlier session, not anywhere in the code.
+
+| Median of 4 runs | With plugin | Without (`--pure`) |
+|---|---|---|
+| Wall time | **8.6 s** | 42.4 s |
+| Tool calls | **0** | 14.5 |
+| LLM steps | **1** | 6.5 |
+| Input tokens (incl. cache reads) | **29,600** | 196,779 |
+| Correct file | 4/4 | 4/4 |
+| Correct env var | **4/4** | 0/4 (guesses `STRIPE_WEBHOOK_SECRET` or `UNKNOWN`) |
+
+How to read it: this is a single task designed to need memory, not a general benchmark. The code-only question (which file) is answered correctly without the plugin too, just about 5x slower and with about 6.6x more input tokens. The decision recorded in an earlier session cannot be recovered from the code at all, and without the plugin the agent invents a plausible wrong value. That second case is the main point of the plugin.
+
+Reproduce: `bun run build && bash bench/setup-fixture.sh && python3 bench/ab.py 4`. The plugin talks to a dead Observatory port, so this measures the pure local L0 path. Your model and provider will change the absolute numbers.
 
 ## Install
 
@@ -74,7 +93,7 @@ The entry module must export only the plugin. OpenCode's loader treats every exp
 
 ## Known limits (v0.1)
 
-- The Hermes Observatory ignores `?scope=` and serves the active Hermes session's capsule. In practice OpenCode usually runs on the L0 fallback. The scope guard prevents poisoning; a scoped Observatory endpoint is planned.
+- The Hermes Observatory is queried with `?project=` and returns the newest session of that project. The scope guard remains as defence against older Observatory builds that ignore the parameter.
 - `experimental.*` hooks may change between OpenCode releases.
 
 ## License

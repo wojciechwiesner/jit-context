@@ -9,7 +9,7 @@ import subprocess
 import sys
 import time
 
-REPO = os.path.expanduser("~/.hermes/cache/scratch/ab-shopapi")
+REPO = os.path.expanduser(os.environ.get("AB_FIXTURE", "~/.hermes/cache/scratch/ab-shopapi"))
 OPENCODE = os.path.expanduser("~/.opencode/bin/opencode")
 PROMPT = (
     "Where is the payment webhook handled in this repo, what is the current blocker, "
