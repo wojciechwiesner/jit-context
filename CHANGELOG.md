@@ -5,7 +5,9 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased] - 2026-09-26
+## [0.3.0] - 2026-09-28
+
+One-line installer for every agent host, the OpenCode plugin in the monorepo, and Agent Zero plugin 0.4.1. The entries below cover everything since 0.2.11; the two dated groups are work landed on 2026-09-26/28 and 2026-09-24.
 
 ### Changed
 - L2 deep retrieval (Borg Broker) is now opt-in via `JIT_L2_ENABLED=1`. The broker route `/api/v1/context/search` is not deployed (404), so every trigger phrase cost ~1.1 s for nothing (capsule 3067 ms -> 1925 ms on a trigger prompt).
@@ -68,7 +70,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Before: 36/53 (14 empty answers). Same 8 turns with the fixes: 42/53 (0 empty). 15 turns: 47/53 (88.7%, 0 empty; +11 / -0 vs before).
 - The cognitive pre-pipeline (LFM2 sensory + planner) measured 36/53 vs STANDARD 36/53, with 4 tasks flipping each way. The gain comes from harness fixes, not from the cognitive layers.
 
-## [Unreleased] - 2026-09-24
+### Landed 2026-09-24 (part of 0.3.0)
 
 ### Added
 - Added the independently versioned Agent Zero v0.4.0 JIT/JEV plugin under `integrations/agent-zero/` with its Apache-2.0 license, host-specific install guidance, isolated adapter tests and dual-suite CI. The deployment record and Hermes upstream PR status are documented separately in `docs/plans/2026-09-24-agent-zero-integration.md`.

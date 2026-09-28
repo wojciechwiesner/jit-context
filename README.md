@@ -200,7 +200,16 @@ Operating in tandem with the JIT context compiler, the **JEV System 1 Engine** p
 
 ## Integrations
 
-The [Agent Zero plugin](integrations/agent-zero/README.md) is now available inside this repository under `integrations/agent-zero/` (plugin v0.4.0, Apache-2.0). The Python core remains v0.2.11 (MIT); these versions and runtime hosts are independent. Install only the plugin subdirectory into Agent Zero, not the repository root. The source tree alone does not activate the plugin; the [verified production rollout](docs/plans/2026-09-24-agent-zero-integration.md) is recorded separately.
+One repository, one installer, four agent hosts. Versions are independent:
+
+| Host | Integration | Version | Install |
+|---|---|---|---|
+| Claude Code | [hooks](integrations/claude-code/hooks) + MCP server | core 0.3.0 (MIT) | `jit install --only claude-code` |
+| Hermes Agent | `src/` as the `ona-context` plugin | core 0.3.0 (MIT) | `jit install --only hermes` |
+| OpenCode | [native plugin](integrations/opencode/README.md) | 0.1.0 (MIT) | `jit install --only opencode` |
+| Agent Zero | [plugin `jit_context`](integrations/agent-zero/README.md) | 0.4.1 (Apache-2.0) | `jit install --only agent-zero`, or in the Agent Zero UI: install from git `https://github.com/wojciechwiesner/jit-context-os` or from the `jit_context-<version>.zip` release asset |
+
+`jit-context-os` is the root-level mirror of `integrations/agent-zero/` that the Agent Zero Plugin Hub needs; issues, PRs and stars belong here. The [verified Agent Zero production rollout](docs/plans/2026-09-24-agent-zero-integration.md) is recorded separately.
 
 ## Quickstart
 
@@ -215,7 +224,7 @@ The installer clones the repo to `~/.jit-context`, links the `jit` CLI into `~/.
 | Claude Code | `~/.claude` | copies the JIT hooks to `~/.claude/hooks`, adds missing entries to `settings.json` (backup first, never duplicates) |
 | Hermes | `~/.hermes` | deploys an immutable `src` snapshot to `plugin-releases/`, points `plugins/ona-context` at it, sets runtime guards, restarts the gateway |
 | OpenCode | `~/.config/opencode` or `opencode` on PATH | adds `opencode-plugin-jit-context` to `opencode.json`, or a locally built bundle in `plugins/` while the npm package is unpublished (needs `bun`) |
-| Agent Zero | a checkout with `usr/plugins` (or `A0_DIR`), or a running container | copies `integrations/agent-zero` to `usr/plugins/jit_context`, keeping the plugin's `data/` |
+| Agent Zero | a checkout with `usr/plugins` (or `A0_DIR`), or a container in the local Docker | copies `integrations/agent-zero` to `usr/plugins/jit_context`, keeping the plugin's `data/`, then runs its `execute.py` self-test; restart Agent Zero afterwards. For Agent Zero on another server, use the UI install (git or ZIP) |
 
 Re-run the same line to update. Options: `bash -s -- --only claude-code,hermes` and `bash -s -- --dry-run`. The same logic works offline as `jit install` / `jit uninstall`. It needs Python 3.11+; on stock macOS (python3 3.9) it picks a newer versioned Python or installs one with `uv`.
 
@@ -314,7 +323,7 @@ claude mcp add jit-context python3 src/mcp_server.py
 ```
 
 ### 2. OpenCode
-Native plugin (recommended): [`integrations/opencode`](integrations/opencode/README.md), published as `opencode-plugin-jit-context`. It injects the scoped capsule into the system prompt, records edits automatically and runs fail-open. On one memory-dependent task (median of 4 runs) it cut wall time from 42.4 s to 8.6 s and tool calls from 14.5 to 0, and it recovered a past-session decision 4/4 vs 0/4 without it. See the [A/B details](integrations/opencode/README.md#ab-test-same-task-with-and-without-the-plugin).
+Native plugin (recommended): [`integrations/opencode`](integrations/opencode/README.md), package name `opencode-plugin-jit-context`. Until it is on npm, `jit install --only opencode` builds it locally (needs `bun`) and switches to the npm package automatically once published. It injects the scoped capsule into the system prompt, records edits automatically and runs fail-open. On one memory-dependent task (median of 4 runs) it cut wall time from 42.4 s to 8.6 s and tool calls from 14.5 to 0, and it recovered a past-session decision 4/4 vs 0/4 without it. See the [A/B details](integrations/opencode/README.md#ab-test-same-task-with-and-without-the-plugin).
 
 ```bash
 opencode plugin opencode-plugin-jit-context
@@ -347,7 +356,7 @@ If you reference **JIT-Context** in research, benchmarks, or agent runtimes, ple
   title        = {JIT-JEV Context OS: Epistemic Runtime & System 1 Gate for AI Agents},
   year         = 2026,
   publisher    = {Zenodo},
-  version      = {v0.2.11},
+  version      = {v0.3.0},
   doi          = {10.5281/zenodo.22649542},
   url          = {https://doi.org/10.5281/zenodo.22649542}
 }

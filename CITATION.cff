@@ -6,8 +6,8 @@ authors:
     email: "wojciech@theones.io"
     affiliation: "The Ones (join.theones.io)"
 title: "JIT-Context: An Epistemic Context Runtime for AI Agents"
-version: 0.2.4
-date-released: 2026-09-08
+version: 0.3.0
+date-released: 2026-09-28
 license: MIT
 repository-code: "https://github.com/wojciechwiesner/jit-context"
 keywords:
