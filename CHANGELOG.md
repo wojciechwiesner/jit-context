@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - L2 deep retrieval (Borg Broker) is now opt-in via `JIT_L2_ENABLED=1`. The broker route `/api/v1/context/search` is not deployed (404), so every trigger phrase cost ~1.1 s for nothing (capsule 3067 ms -> 1925 ms on a trigger prompt).
 
 ### Fixed
+- `jit init` stack detection now reads `package.json` in first-level subdirectories too (e.g. `site/`), not only the repo root. Before, a Next.js app in `site/` next to Python scripts was profiled as Python/FastAPI only (luna_salon), so the capsule suggested FastAPI docs instead of Next.js.
 - `context/compiler.py`: L0 verified facts are now JEV-ranked too (previously only rare L2 recalls were), and they are loaded with a dedicated query (`l0.overlay.get_active_facts`, 30 newest) instead of being filtered out of the 10 newest overlays, where user statements crowded them out. First live `jev sync` in the Claude Code capsule: 18 facts scored in 360 ms.
 - `l0/db.py`: schema migrations now run on existing overlay DBs. `get_db()` used to apply the schema only when the file did not exist, so long-lived session DBs (1059 of 1139 locally) never got `tool_routing` or `llm_metrics.tool_names_json`, and every turn logged `no such table: tool_routing` / `no such column: tool_names_json`. Init is now gated on `PRAGMA user_version` (`SCHEMA_VERSION = 2`); telemetry schema errors are printed instead of swallowed. Regression test: `src/tests/test_db_schema_migration.py`.
 

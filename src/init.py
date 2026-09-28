@@ -71,9 +71,13 @@ class ProjectScanner:
             "entrypoints": []
         }
 
-        # Check Node / JS / TS
-        pkg_json = self.target_dir / "package.json"
-        if pkg_json.exists():
+        # Check Node / JS / TS (root + first-level subdirs, e.g. site/, web/)
+        skip_dirs = {"node_modules", ".git", ".next", "venv", ".venv", "__pycache__", "dist", "build", ".turbo"}
+        pkg_jsons = [self.target_dir / "package.json"] + sorted(
+            d / "package.json" for d in self.target_dir.iterdir()
+            if d.is_dir() and d.name not in skip_dirs and not d.name.startswith(".")
+        )
+        for pkg_json in (p for p in pkg_jsons if p.exists()):
             stack["package_managers"].append("npm/yarn/pnpm")
             try:
                 data = json.loads(pkg_json.read_text(encoding="utf-8"))
@@ -98,7 +102,6 @@ class ProjectScanner:
         reqs = self.target_dir / "requirements.txt"
         setup_py = self.target_dir / "setup.py"
         py_files = []
-        skip_dirs = {"node_modules", ".git", ".next", "venv", ".venv", "__pycache__", "dist", "build", ".turbo"}
         for root, dirs, files in os.walk(self.target_dir):
             dirs[:] = [d for d in dirs if d not in skip_dirs and not d.startswith(".")]
             for f in files:
