@@ -18,3 +18,14 @@ jobs:
         run: python -m pytest src/tests -q
       - name: Test Agent Zero adapter (isolated collection)
         run: python -m pytest integrations/agent-zero/tests -q
+
+  opencode-plugin:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: integrations/opencode
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install --frozen-lockfile
+      - run: bun run check

@@ -35,8 +35,11 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/wojciechwiesner/opencode-plugin-jit-context.git"
+    "url": "git+https://github.com/wojciechwiesner/jit-context.git",
+    "directory": "integrations/opencode"
   },
+  "homepage": "https://github.com/wojciechwiesner/jit-context/tree/master/integrations/opencode#readme",
+  "bugs": "https://github.com/wojciechwiesner/jit-context/issues",
   "peerDependencies": {
     "@opencode-ai/plugin": ">=1.17.0"
   },

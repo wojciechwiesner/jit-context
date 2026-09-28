@@ -48,7 +48,7 @@ Task: *"Where is the payment webhook handled, what is the current blocker, and w
 
 How to read it: this is a single task designed to need memory, not a general benchmark. The code-only question (which file) is answered correctly without the plugin too, just about 5x slower and with about 6.6x more input tokens. The decision recorded in an earlier session cannot be recovered from the code at all, and without the plugin the agent invents a plausible wrong value. That second case is the main point of the plugin.
 
-Reproduce: `bun run build && bash bench/setup-fixture.sh && python3 bench/ab.py 4`. The plugin talks to a dead Observatory port, so this measures the pure local L0 path. Your model and provider will change the absolute numbers.
+Reproduce (from `integrations/opencode/`): `bun install && bun run build && bash bench/setup-fixture.sh && python3 bench/ab.py 4`. The plugin talks to a dead Observatory port, so this measures the pure local L0 path. Your model and provider will change the absolute numbers.
 
 ## Install
 
@@ -61,7 +61,7 @@ Local, before publishing:
 ```jsonc
 // opencode.json
 {
-  "plugin": [["file:///ABS/PATH/opencode-plugin-jit-context/dist/index.js", {}]]
+  "plugin": [["file:///ABS/PATH/jit-context/integrations/opencode/dist/index.js", {}]]
 }
 ```
 

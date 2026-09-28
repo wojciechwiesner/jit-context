@@ -305,13 +305,19 @@ claude mcp add jit-context python3 src/mcp_server.py
 ```
 
 ### 2. OpenCode
-Add to `~/.opencode/config.json`:
+Native plugin (recommended): [`integrations/opencode`](integrations/opencode/README.md), published as `opencode-plugin-jit-context`. It injects the scoped capsule into the system prompt, records edits automatically and runs fail-open. On one memory-dependent task (median of 4 runs) it cut wall time from 42.4 s to 8.6 s and tool calls from 14.5 to 0, and it recovered a past-session decision 4/4 vs 0/4 without it. See the [A/B details](integrations/opencode/README.md#ab-test-same-task-with-and-without-the-plugin).
+
+```bash
+opencode plugin opencode-plugin-jit-context
+```
+
+MCP only (no prompt injection): add to `opencode.json`:
 ```json
 {
-  "mcpServers": {
+  "mcp": {
     "jit-context": {
-      "command": "python3",
-      "args": ["path/to/jit-context/src/mcp_server.py"]
+      "type": "local",
+      "command": ["python3", "path/to/jit-context/src/mcp_server.py"]
     }
   }
 }

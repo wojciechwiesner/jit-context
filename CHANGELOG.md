@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased] - 2026-09-26
 
 ### Added
+- `integrations/opencode/`: native OpenCode plugin (`opencode-plugin-jit-context` 0.1.0, TypeScript/Bun, MIT), moved in from a standalone repo with its history. It injects the scoped capsule via `experimental.chat.system.transform`, records edits, and runs fail-open. A/B test (median of 4 runs, one memory-dependent task): 8.6 s vs 42.4 s, 0 vs 14.5 tool calls, past-session decision recovered 4/4 vs 0/4. CI job `opencode-plugin` runs `bun run check`.
+- README: the OpenCode MCP snippet now uses the real `opencode.json` `mcp` schema (`type: local`, `command` array) instead of `mcpServers`.
 - GAIA L1 qwen3.8:jit rerun (first 10 tasks, 15 turns, `--judge`, commit `7fe938d`): 8/10 exact, 8/10 verified, 0 HTTP 400, 4 HTTP 500 from llama-server (truncated tool-call JSON). Before the history fix and without the judge: 3/10. Raw files: `benchmarks/results/gaia_loop_guard/qwen38jit_t15_judge_10.{json,log}`.
 - `src/cognitive/loop_guard.py`: deterministic in-loop controller for the GAIA worker (Gemini and OpenAI-compatible loops). It skips exact-repeat tool calls, detects near-repeat searches and no-progress streaks (novelty < 10% for 3 calls), nudges a strategy change, warns 2 turns before the budget ends and disables tools on the reserved last turn so the model must answer.
 - `--max_turns` / `GAIA_MAX_TURNS` for the cognitive GAIA runner (default 15, was a hardcoded 8 that was never passed to the worker).
