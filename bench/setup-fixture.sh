@@ -79,5 +79,5 @@ cd "$ROOT" && bun -e "
 import { L0Store } from './src/l0'
 new L0Store('$R/.jit.db').record(
   'Decision 2026-09-20: webhook secret is read from env PAYWALL_WH_SECRET (never hardcode), rotation owner: Klaudia',
-  'ab-shopapi', 'prev-session', 'opencode:build')"
+  '$(basename "$R")', 'prev-session', 'opencode:build')"
 echo "Fixture ready at $R"
