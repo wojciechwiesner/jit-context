@@ -143,6 +143,19 @@ def get_active_overlays(conn: sqlite3.Connection, session_id: str, limit: int = 
     )
     return [dict(r) for r in cursor.fetchall()]
 
+def get_active_facts(conn: sqlite3.Connection, session_id: str, limit: int = 30) -> List[Dict]:
+    """Active verified facts, queried separately so user statements cannot crowd them out."""
+    cursor = conn.execute(
+        """
+        SELECT key, value FROM overlay
+        WHERE session_id = ? AND status = 'active' AND kind = 'verified_fact'
+        ORDER BY seq DESC
+        LIMIT ?
+        """,
+        (session_id, limit)
+    )
+    return [dict(r) for r in cursor.fetchall()]
+
 def get_latest_direct_user_message(conn: sqlite3.Connection, session_id: str) -> Optional[str]:
     """Retrieve the most recent genuine direct_user message from WAL."""
     cursor = conn.execute(

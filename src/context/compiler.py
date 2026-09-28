@@ -5,12 +5,13 @@ import time
 import re
 from typing import List, Dict, Optional, Set, Any, Tuple
 from context.renderer import render_capsule
-from l0.overlay import ensure_session, get_active_overlays
+from l0.overlay import ensure_session, get_active_facts, get_active_overlays
 from l0.recent_fence import compute_content_hash, get_missing_recent_turns
 from l1.scope import resolve_scope
 from l1.project_cache import get_project_context
 from l2.triggers import should_trigger_deep_retrieval
 from l2.client import query_deep_context
+from config import L2_ENABLED
 from context.cascade_distiller import distill_context_cascade
 
 class CapsuleResult(str):
@@ -96,7 +97,7 @@ def compile_context(
     # 2. L0 Active Overlays (RYOW - Invariant I2)
     overlays = get_active_overlays(conn, session_id, limit=10)
     current_statements = _prior_user_statements(overlays, user_message)
-    verified_facts = [{"key": o.get("key", ""), "value": o.get("value", "")} for o in overlays if o.get("kind") == "verified_fact"]
+    verified_facts = get_active_facts(conn, session_id)
     
     # 3. L0 RecentTurnFence (Deduplication across compressions)
     transcript_hashes: Set[str] = set()
@@ -142,7 +143,7 @@ def compile_context(
     # 5. L2 Deep Path Trigger (Invariant I6)
     recalled_facts = []
     should_deep, deep_reason = should_trigger_deep_retrieval(user_message)
-    if should_deep:
+    if should_deep and L2_ENABLED:
         deep_res = query_deep_context(user_message, retrieval_scopes, conn)
         if deep_res:
             recalled_facts.append(deep_res)
@@ -352,6 +353,11 @@ def compile_context(
             reranked = jev.rerank_hybrid(user_message, candidates)
             jev.prefetch_async(user_message, candidates)
             recalled_facts = [r["value"] for r in reranked]
+        # L0 verified facts exist on every turn; L2 recall is rare, so rank these too.
+        if verified_facts:
+            candidates = [{"key": f["key"] or fact_key(f["value"]), "value": f["value"]} for f in verified_facts]
+            verified_facts = jev.rerank_hybrid(user_message, candidates)
+            jev.prefetch_async(user_message, candidates)
     except Exception:
         pass
 

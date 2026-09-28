@@ -88,6 +88,8 @@ WORKSPACE_DIR = _resolve_default_workspace()
 L0_MAX_LATENCY_MS = 3.0
 L1_MAX_LATENCY_MS = 10.0
 L2_DEADLINE_MS = 2000.0
+# The Borg Broker L2 service is not deployed yet; opt in once it exists.
+L2_ENABLED = os.environ.get("JIT_L2_ENABLED", "0").lower() in ("1", "true", "on")
 
 # Circuit Breaker settings
 CB_CONSECUTIVE_FAILURES_THRESHOLD = 3
