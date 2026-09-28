@@ -416,7 +416,7 @@ def run_init(target_path: Path, tier: str = "standard", goal: Optional[str] = No
     }
 
 def main():
-    known_cmds = {"init", "mode", "config", "configure", "off", "on", "status", "doctor", "stream", "jev", "-h", "--help"}
+    known_cmds = {"init", "mode", "config", "configure", "off", "on", "status", "doctor", "stream", "jev", "install", "uninstall", "-h", "--help"}
     if len(sys.argv) > 1 and sys.argv[1] not in known_cmds:
         sys.argv.insert(1, "init")
 
@@ -452,6 +452,11 @@ def main():
     jev_parser.add_argument("action", nargs="?", default="status", choices=["status", "probe", "test"], help="Action (status, probe)")
     jev_parser.add_argument("--query", type=str, default="drzewo decyzyjne i silnik reguł probabilistycznych", help="Test query for JEV probe")
 
+    # jit install / uninstall: wire JIT Context into Claude Code, Hermes, OpenCode, Agent Zero
+    from installer import cli as installer_cli
+    for action in ("install", "uninstall"):
+        installer_cli.add_arguments(subparsers.add_parser(action, help=f"{action.capitalize()} JIT Context for detected agent hosts"))
+
     # Allow running directly as 'jit <path>' without subcommand
     parser.add_argument("direct_path", nargs="?", default=None, help=argparse.SUPPRESS)
     parser.add_argument("--tier", choices=["simple", "standard", "deep", "xhigh"], default="standard", help=argparse.SUPPRESS)
@@ -463,6 +468,9 @@ def main():
     live_file = Path("/tmp/hermes-jit-live.json")
 
     cmd = args.command or args.direct_path
+
+    if cmd in ("install", "uninstall"):
+        sys.exit(installer_cli.main(cmd, args))
 
     # Subcommand: jit mode
     if cmd == "mode":

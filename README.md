@@ -204,13 +204,22 @@ The [Agent Zero plugin](integrations/agent-zero/README.md) is now available insi
 
 ## Quickstart
 
-### 1. Install the Python CLIs (Python 3.11+)
+### 1. One-line install (all agent hosts)
 ```bash
-git clone https://github.com/wojciechwiesner/jit-context.git
-cd jit-context
-python3 -m pip install -e .
+curl -fsSL https://raw.githubusercontent.com/wojciechwiesner/jit-context/master/install.sh | bash
 ```
-This installs `jit`, `jit-doctor`, and `jit-observatory`. The pip package does not automatically activate the Hermes plugin; `jit-doctor` reports a missing plugin until the Hermes adapter is installed.
+The installer clones the repo to `~/.jit-context`, links the `jit` CLI into `~/.local/bin`, then sets up every agent host it finds:
+
+| Host | Detected by | What it does |
+|---|---|---|
+| Claude Code | `~/.claude` | copies the JIT hooks to `~/.claude/hooks`, adds missing entries to `settings.json` (backup first, never duplicates) |
+| Hermes | `~/.hermes` | deploys an immutable `src` snapshot to `plugin-releases/`, points `plugins/ona-context` at it, sets runtime guards, restarts the gateway |
+| OpenCode | `~/.config/opencode` or `opencode` on PATH | adds `opencode-plugin-jit-context` to `opencode.json`, or a locally built bundle in `plugins/` while the npm package is unpublished (needs `bun`) |
+| Agent Zero | a checkout with `usr/plugins` (or `A0_DIR`), or a running container | copies `integrations/agent-zero` to `usr/plugins/jit_context`, keeping the plugin's `data/` |
+
+Re-run the same line to update. Options: `bash -s -- --only claude-code,hermes` and `bash -s -- --dry-run`. The same logic works offline as `jit install` / `jit uninstall`. It needs Python 3.11+; on stock macOS (python3 3.9) it picks a newer versioned Python or installs one with `uv`.
+
+For a pip-only setup of the CLIs (`jit`, `jit-doctor`, `jit-observatory`) without host wiring: `python3 -m pip install -e .` in a clone.
 
 ### 2. Configure Your Obsidian Vault (Optional / Auto-detected)
 By default, JIT auto-detects `~/Documents/Vault` or `~/Documents/Wojciech`. You can point to any local Obsidian vault:
