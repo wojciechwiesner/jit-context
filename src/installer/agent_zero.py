@@ -5,6 +5,7 @@ from __future__ import annotations
 import os
 import shutil
 import subprocess
+import sys
 from pathlib import Path
 
 from installer.common import DRY, FAIL, INTEGRATIONS_DIR, OK, SKIP, Result, home, timestamp
@@ -54,7 +55,13 @@ def install_local(root: Path) -> Path:
     if target.exists():
         shutil.rmtree(target)
     os.replace(staging, target)
+    _self_test([sys.executable, str(target / "execute.py")])
     return target
+
+
+def _self_test(command: list[str]) -> None:
+    """Run the plugin's own idempotent setup/self-test (creates data/jit_context.db)."""
+    subprocess.run(command, check=True, capture_output=True, timeout=DOCKER_TIMEOUT_S)
 
 
 def install_container(name: str) -> None:
@@ -63,6 +70,7 @@ def install_container(name: str) -> None:
                    capture_output=True, timeout=DOCKER_TIMEOUT_S)
     subprocess.run(["docker", "cp", f"{PLUGIN_SRC}/.", f"{name}:{dest}"], check=True,
                    capture_output=True, timeout=DOCKER_TIMEOUT_S)
+    _self_test(["docker", "exec", name, "python3", f"{dest}/execute.py"])
 
 
 def install(dry_run: bool = False) -> Result:

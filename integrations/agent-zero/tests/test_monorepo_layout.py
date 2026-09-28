@@ -10,7 +10,7 @@ PLUGIN_ROOT = Path(__file__).resolve().parents[1]
 def test_self_contained_plugin_layout():
     manifest = (PLUGIN_ROOT / "plugin.yaml").read_text(encoding="utf-8")
     assert "name: jit_context" in manifest
-    assert "version: 0.4.0" in manifest
+    assert "version: 0.4.1" in manifest
     for path in (
         "LICENSE", "execute.py", "default_config.yaml", "helpers/runtime.py",
         "jev_bridge/_runtime.py", "extensions/python/agent_init/_10_jev_init.py",

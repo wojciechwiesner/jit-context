@@ -11,6 +11,10 @@ def test_tokens_filters_stopwords():
     t = tokens("The phase_6_module and audit_exporter are deployed")
     assert "phase_6_module" in t and "the" not in t
 
+def test_tokens_fold_polish_diacritics():
+    assert tokens("połączenie wdrożenie usługi") == {"polaczenie", "wdrozenie", "uslugi"}
+    assert tokens("Połączenie") == tokens("polaczenie")
+
 def test_helpful_when_facts_echoed():
     resp = "W module audit_exporter.py oraz psp_gateway.py dodałem telemetry"
     assert classify_turn(FACTS, resp) == "HELPFUL"

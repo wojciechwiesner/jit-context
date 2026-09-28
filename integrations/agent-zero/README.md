@@ -1,38 +1,40 @@
-# Agent Zero adapter (v0.4.0)
+# JIT Context OS for Agent Zero (v0.4.1)
 
-This directory is the self-contained Agent Zero plugin, imported from the public
-[`jit-context-os` v0.4.0 release](https://github.com/wojciechwiesner/jit-context-os/releases/tag/v0.4.0).
-It contains its own `plugin.yaml`, hook extensions, JEV bridge, API/UI assets and
-Apache-2.0 `LICENSE`. The root `jit-context` Python core is a separate runtime
-(currently v0.2.11, MIT); the plugin does not become the root pip package or
-inherit its version merely by living in this monorepo.
+Agent Zero plugin for [JIT Context](https://github.com/wojciechwiesner/jit-context):
+3-tier memory cascade (L0/L1/L2), JEV shadow judge, distill/eviction layer and a
+live chat status bar, in one self-contained plugin (Apache-2.0).
 
-## Installation in Agent Zero
+> **Source of truth:** this plugin lives in
+> [`wojciechwiesner/jit-context`](https://github.com/wojciechwiesner/jit-context)
+> under `integrations/agent-zero/`. The
+> [`jit-context-os`](https://github.com/wojciechwiesner/jit-context-os) repository
+> is an automatic read-only mirror with the plugin at its root, as the Agent Zero
+> Plugin Hub requires. Please star, open issues and send PRs in `jit-context`.
 
-The Agent Zero plugin loader expects `plugin.yaml` at the installed plugin root.
-Do not hand the GitHub Plugin Hub the monorepo root URL: the plugin is nested.
-On the Agent Zero host, clone the repository and install only this directory:
+## Install
 
-```bash
-git clone --depth 1 https://github.com/wojciechwiesner/jit-context.git /tmp/jit-context
-# Back up any existing /a0/usr/plugins/jit_context and its data/ before replacing it.
-mkdir -p /a0/usr/plugins/jit_context
-cp -R /tmp/jit-context/integrations/agent-zero/. /a0/usr/plugins/jit_context/
-python3 /a0/usr/plugins/jit_context/execute.py
-```
+Pick one:
 
-The repository alone does not activate the plugin. Production installation
-and its verification are recorded in
-[`docs/plans/2026-09-24-agent-zero-integration.md`](../../docs/plans/2026-09-24-agent-zero-integration.md).
-To avoid mixing stale files on an already-populated install, back up and replace
-the plugin directory during a scheduled deployment. Keep runtime `data/`,
-`config.json`, and secrets outside version control. Configure the JEV API
-credential through the host configuration/environment, not this repository.
+1. **One line, every agent host on the machine** (Claude Code, Hermes, OpenCode, Agent Zero):
+   ```bash
+   curl -fsSL https://raw.githubusercontent.com/wojciechwiesner/jit-context/master/install.sh | bash -s -- --only agent-zero
+   ```
+   It finds a local Agent Zero checkout (or `A0_DIR`) or a running Agent Zero
+   container, copies the plugin to `usr/plugins/jit_context`, keeps the plugin's
+   `data/`, and runs `execute.py` (idempotent setup and self-test). Restart Agent Zero afterwards.
+2. **Agent Zero UI, install from git:** `https://github.com/wojciechwiesner/jit-context-os`
+3. **Agent Zero UI, install from ZIP:** download `jit_context-<version>.zip` from the
+   [releases](https://github.com/wojciechwiesner/jit-context/releases) (tags `a0-v*`).
 
-## Verification in this repository
+Do not give Agent Zero the `jit-context` root URL: the plugin is nested there,
+and the loader expects `plugin.yaml` at the plugin root.
 
-Run the suites separately because both the Python core and this adapter have a
-Python `tests` package:
+Keep runtime `data/`, `config.json` and secrets out of version control. Configure
+the JEV API credential through the host configuration or environment.
+
+## Verification in the monorepo
+
+The Python core and this adapter both have a `tests` package, so run the suites separately:
 
 ```bash
 python3 -m pytest src/tests -q
@@ -41,8 +43,11 @@ python3 -m pytest integrations/agent-zero/tests -q
 
 `python3 integrations/agent-zero/execute.py` initializes a database at the
 plugin's `data/` path; use a temporary copy for an isolated smoke test.
+Production rollout notes: [`docs/plans/2026-09-24-agent-zero-integration.md`](https://github.com/wojciechwiesner/jit-context/blob/master/docs/plans/2026-09-24-agent-zero-integration.md).
 
-In the Hermes CLI, `jit mode active`, `jit jev status`, and `jit doctor` inspect
-Hermes's installed JIT/JEV runtime, not Agent Zero's plugin. A successful JEV
-probe proves API reachability and ordering in that invocation, not a measured
-token reduction for every turn.
+In the Hermes CLI, `jit mode active`, `jit jev status` and `jit doctor` inspect
+Hermes's JIT/JEV runtime, not this plugin.
+
+## Citation
+
+DOI [10.5281/zenodo.22649542](https://doi.org/10.5281/zenodo.22649542)

@@ -6,6 +6,7 @@ The optional HTTP backend must emit the same three labels.
 from __future__ import annotations
 
 import re
+import unicodedata
 from typing import Dict, List
 
 _TOKEN_RE = re.compile(r"[a-z0-9_:\-.]{3,}")
@@ -16,8 +17,19 @@ _STOP = {
 MIN_HELPFUL_RATIO = 0.25
 
 
+def fold_text(text: str) -> str:
+    """Lowercase and strip diacritics so 'połączenie' and 'polaczenie' tokenize identically.
+
+    Without this the ASCII-only token regex split Polish words at every diacritic
+    ('połączenie' -> 'czenie'). Same folding as core cognitive.jev_engine.fold_text.
+    """
+    lowered = (text or "").lower().replace("ł", "l")
+    decomposed = unicodedata.normalize("NFKD", lowered)
+    return "".join(ch for ch in decomposed if not unicodedata.combining(ch))
+
+
 def tokens(text: str) -> set:
-    return {t for t in _TOKEN_RE.findall((text or "").lower()) if t not in _STOP}
+    return {t for t in _TOKEN_RE.findall(fold_text(text)) if t not in _STOP}
 
 
 def fact_hit(fact: Dict[str, str], response_tokens: set) -> bool:

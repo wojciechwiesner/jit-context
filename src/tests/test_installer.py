@@ -99,6 +99,7 @@ def test_agent_zero_reinstall_keeps_plugin_data(fake_home, monkeypatch):
 
     assert agent_zero.install().status == OK
     assert (target / "data" / "api_key").read_text() == "keep-me"
+    assert (target / "data" / "jit_context.db").exists()  # plugin self-test ran
 
 
 def test_one_failing_host_does_not_stop_the_rest(fake_home, monkeypatch):
