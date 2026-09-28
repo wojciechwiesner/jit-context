@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased] - 2026-09-26
 
+### Fixed
+- `l0/db.py`: schema migrations now run on existing overlay DBs. `get_db()` used to apply the schema only when the file did not exist, so long-lived session DBs (1059 of 1139 locally) never got `tool_routing` or `llm_metrics.tool_names_json`, and every turn logged `no such table: tool_routing` / `no such column: tool_names_json`. Init is now gated on `PRAGMA user_version` (`SCHEMA_VERSION = 2`); telemetry schema errors are printed instead of swallowed. Regression test: `src/tests/test_db_schema_migration.py`.
+
 ### Added
 - `integrations/opencode/`: native OpenCode plugin (`opencode-plugin-jit-context` 0.1.0, TypeScript/Bun, MIT), moved in from a standalone repo with its history. It injects the scoped capsule via `experimental.chat.system.transform`, records edits, and runs fail-open. A/B test (median of 4 runs, one memory-dependent task): 8.6 s vs 42.4 s, 0 vs 14.5 tool calls, past-session decision recovered 4/4 vs 0/4. CI job `opencode-plugin` runs `bun run check`.
 - README: the OpenCode MCP snippet now uses the real `opencode.json` `mcp` schema (`type: local`, `command` array) instead of `mcpServers`.

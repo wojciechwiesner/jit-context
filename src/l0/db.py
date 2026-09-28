@@ -6,6 +6,10 @@ from typing import Optional
 from pathlib import Path
 from config import DB_PATH
 
+# Bump whenever SCHEMA_SQL or telemetry.db_schema gains a table or column.
+# Every CREATE is IF NOT EXISTS and migrations are idempotent, so re-running is safe.
+SCHEMA_VERSION = 2
+
 SCHEMA_SQL = """
 CREATE TABLE IF NOT EXISTS sessions (
     session_id TEXT PRIMARY KEY,
@@ -103,7 +107,7 @@ def _init_db_conn(conn: sqlite3.Connection) -> None:
             from telemetry.db_schema import init_telemetry_schema
             init_telemetry_schema(conn)
         except Exception as e:
-            pass
+            print(f"[ona-context:db] Telemetry schema init error: {e}")
     except Exception as e:
         print(f"[ona-context:db] Schema init error: {e}")
 
@@ -114,7 +118,6 @@ def get_db(db_path: Optional[Path] = None, session_id: Optional[str] = None, pro
     else:
         target_path = db_path or DB_PATH
     target_path.parent.mkdir(parents=True, exist_ok=True)
-    needs_init = not target_path.exists()
     conn = sqlite3.connect(str(target_path), timeout=0.05)
     conn.row_factory = sqlite3.Row
     
@@ -125,9 +128,12 @@ def get_db(db_path: Optional[Path] = None, session_id: Optional[str] = None, pro
     conn.execute("PRAGMA temp_store=MEMORY;")
     conn.execute("PRAGMA busy_timeout=50;")
     
-    if needs_init:
+    # Gate on user_version, not on file existence: databases created before a
+    # schema change (new table/column) must still receive the migration.
+    if conn.execute("PRAGMA user_version;").fetchone()[0] < SCHEMA_VERSION:
         with conn:
             _init_db_conn(conn)
+        conn.execute(f"PRAGMA user_version = {SCHEMA_VERSION};")
     return conn
 
 def init_db(db_path: Optional[Path] = None) -> None:
