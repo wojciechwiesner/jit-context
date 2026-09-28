@@ -3,10 +3,11 @@ export type LiveCapsule = { scope: string; capsule: string }
 /**
  * Fetches the live capsule from the Hermes Observatory.
  *
- * Scope guard: the Observatory serves the capsule of the *current Hermes
- * session* and does not filter by `?scope=`. A capsule whose scope differs from
- * the OpenCode project is rejected, otherwise another conversation's goal would
- * leak into this agent (context poisoning).
+ * The Observatory selects by `?project=` and returns that project's newest
+ * Hermes session (or `no_project_session`). Scope guard: a capsule whose scope
+ * still differs from the OpenCode project is rejected (older Observatory builds
+ * ignore the parameter and serve the active session), so another project's
+ * context never leaks into this agent.
  *
  * Fail-open (Invariant I6): any error or timeout returns null, never throws.
  */
@@ -17,7 +18,7 @@ export async function fetchLiveCapsule(
   fetchImpl: typeof fetch = fetch,
 ): Promise<LiveCapsule | null> {
   try {
-    const url = `${baseUrl}/api/context/live?scope=${encodeURIComponent(scope)}`
+    const url = `${baseUrl}/api/context/live?project=${encodeURIComponent(scope)}`
     const res = await fetchImpl(url, { signal: AbortSignal.timeout(timeoutMs) })
     if (!res.ok) return null
     const data = (await res.json()) as Partial<LiveCapsule>

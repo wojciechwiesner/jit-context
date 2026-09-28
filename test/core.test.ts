@@ -40,9 +40,20 @@ describe("L0Store", () => {
 })
 
 describe("fetchLiveCapsule", () => {
-  test("accepts capsule with matching scope", async () => {
-    const r = await fetchLiveCapsule("http://x", "boocco", 100, jsonFetch({ scope: "boocco", capsule: "<C/>" }))
+  test("accepts capsule with matching scope and queries by project", async () => {
+    let url = ""
+    const spy = (async (u: string) => {
+      url = u
+      return new Response(JSON.stringify({ scope: "boocco", capsule: "<C/>" }))
+    }) as unknown as typeof fetch
+    const r = await fetchLiveCapsule("http://x", "boocco", 100, spy)
     expect(r?.capsule).toBe("<C/>")
+    expect(url).toBe("http://x/api/context/live?project=boocco")
+  })
+
+  test("no_project_session response yields null", async () => {
+    const r = await fetchLiveCapsule("http://x", "p", 100, jsonFetch({ status: "no_project_session", scope: "p" }))
+    expect(r).toBeNull()
   })
 
   test("rejects capsule from another scope (anti-poisoning)", async () => {
