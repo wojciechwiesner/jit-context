@@ -56,14 +56,32 @@ def _fallback_l0_direct_read(scope: str = "") -> str:
         return f"[JIT Context OS] Local overlay DB not found at {L0_DB_PATH}."
 
     try:
-        conn = sqlite3.connect(f"file:{L0_DB_PATH}?mode=ro", uri=True)
+        # `mode=ro` URIs fail on the live Hermes WAL DB ("unable to open database
+        # file"); a normal connection with query_only is read-only and works.
+        conn = sqlite3.connect(str(L0_DB_PATH), timeout=0.2)
+        conn.execute("PRAGMA query_only = ON")
         cursor = conn.cursor()
-        query = (
-            "SELECT scope, key, value, updated_at FROM session_overlay "
-            "ORDER BY updated_at DESC LIMIT 15"
-        )
-        cursor.execute(query)
-        rows = cursor.fetchall()
+        has_table = cursor.execute(
+            "SELECT 1 FROM sqlite_master WHERE type='table' AND name='session_overlay'"
+        ).fetchone()
+
+        # Only `session_overlay` is read: it is scoped. Hermes' internal `overlay`
+        # table has no scope column, so reading it would leak other sessions'
+        # user utterances into this project's capsule.
+        rows = []
+        if has_table:
+            if scope:
+                cursor.execute(
+                    "SELECT scope, key, value, updated_at FROM session_overlay "
+                    "WHERE scope IN (?, 'general') ORDER BY updated_at DESC LIMIT 15",
+                    (scope,),
+                )
+            else:
+                cursor.execute(
+                    "SELECT scope, key, value, updated_at FROM session_overlay "
+                    "ORDER BY updated_at DESC LIMIT 15"
+                )
+            rows = cursor.fetchall()
         conn.close()
 
         if not rows:
@@ -71,8 +89,6 @@ def _fallback_l0_direct_read(scope: str = "") -> str:
 
         lines = ["<JIT_CONTEXT_FALLBACK source='sqlite_wal'>"]
         for r_scope, r_key, r_val, r_time in rows:
-            if scope and r_scope != scope and r_scope != "general":
-                continue
             lines.append(f"  • [{r_scope}] {r_key}: {r_val}")
         lines.append("</JIT_CONTEXT_FALLBACK>")
         return "\n".join(lines)

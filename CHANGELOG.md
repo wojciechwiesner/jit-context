@@ -47,6 +47,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added a wheel-level distribution test that installs the CLI in a separate virtual environment, probes an ephemeral localhost Observatory, verifies bundled HTML/manifest files, and asserts a missing Hermes plugin yields a nonzero doctor exit.
 
 ### Fixed
+- MCP server L0 fallback (`get_jit_context` when the Observatory is down) could not read the live Hermes WAL database: `mode=ro` URI connections failed with "unable to open database file". It now opens a normal connection with `PRAGMA query_only`, which stays read-only. It reads only the scoped `session_overlay` table and filters by scope in SQL, so the unscoped Hermes `overlay` table can no longer leak other sessions' messages into a project capsule.
 - JEV scores now actually reach the capsule. Previously `compiler.py` fired the prefetch and reranked in the same call with
   exact-text cache keys and positional fact keys (`fact_{i}`), so the remote result was almost never used. Now: content-addressed
   fact keys (`fact_key`), cache keyed by the normalized token set, and fuzzy reuse (token Jaccard >= 0.5, TTL 300 s) so a prefetch
