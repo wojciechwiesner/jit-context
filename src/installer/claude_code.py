@@ -18,7 +18,7 @@ HOOK_FILES = (
     "jit_compact_extract.py",
     "jit_spill_select.py",
 )
-SPILL_MATCHER = "mcp__.*|WebFetch|WebSearch|Grep|Glob|Agent|Task"
+SPILL_MATCHER = "mcp__.*|WebFetch|WebSearch|Grep|Glob|Agent|Task|ListMcpResourcesTool|ReadMcpResourceTool|ReadMcpResourceDirTool"
 
 # (event, matcher, script, timeout, status message)
 REGISTRATIONS = (

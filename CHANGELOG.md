@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+- `installer/claude_code.py`: `SPILL_MATCHER` (the PostToolUse matcher that triggers `jit-spillover-hook.py`) did not cover `ListMcpResourcesTool`, `ReadMcpResourceTool`, `ReadMcpResourceDirTool` — the three generic MCP resource-access tools, which are not prefixed `mcp__<server>__` and so were never matched by `mcp__.*`. Large resource reads (e.g. full Notion pages, Drive files) went straight into context with no spillover. Matcher now includes all three.
+
 ## [0.3.0] - 2026-09-28
 
 One-line installer for every agent host, the OpenCode plugin in the monorepo, and Agent Zero plugin 0.4.1. The entries below cover everything since 0.2.11; the two dated groups are work landed on 2026-09-26/28 and 2026-09-24.
