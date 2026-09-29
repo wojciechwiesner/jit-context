@@ -31,6 +31,30 @@ find_python() {
   return 1
 }
 
+ensure_venv() {
+  # Hooks are registered against this exact interpreter (sys.executable at
+  # install time) - it must have the package's runtime deps importable, or
+  # every SessionStart/UserPromptSubmit hook fails with ModuleNotFoundError.
+  # Runs inside $(...): a bare `exit` here would only kill the subshell, so
+  # failures use `return 1` and the caller checks the exit status instead.
+  local venv_dir="$INSTALL_DIR/.venv" venv_python="$INSTALL_DIR/.venv/bin/python3"
+  if [[ ! -x "$venv_python" ]]; then
+    say "Creating virtualenv at $venv_dir" >&2
+    if command -v uv >/dev/null; then
+      uv venv --quiet --python "$PYTHON" "$venv_dir" >&2 || { warn "uv venv failed"; return 1; }
+    else
+      "$PYTHON" -m venv "$venv_dir" >&2 || { warn "python -m venv failed (Debian/Ubuntu: sudo apt install python3-venv, or install uv: https://docs.astral.sh/uv/)"; return 1; }
+    fi
+  fi
+  say "Installing dependencies into virtualenv" >&2
+  if command -v uv >/dev/null; then
+    uv pip install --quiet --python "$venv_python" -e "$INSTALL_DIR" >&2 || { warn "uv pip install failed"; return 1; }
+  else
+    "$venv_python" -m pip install --quiet --upgrade -e "$INSTALL_DIR" >&2 || { warn "pip install failed"; return 1; }
+  fi
+  echo "$venv_python"
+}
+
 command -v git >/dev/null || die "git is required"
 PYTHON="$(find_python)" || die "python >= $MIN_PYTHON is required (install it, or install uv: https://docs.astral.sh/uv/)"
 say "Using $("$PYTHON" -V 2>&1) at $PYTHON"
@@ -43,6 +67,9 @@ else
   say "Cloning into $INSTALL_DIR"
   git clone --depth 1 --quiet "$REPO_URL" "$INSTALL_DIR"
 fi
+
+PYTHON="$(ensure_venv)" || die "could not set up the jit-context virtualenv"
+say "Hooks and CLI will run under $PYTHON"
 
 say "Linking the jit CLI into $BIN_DIR"
 mkdir -p "$BIN_DIR"

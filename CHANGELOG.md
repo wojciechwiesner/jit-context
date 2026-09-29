@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - `installer/claude_code.py`: `SPILL_MATCHER` (the PostToolUse matcher that triggers `jit-spillover-hook.py`) did not cover `ListMcpResourcesTool`, `ReadMcpResourceTool`, `ReadMcpResourceDirTool` — the three generic MCP resource-access tools, which are not prefixed `mcp__<server>__` and so were never matched by `mcp__.*`. Large resource reads (e.g. full Notion pages, Drive files) went straight into context with no spillover. Matcher now includes all three.
+- `install.sh`: hooks and the `jit` CLI were registered against whatever bare interpreter `find_python()` picked, with the package's dependencies never installed into it. Any host missing `httpx`/`pydantic`/`requests` system-wide (e.g. a fresh Arch/Omarchy `python3.14` with no `pip`) got every `SessionStart`/`UserPromptSubmit` hook throwing `ModuleNotFoundError` on every prompt. The installer now provisions `.jit-context/.venv` (via `uv venv` when available, else `python -m venv`), installs the package into it (`uv pip install`/`pip install -e .`), and points every downstream `sys.executable`-based registration (Claude Code, Agent Zero, ...) at that interpreter instead.
+- `l2/client.py`: `import httpx` and `httpx.Client(...)` construction ran unconditionally at module import time, reachable transitively from `context/compiler.py` (imported by the core capsule-compiling hook) regardless of `JIT_L2_ENABLED`. A missing `httpx` broke 100% of context injection, not just the opt-in L2 feature it belonged to. The client is now constructed lazily on first use inside the existing fail-open `try/except`, so a missing dependency degrades to "L2 unavailable" instead of crashing every hook.
+
+### Changed
+- `pyproject.toml`: dropped `pandas`, `pypdf`, `python-docx`, `python-pptx`, `openpyxl`, `youtube-transcript-api`, `tabulate` from core `dependencies` — none are imported anywhere under `src/` (the installed hook/CLI runtime only needs `httpx`, `pydantic`, `requests`); they were only used by `benchmarks/`, which isn't part of the installed package. Moved to a new `benchmarks` optional-dependencies group. Cuts every fresh install from 10 dependencies (several of them heavy, e.g. pandas) down to 3.
 
 ## [0.3.0] - 2026-09-28
 
