@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Claude Code hooks now import an immutable runtime snapshot instead of the live dev checkout. `jit install` copies `src/` to `~/.claude/jit-context-runtime/src-<head>[-dirty]-<timestamp>/` (with `DEPLOYED_FROM.txt` and precompiled bytecode) and points `current` at it. The new `hooks/jit_src_path.py` resolves `JIT_SRC` > `JIT_DEV_LIVE=1` (live `~/.jit-context/src`) > snapshot > live fallback, so a half-finished edit in the checkout can no longer break running hooks. `jit uninstall` removes the runtime directory.
+- `AGENTS.md` (imported by `CLAUDE.md`) and a README "Development workflow" section: never edit deployed copies; fix in the repo, test, commit, `jit install`, push.
+
 ### Fixed
 - `installer/claude_code.py`: `SPILL_MATCHER` (the PostToolUse matcher that triggers `jit-spillover-hook.py`) did not cover `ListMcpResourcesTool`, `ReadMcpResourceTool`, `ReadMcpResourceDirTool` — the three generic MCP resource-access tools, which are not prefixed `mcp__<server>__` and so were never matched by `mcp__.*`. Large resource reads (e.g. full Notion pages, Drive files) went straight into context with no spillover. Matcher now includes all three.
 - `install.sh`: hooks and the `jit` CLI were registered against whatever bare interpreter `find_python()` picked, with the package's dependencies never installed into it. Any host missing `httpx`/`pydantic`/`requests` system-wide (e.g. a fresh Arch/Omarchy `python3.14` with no `pip`) got every `SessionStart`/`UserPromptSubmit` hook throwing `ModuleNotFoundError` on every prompt. The installer now provisions `.jit-context/.venv` (via `uv venv` when available, else `python -m venv`), installs the package into it (`uv pip install`/`pip install -e .`), and points every downstream `sys.executable`-based registration (Claude Code, Agent Zero, ...) at that interpreter instead.
@@ -14,6 +18,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - `pyproject.toml`: dropped `pandas`, `pypdf`, `python-docx`, `python-pptx`, `openpyxl`, `youtube-transcript-api`, `tabulate` from core `dependencies` — none are imported anywhere under `src/` (the installed hook/CLI runtime only needs `httpx`, `pydantic`, `requests`); they were only used by `benchmarks/`, which isn't part of the installed package. Moved to a new `benchmarks` optional-dependencies group. Cuts every fresh install from 10 dependencies (several of them heavy, e.g. pandas) down to 3.
+- Snapshot logic moved from `installer/hermes.py` to `installer/common.py` (`create_snapshot`, `prune_snapshots`, `relink`, `remove_tree`) and shared by Hermes and Claude Code. Every install now creates a fresh snapshot (Hermes used to reuse one per git HEAD, so uncommitted changes were never redeployed). Snapshots are read-only (`a-w`), and only the newest 3 are kept; the active one is never pruned. `remove_tree` restores write bits before deleting.
+- `git_head()` uses `git rev-parse`, so snapshots deployed from a git worktree carry the real commit instead of `local`.
 
 ## [0.3.0] - 2026-09-28
 

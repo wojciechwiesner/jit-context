@@ -211,6 +211,18 @@ One repository, one installer, four agent hosts. Versions are independent:
 
 `jit-context-os` is the root-level mirror of `integrations/agent-zero/` that the Agent Zero Plugin Hub needs; issues, PRs and stars belong here. The [verified Agent Zero production rollout](docs/plans/2026-09-24-agent-zero-integration.md) is recorded separately.
 
+## Development workflow
+
+This repository is the single source of truth. Installed copies are read-only snapshots that the next install overwrites, so never edit them (`~/.hermes/plugins/ona-context`, `~/.claude/hooks`, `~/.claude/jit-context-runtime`, the Agent Zero container, the `jit-context-os` mirror).
+
+1. Fix in this repo.
+2. `python3 -m pytest src/tests -q`
+3. Commit.
+4. `jit install` redeploys every local host (each snapshot records its origin in `DEPLOYED_FROM.txt`).
+5. Push; CI mirrors `integrations/agent-zero/` to `jit-context-os`.
+
+A half-finished edit in the checkout no longer reaches running hooks. To try uncommitted `src/` changes live in Claude Code, export `JIT_DEV_LIVE=1` (hooks import `~/.jit-context/src` directly; `JIT_DEV_LIVE=1 jit install` also drops the `current` snapshot link) or point `JIT_SRC` at any tree. Unset it and re-run `jit install` to return to snapshots.
+
 ## Quickstart
 
 ### 1. One-line install (all agent hosts)
@@ -221,8 +233,8 @@ The installer clones the repo to `~/.jit-context`, links the `jit` CLI into `~/.
 
 | Host | Detected by | What it does |
 |---|---|---|
-| Claude Code | `~/.claude` | copies the JIT hooks to `~/.claude/hooks`, adds missing entries to `settings.json` (backup first, never duplicates) |
-| Hermes | `~/.hermes` | deploys an immutable `src` snapshot to `plugin-releases/`, points `plugins/ona-context` at it, sets runtime guards, restarts the gateway |
+| Claude Code | `~/.claude` | copies the JIT hooks to `~/.claude/hooks`, deploys a read-only `src` snapshot to `~/.claude/jit-context-runtime/` (hooks import it via the `current` link, last 3 kept), adds missing entries to `settings.json` (backup first, never duplicates) |
+| Hermes | `~/.hermes` | deploys a read-only `src` snapshot to `plugin-releases/` (last 3 kept), points `plugins/ona-context` at it, sets runtime guards, restarts the gateway |
 | OpenCode | `~/.config/opencode` or `opencode` on PATH | adds `opencode-plugin-jit-context` to `opencode.json`, or a locally built bundle in `plugins/` while the npm package is unpublished (needs `bun`) |
 | Agent Zero | a checkout with `usr/plugins` (or `A0_DIR`), or a container in the local Docker | copies `integrations/agent-zero` to `usr/plugins/jit_context`, keeping the plugin's `data/`, then runs its `execute.py` self-test; restart Agent Zero afterwards. For Agent Zero on another server, use the UI install (git or ZIP) |
 
