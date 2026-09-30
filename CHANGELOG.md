@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Workflow `.github/workflows/agent-zero-mirror.yml`: every push to `master` touching `integrations/agent-zero/**` (or a manual dispatch) rsyncs the plugin to the root of `wojciechwiesner/jit-context-os` and pushes a regular `chore(sync): mirror integrations/agent-zero from jit-context@<sha>` commit (no force-push, no history rewrite). Needs the write deploy key secret `JIT_CONTEXT_OS_DEPLOY_KEY`. `jit-context-os` is now a read-only mirror; edit the plugin here.
+- `integrations/agent-zero/`: reconciled drift with `jit-context-os` before the first sync so the mirror's `--delete` loses nothing: ported `CHANGELOG.md`, `CITATION.cff`, `docs/plans/2026-09-21-jev-bridge-plan.md` and `.planning/` (STATE, THOUGHTS, ARCHITECTURE), and merged the features, configuration table (corrected to real `default_config.yaml` keys) and benchmark snapshot from its README.
+
+### Changed
+- `agent-zero-release.yml`: the release ZIP excludes the plugin's `.planning/` and `docs/`.
+
 ### Fixed
 - `installer/claude_code.py`: `SPILL_MATCHER` (the PostToolUse matcher that triggers `jit-spillover-hook.py`) did not cover `ListMcpResourcesTool`, `ReadMcpResourceTool`, `ReadMcpResourceDirTool` — the three generic MCP resource-access tools, which are not prefixed `mcp__<server>__` and so were never matched by `mcp__.*`. Large resource reads (e.g. full Notion pages, Drive files) went straight into context with no spillover. Matcher now includes all three.
 - `install.sh`: hooks and the `jit` CLI were registered against whatever bare interpreter `find_python()` picked, with the package's dependencies never installed into it. Any host missing `httpx`/`pydantic`/`requests` system-wide (e.g. a fresh Arch/Omarchy `python3.14` with no `pip`) got every `SessionStart`/`UserPromptSubmit` hook throwing `ModuleNotFoundError` on every prompt. The installer now provisions `.jit-context/.venv` (via `uv venv` when available, else `python -m venv`), installs the package into it (`uv pip install`/`pip install -e .`), and points every downstream `sys.executable`-based registration (Claude Code, Agent Zero, ...) at that interpreter instead.

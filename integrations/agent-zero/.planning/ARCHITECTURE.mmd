@@ -1,0 +1,7 @@
+graph TD
+  User[User / Operator] --> ChatInput[Chat Input with JIT Status Bar]
+  ChatInput --> LoopStart[message_loop_start / JEV Prefetch]
+  LoopStart --> JITRuntime[JIT Context Runtime / L0 SQLite WAL]
+  JITRuntime --> AgentExecution[Agent Zero Execution]
+  AgentExecution --> LoopEnd[message_loop_end / Shadow Judge]
+  LoopEnd --> EvictionAdvisor[Eviction Advisor & L2 Vault Promotion]

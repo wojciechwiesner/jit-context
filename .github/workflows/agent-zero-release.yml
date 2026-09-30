@@ -28,7 +28,8 @@ jobs:
           grep -qx "version: ${version}" integrations/agent-zero/plugin.yaml \
             || { echo "::error::tag ${GITHUB_REF_NAME} does not match plugin.yaml version"; exit 1; }
           mkdir -p dist/jit_context
-          rsync -a --exclude tests --exclude __pycache__ --exclude data integrations/agent-zero/ dist/jit_context/
+          rsync -a --exclude tests --exclude __pycache__ --exclude data \
+            --exclude .planning --exclude docs integrations/agent-zero/ dist/jit_context/
           (cd dist && zip -qr "jit_context-${version}.zip" jit_context)
           echo "VERSION=${version}" >> "$GITHUB_ENV"
       - name: Publish GitHub release
