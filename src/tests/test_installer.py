@@ -65,7 +65,7 @@ def test_hermes_links_snapshot_and_moves_real_dir_aside(fake_home, monkeypatch):
     assert link.is_symlink() and (link / "plugin.yaml").exists()
     assert (link / "DEPLOYED_FROM.txt").exists() and not (link / "tests").exists()
     assert list(link.parent.glob("ona-context.bak.*/keep.txt"))
-    assert hermes.install().status == OK  # re-run reuses the snapshot
+    assert hermes.install().status == OK  # re-run deploys a fresh snapshot
 
     hermes.uninstall()
     assert not link.exists() and list((fake_home / ".hermes/plugin-releases").iterdir())

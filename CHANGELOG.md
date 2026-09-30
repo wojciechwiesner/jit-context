@@ -10,6 +10,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Workflow `.github/workflows/agent-zero-mirror.yml`: every push to `master` touching `integrations/agent-zero/**` (or a manual dispatch) rsyncs the plugin to the root of `wojciechwiesner/jit-context-os` and pushes a regular `chore(sync): mirror integrations/agent-zero from jit-context@<sha>` commit (no force-push, no history rewrite). Needs the write deploy key secret `JIT_CONTEXT_OS_DEPLOY_KEY`. `jit-context-os` is now a read-only mirror; edit the plugin here.
 - `integrations/agent-zero/`: reconciled drift with `jit-context-os` before the first sync so the mirror's `--delete` loses nothing: ported `CHANGELOG.md`, `CITATION.cff`, `docs/plans/2026-09-21-jev-bridge-plan.md` and `.planning/` (STATE, THOUGHTS, ARCHITECTURE), and merged the features, configuration table (corrected to real `default_config.yaml` keys) and benchmark snapshot from its README.
+- Claude Code hooks now import an immutable runtime snapshot instead of the live dev checkout. `jit install` copies `src/` to `~/.claude/jit-context-runtime/src-<head>[-dirty]-<timestamp>/` (with `DEPLOYED_FROM.txt` and precompiled bytecode) and points `current` at it. The new `hooks/jit_src_path.py` resolves `JIT_SRC` > `JIT_DEV_LIVE=1` (live `~/.jit-context/src`) > snapshot > live fallback, so a half-finished edit in the checkout can no longer break running hooks. `jit uninstall` removes the runtime directory.
+- `AGENTS.md` (imported by `CLAUDE.md`) and a README "Development workflow" section: never edit deployed copies; fix in the repo, test, commit, `jit install`, push.
 
 ### Changed
 - `agent-zero-release.yml`: the release ZIP excludes the plugin's `.planning/` and `docs/`.
@@ -21,6 +23,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - `pyproject.toml`: dropped `pandas`, `pypdf`, `python-docx`, `python-pptx`, `openpyxl`, `youtube-transcript-api`, `tabulate` from core `dependencies` — none are imported anywhere under `src/` (the installed hook/CLI runtime only needs `httpx`, `pydantic`, `requests`); they were only used by `benchmarks/`, which isn't part of the installed package. Moved to a new `benchmarks` optional-dependencies group. Cuts every fresh install from 10 dependencies (several of them heavy, e.g. pandas) down to 3.
+- Snapshot logic moved from `installer/hermes.py` to `installer/common.py` (`create_snapshot`, `prune_snapshots`, `relink`, `remove_tree`) and shared by Hermes and Claude Code. Every install now creates a fresh snapshot (Hermes used to reuse one per git HEAD, so uncommitted changes were never redeployed). Snapshots are read-only (`a-w`), and only the newest 3 are kept; the active one is never pruned. `remove_tree` restores write bits before deleting.
+- `git_head()` uses `git rev-parse`, so snapshots deployed from a git worktree carry the real commit instead of `local`.
 
 ## [0.3.0] - 2026-09-28
 

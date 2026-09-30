@@ -24,7 +24,11 @@ import os
 import sys
 import time
 
-JIT_SRC = os.path.expanduser(os.environ.get("JIT_SRC", "~/.jit-context/src"))
+try:  # immutable runtime snapshot unless JIT_SRC / JIT_DEV_LIVE=1 say otherwise
+    from jit_src_path import resolve_jit_src
+    JIT_SRC = resolve_jit_src()
+except ImportError:
+    JIT_SRC = os.path.expanduser(os.environ.get("JIT_SRC", "~/.jit-context/src"))
 LOG_PATH = os.path.expanduser("~/.claude/logs/jit-spillover-hook.log")
 LEAF_MIN_CHARS = int(os.environ.get("JIT_SPILL_MIN_CHARS", "6000"))
 TARGET_CHARS = int(os.environ.get("JIT_SPILL_TARGET_CHARS", "4000"))

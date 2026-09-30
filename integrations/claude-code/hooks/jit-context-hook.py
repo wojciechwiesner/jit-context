@@ -25,7 +25,11 @@ import re
 import sys
 import time
 
-JIT_SRC = os.path.expanduser(os.environ.get("JIT_SRC", "~/.jit-context/src"))
+try:  # immutable runtime snapshot unless JIT_SRC / JIT_DEV_LIVE=1 say otherwise
+    from jit_src_path import resolve_jit_src
+    JIT_SRC = resolve_jit_src()
+except ImportError:
+    JIT_SRC = os.path.expanduser(os.environ.get("JIT_SRC", "~/.jit-context/src"))
 HERMES_ENV = os.path.expanduser("~/.hermes/.env")
 LOG_PATH = os.path.expanduser("~/.claude/logs/jit-context-hook.log")
 MAX_CAPSULE_CHARS = int(os.environ.get("JIT_CLAUDE_MAX_CHARS", "8000"))
