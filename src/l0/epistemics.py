@@ -244,10 +244,22 @@ def _norm_evidence(s: str) -> str:
     return re.sub(r"[\s,]+", " ", s.lower()).strip()
 
 
+def _occurs(needle: str, evidence: str) -> bool:
+    """True when `needle` appears in `evidence` as a whole token sequence.
+
+    Plain substring matching grounds anything short: 'o' occurs in every page and
+    '17' occurs in '2017'. Single non-digit characters are never evidence of anything.
+    """
+    if not needle or (len(needle) < 2 and not needle.isdigit()):
+        return False
+    pattern = r"(?<!\w)(?<!\d\.)" + re.escape(needle) + r"(?!\w|\.\d)"
+    return re.search(pattern, evidence) is not None
+
+
 def answer_grounding(answer: str, tool_events: List[Dict[str, Any]]) -> str:
     """Classify whether the answer is traceable to tool evidence.
 
-    GROUNDED_EXACT   - the answer string occurs in tool output
+    GROUNDED_EXACT   - the answer occurs in tool output as whole tokens
     GROUNDED_PARTS   - every list item / every number of the answer occurs in tool output
     COMPUTED         - python_exec ran successfully (answer may be derived, not quoted)
     UNGROUNDED       - none of the above
@@ -256,14 +268,14 @@ def answer_grounding(answer: str, tool_events: List[Dict[str, Any]]) -> str:
     if not ans:
         return "UNGROUNDED"
     evidence = _norm_evidence(_evidence_text(tool_events))
-    a = _norm_evidence(ans)
-    if a and a in evidence:
+    if _occurs(_norm_evidence(ans), evidence):
         return "GROUNDED_EXACT"
     parts = [p.strip() for p in re.split(r"[;,]|\band\b", ans) if p.strip()]
-    if len(parts) > 1 and all(_norm_evidence(p) in evidence for p in parts):
+    if len(parts) > 1 and all(_occurs(_norm_evidence(p), evidence) for p in parts):
         return "GROUNDED_PARTS"
     nums = re.findall(r"\d+(?:\.\d+)?", ans.replace(",", ""))
-    if nums and all(n in evidence.replace(",", "") for n in nums) and len(re.sub(r"[\d.,\s$%]", "", ans)) == 0:
+    plain_evidence = evidence.replace(",", "")
+    if nums and all(_occurs(n, plain_evidence) for n in nums) and len(re.sub(r"[\d.,\s$%]", "", ans)) == 0:
         return "GROUNDED_PARTS"
     if any(e.get("tool") == "python_exec" and e.get("status") != "ERROR" for e in tool_events):
         return "COMPUTED"

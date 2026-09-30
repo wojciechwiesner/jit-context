@@ -1,0 +1,22 @@
+error: nie można przekodować „tests/roots/test-root/wrongenc.inc” z UTF-8 na iso-8859
+error: nie można przekodować „tests/roots/test-warnings/wrongenc.inc” z UTF-8 na iso-8859
+error: nie można przekodować „tests/roots/test-root/wrongenc.inc” z iso-8859 na UTF-8
+error: nie można przekodować „tests/roots/test-warnings/wrongenc.inc” z iso-8859 na UTF-8
+[v2] sphinx-doc__sphinx-9698: turns=13 wall=33.1s ptok=31978 edits_ok=0 edits_failed=0 parse_fail=0 fallback=0 finished=True diff_lines=0
+[v2] django__django-13512: turns=4 wall=13.0s ptok=8862 edits_ok=1 edits_failed=0 parse_fail=0 fallback=0 finished=True diff_lines=13
+[v2] astropy__astropy-7166: turns=25 wall=39.6s ptok=122587 edits_ok=0 edits_failed=21 parse_fail=0 fallback=0 finished=False diff_lines=0
+error: nie można przekodować „tests/roots/test-root/wrongenc.inc” z UTF-8 na iso-8859
+error: nie można przekodować „tests/roots/test-warnings/wrongenc.inc” z UTF-8 na iso-8859
+error: nie można przekodować „tests/roots/test-root/wrongenc.inc” z iso-8859 na UTF-8
+error: nie można przekodować „tests/roots/test-warnings/wrongenc.inc” z iso-8859 na UTF-8
+[v2] sphinx-doc__sphinx-7889: turns=25 wall=90.8s ptok=118708 edits_ok=0 edits_failed=37 parse_fail=0 fallback=0 finished=False diff_lines=0
+error: nie można przekodować „tests/roots/test-root/wrongenc.inc” z UTF-8 na iso-8859
+error: nie można przekodować „tests/roots/test-warnings/wrongenc.inc” z UTF-8 na iso-8859
+error: nie można przekodować „tests/roots/test-root/wrongenc.inc” z iso-8859 na UTF-8
+error: nie można przekodować „tests/roots/test-warnings/wrongenc.inc” z iso-8859 na UTF-8
+[v2] sphinx-doc__sphinx-9711: turns=10 wall=10.0s ptok=14279 edits_ok=2 edits_failed=0 parse_fail=0 fallback=0 finished=True diff_lines=17
+[v2] django__django-11163: turns=6 wall=8.4s ptok=6510 edits_ok=1 edits_failed=3 parse_fail=0 fallback=0 finished=True diff_lines=13
+[v2] django__django-15863: turns=25 wall=103.1s ptok=166509 edits_ok=0 edits_failed=25 parse_fail=0 fallback=0 finished=False diff_lines=0
+[v2] django__django-11179: turns=25 wall=48.6s ptok=77475 edits_ok=0 edits_failed=16 parse_fail=0 fallback=0 finished=False diff_lines=0
+[v2] pydata__xarray-4356: turns=4 wall=4.1s ptok=3550 edits_ok=1 edits_failed=0 parse_fail=0 fallback=0 finished=True diff_lines=13
+[v2] django__django-15315: turns=4 wall=7.2s ptok=7012 edits_ok=1 edits_failed=0 parse_fail=0 fallback=0 finished=True diff_lines=16

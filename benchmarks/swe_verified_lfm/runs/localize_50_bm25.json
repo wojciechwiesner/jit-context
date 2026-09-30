@@ -1,0 +1,3436 @@
+{
+  "n": 50,
+  "summary": {
+    "content": {
+      "@10_all": "40/50",
+      "@10_any": "41/50",
+      "@1_all": "19/50",
+      "@1_any": "21/50",
+      "@3_all": "31/50",
+      "@3_any": "32/50",
+      "@5_all": "35/50",
+      "@5_any": "36/50"
+    },
+    "symbols": {
+      "@10_all": "34/50",
+      "@10_any": "36/50",
+      "@1_all": "13/50",
+      "@1_any": "13/50",
+      "@3_all": "23/50",
+      "@3_any": "23/50",
+      "@5_all": "29/50",
+      "@5_any": "31/50"
+    }
+  },
+  "records": [
+    {
+      "instance_id": "sphinx-doc__sphinx-9698",
+      "gold": [
+        "sphinx/domains/python.py"
+      ],
+      "n_files": 184,
+      "gold_in_index": true,
+      "content": {
+        "top5": [
+          "sphinx/application.py",
+          "sphinx/domains/python.py",
+          "sphinx/environment/__init__.py",
+          "sphinx/domains/javascript.py",
+          "sphinx/domains/__init__.py"
+        ],
+        "hits": {
+          "@1": {
+            "any": false,
+            "all": false
+          },
+          "@3": {
+            "any": true,
+            "all": true
+          },
+          "@5": {
+            "any": true,
+            "all": true
+          },
+          "@10": {
+            "any": true,
+            "all": true
+          }
+        },
+        "gold_rank": [
+          2
+        ]
+      },
+      "symbols": {
+        "top5": [
+          "doc/usage/extensions/example_numpy.py",
+          "doc/usage/extensions/example_google.py",
+          "sphinx/domains/python.py",
+          "sphinx/ext/autodoc/__init__.py",
+          "sphinx/domains/rst.py"
+        ],
+        "hits": {
+          "@1": {
+            "any": false,
+            "all": false
+          },
+          "@3": {
+            "any": true,
+            "all": true
+          },
+          "@5": {
+            "any": true,
+            "all": true
+          },
+          "@10": {
+            "any": true,
+            "all": true
+          }
+        },
+        "gold_rank": [
+          3
+        ]
+      }
+    },
+    {
+      "instance_id": "django__django-13512",
+      "gold": [
+        "django/contrib/admin/utils.py",
+        "django/forms/fields.py"
+      ],
+      "n_files": 851,
+      "gold_in_index": true,
+      "content": {
+        "top5": [
+          "django/utils/html.py",
+          "django/http/response.py",
+          "docs/conf.py",
+          "django/db/backends/oracle/base.py",
+          "django/contrib/admin/models.py"
+        ],
+        "hits": {
+          "@1": {
+            "any": false,
+            "all": false
+          },
+          "@3": {
+            "any": false,
+            "all": false
+          },
+          "@5": {
+            "any": false,
+            "all": false
+          },
+          "@10": {
+            "any": false,
+            "all": false
+          }
+        },
+        "gold_rank": [
+          18,
+          12
+        ]
+      },
+      "symbols": {
+        "top5": [
+          "django/core/serializers/json.py",
+          "django/db/backends/mysql/features.py",
+          "django/contrib/admin/views/autocomplete.py",
+          "django/forms/utils.py",
+          "django/contrib/admin/views/main.py"
+        ],
+        "hits": {
+          "@1": {
+            "any": false,
+            "all": false
+          },
+          "@3": {
+            "any": false,
+            "all": false
+          },
+          "@5": {
+            "any": false,
+            "all": false
+          },
+          "@10": {
+            "any": false,
+            "all": false
+          }
+        },
+        "gold_rank": [
+          70,
+          161
+        ]
+      }
+    },
+    {
+      "instance_id": "astropy__astropy-7166",
+      "gold": [
+        "astropy/utils/misc.py"
+      ],
+      "n_files": 398,
+      "gold_in_index": true,
+      "content": {
+        "top5": [
+          "astropy/utils/misc.py",
+          "astropy/utils/decorators.py",
+          "astropy/config/configuration.py",
+          "astropy/constants/constant.py",
+          "astropy/coordinates/representation.py"
+        ],
+        "hits": {
+          "@1": {
+            "any": true,
+            "all": true
+          },
+          "@3": {
+            "any": true,
+            "all": true
+          },
+          "@5": {
+            "any": true,
+            "all": true
+          },
+          "@10": {
+            "any": true,
+            "all": true
+          }
+        },
+        "gold_rank": [
+          1
+        ]
+      },
+      "symbols": {
+        "top5": [
+          "astropy/extern/bundled/six.py",
+          "astropy/modeling/functional_models.py",
+          "astropy/modeling/powerlaws.py",
+          "astropy/utils/misc.py",
+          "astropy/wcs/_docutil.py"
+        ],
+        "hits": {
+          "@1": {
+            "any": false,
+            "all": false
+          },
+          "@3": {
+            "any": false,
+            "all": false
+          },
+          "@5": {
+            "any": true,
+            "all": true
+          },
+          "@10": {
+            "any": true,
+            "all": true
+          }
+        },
+        "gold_rank": [
+          4
+        ]
+      }
+    },
+    {
+      "instance_id": "sphinx-doc__sphinx-7889",
+      "gold": [
+        "sphinx/ext/autodoc/mock.py"
+      ],
+      "n_files": 188,
+      "gold_in_index": true,
+      "content": {
+        "top5": [
+          "sphinx/ext/napoleon/__init__.py",
+          "sphinx/ext/autodoc/__init__.py",
+          "sphinx/ext/intersphinx.py",
+          "sphinx/ext/coverage.py",
+          "sphinx/ext/ifconfig.py"
+        ],
+        "hits": {
+          "@1": {
+            "any": false,
+            "all": false
+          },
+          "@3": {
+            "any": false,
+            "all": false
+          },
+          "@5": {
+            "any": false,
+            "all": false
+          },
+          "@10": {
+            "any": false,
+            "all": false
+          }
+        },
+        "gold_rank": [
+          44
+        ]
+      },
+      "symbols": {
+        "top5": [
+          "sphinx/ext/ifconfig.py",
+          "sphinx/ext/napoleon/__init__.py",
+          "sphinx/ext/coverage.py",
+          "sphinx/ext/intersphinx.py",
+          "sphinx/ext/autodoc/__init__.py"
+        ],
+        "hits": {
+          "@1": {
+            "any": false,
+            "all": false
+          },
+          "@3": {
+            "any": false,
+            "all": false
+          },
+          "@5": {
+            "any": false,
+            "all": false
+          },
+          "@10": {
+            "any": true,
+            "all": true
+          }
+        },
+        "gold_rank": [
+          6
+        ]
+      }
+    },
+    {
+      "instance_id": "sphinx-doc__sphinx-9711",
+      "gold": [
+        "sphinx/extension.py"
+      ],
+      "n_files": 184,
+      "gold_in_index": true,
+      "content": {
+        "top5": [
+          "sphinx/application.py",
+          "sphinx/cmd/quickstart.py",
+          "sphinx/locale/__init__.py",
+          "sphinx/config.py",
+          "sphinx/ext/napoleon/__init__.py"
+        ],
+        "hits": {
+          "@1": {
+            "any": false,
+            "all": false
+          },
+          "@3": {
+            "any": false,
+            "all": false
+          },
+          "@5": {
+            "any": false,
+            "all": false
+          },
+          "@10": {
+            "any": false,
+            "all": false
+          }
+        },
+        "gold_rank": [
+          23
+        ]
+      },
+      "symbols": {
+        "top5": [
+          "sphinx/errors.py",
+          "sphinx/extension.py",
+          "sphinx/domains/changeset.py",
+          "utils/bump_version.py",
+          "sphinx/ext/doctest.py"
+        ],
+        "hits": {
+          "@1": {
+            "any": false,
+            "all": false
+          },
+          "@3": {
+            "any": true,
+            "all": true
+          },
+          "@5": {
+            "any": true,
+            "all": true
+          },
+          "@10": {
+            "any": true,
+            "all": true
+          }
+        },
+        "gold_rank": [
+          2
+        ]
+      }
+    },
+    {
+      "instance_id": "django__django-11163",
+      "gold": [
+        "django/forms/models.py"
+      ],
+      "n_files": 820,
+      "gold_in_index": true,
+      "content": {
+        "top5": [
+          "django/forms/models.py",
+          "django/forms/forms.py",
+          "django/db/models/fields/__init__.py",
+          "django/utils/http.py",
+          "django/db/models/query.py"
+        ],
+        "hits": {
+          "@1": {
+            "any": true,
+            "all": true
+          },
+          "@3": {
+            "any": true,
+            "all": true
+          },
+          "@5": {
+            "any": true,
+            "all": true
+          },
+          "@10": {
+            "any": true,
+            "all": true
+          }
+        },
+        "gold_rank": [
+          1
+        ]
+      },
+      "symbols": {
+        "top5": [
+          "django/db/models/options.py",
+          "django/core/exceptions.py",
+          "django/contrib/admin/checks.py",
+          "django/db/models/fields/mixins.py",
+          "django/forms/forms.py"
+        ],
+        "hits": {
+          "@1": {
+            "any": false,
+            "all": false
+          },
+          "@3": {
+            "any": false,
+            "all": false
+          },
+          "@5": {
+            "any": false,
+            "all": false
+          },
+          "@10": {
+            "any": false,
+            "all": false
+          }
+        },
+        "gold_rank": [
+          15
+        ]
+      }
+    },
+    {
+      "instance_id": "django__django-15863",
+      "gold": [
+        "django/template/defaultfilters.py"
+      ],
+      "n_files": 861,
+      "gold_in_index": true,
+      "content": {
+        "top5": [
+          "django/template/backends/django.py",
+          "django/template/defaultfilters.py",
+          "django/contrib/humanize/templatetags/humanize.py",
+          "django/db/backends/oracle/base.py",
+          "django/conf/global_settings.py"
+        ],
+        "hits": {
+          "@1": {
+            "any": false,
+            "all": false
+          },
+          "@3": {
+            "any": true,
+            "all": true
+          },
+          "@5": {
+            "any": true,
+            "all": true
+          },
+          "@10": {
+            "any": true,
+            "all": true
+          }
+        },
+        "gold_rank": [
+          2
+        ]
+      },
+      "symbols": {
+        "top5": [
+          "django/template/backends/django.py",
+          "django/core/checks/templates.py",
+          "django/forms/renderers.py",
+          "django/template/utils.py",
+          "django/template/backends/jinja2.py"
+        ],
+        "hits": {
+          "@1": {
+            "any": false,
+            "all": false
+          },
+          "@3": {
+            "any": false,
+            "all": false
+          },
+          "@5": {
+            "any": false,
+            "all": false
+          },
+          "@10": {
+            "any": false,
+            "all": false
+          }
+        },
+        "gold_rank": [
+          18
+        ]
+      }
+    },
+    {
+      "instance_id": "django__django-11179",
+      "gold": [
+        "django/db/models/deletion.py"
+      ],
+      "n_files": 820,
+      "gold_in_index": true,
+      "content": {
+        "top5": [
+          "django/db/models/deletion.py",
+          "django/contrib/admin/options.py",
+          "django/db/models/query.py",
+          "django/db/models/base.py",
+          "django/contrib/contenttypes/fields.py"
+        ],
+        "hits": {
+          "@1": {
+            "any": true,
+            "all": true
+          },
+          "@3": {
+            "any": true,
+            "all": true
+          },
+          "@5": {
+            "any": true,
+            "all": true
+          },
+          "@10": {
+            "any": true,
+            "all": true
+          }
+        },
+        "gold_rank": [
+          1
+        ]
+      },
+      "symbols": {
+        "top5": [
+          "django/db/models/deletion.py",
+          "django/db/backends/oracle/schema.py",
+          "django/contrib/sessions/backends/db.py",
+          "django/db/models/sql/subqueries.py",
+          "django/db/migrations/state.py"
+        ],
+        "hits": {
+          "@1": {
+            "any": true,
+            "all": true
+          },
+          "@3": {
+            "any": true,
+            "all": true
+          },
+          "@5": {
+            "any": true,
+            "all": true
+          },
+          "@10": {
+            "any": true,
+            "all": true
+          }
+        },
+        "gold_rank": [
+          1
+        ]
+      }
+    },
+    {
+      "instance_id": "pydata__xarray-4356",
+      "gold": [
+        "xarray/core/nanops.py"
+      ],
+      "n_files": 98,
+      "gold_in_index": true,
+      "content": {
+        "top5": [
+          "xarray/core/rolling.py",
+          "xarray/core/nanops.py",
+          "xarray/core/dataset.py",
+          "xarray/core/variable.py",
+          "xarray/core/dataarray.py"
+        ],
+        "hits": {
+          "@1": {
+            "any": false,
+            "all": false
+          },
+          "@3": {
+            "any": true,
+            "all": true
+          },
+          "@5": {
+            "any": true,
+            "all": true
+          },
+          "@10": {
+            "any": true,
+            "all": true
+          }
+        },
+        "gold_rank": [
+          2
+        ]
+      },
+      "symbols": {
+        "top5": [
+          "xarray/core/weighted.py",
+          "xarray/core/npcompat.py",
+          "xarray/core/dtypes.py",
+          "xarray/coding/strings.py",
+          "xarray/plot/utils.py"
+        ],
+        "hits": {
+          "@1": {
+            "any": false,
+            "all": false
+          },
+          "@3": {
+            "any": false,
+            "all": false
+          },
+          "@5": {
+            "any": false,
+            "all": false
+          },
+          "@10": {
+            "any": false,
+            "all": false
+          }
+        },
+        "gold_rank": [
+          38
+        ]
+      }
+    },
+    {
+      "instance_id": "django__django-15315",
+      "gold": [
+        "django/db/models/fields/__init__.py"
+      ],
+      "n_files": 858,
+      "gold_in_index": true,
+      "content": {
+        "top5": [
+          "django/db/models/fields/files.py",
+          "django/db/models/base.py",
+          "django/forms/models.py",
+          "django/db/models/fields/__init__.py",
+          "django/contrib/auth/models.py"
+        ],
+        "hits": {
+          "@1": {
+            "any": false,
+            "all": false
+          },
+          "@3": {
+            "any": false,
+            "all": false
+          },
+          "@5": {
+            "any": true,
+            "all": true
+          },
+          "@10": {
+            "any": true,
+            "all": true
+          }
+        },
+        "gold_rank": [
+          4
+        ]
+      },
+      "symbols": {
+        "top5": [
+          "django/utils/dateformat.py",
+          "django/contrib/contenttypes/models.py",
+          "django/db/models/base.py",
+          "django/core/checks/templates.py",
+          "django/contrib/admin/utils.py"
+        ],
+        "hits": {
+          "@1": {
+            "any": false,
+            "all": false
+          },
+          "@3": {
+            "any": false,
+            "all": false
+          },
+          "@5": {
+            "any": false,
+            "all": false
+          },
+          "@10": {
+            "any": false,
+            "all": false
+          }
+        },
+        "gold_rank": [
+          18
+        ]
+      }
+    },
+    {
+      "instance_id": "astropy__astropy-7336",
+      "gold": [
+        "astropy/units/decorators.py"
+      ],
+      "n_files": 401,
+      "gold_in_index": true,
+      "content": {
+        "top5": [
+          "astropy/units/decorators.py",
+          "astropy/utils/decorators.py",
+          "ah_bootstrap.py",
+          "astropy/nddata/decorators.py",
+          "astropy/modeling/core.py"
+        ],
+        "hits": {
+          "@1": {
+            "any": true,
+            "all": true
+          },
+          "@3": {
+            "any": true,
+            "all": true
+          },
+          "@5": {
+            "any": true,
+            "all": true
+          },
+          "@10": {
+            "any": true,
+            "all": true
+          }
+        },
+        "gold_rank": [
+          1
+        ]
+      },
+      "symbols": {
+        "top5": [
+          "astropy/units/decorators.py",
+          "astropy/_erfa/erfa_generator.py",
+          "astropy/units/core.py",
+          "astropy/modeling/core.py",
+          "astropy/utils/decorators.py"
+        ],
+        "hits": {
+          "@1": {
+            "any": true,
+            "all": true
+          },
+          "@3": {
+            "any": true,
+            "all": true
+          },
+          "@5": {
+            "any": true,
+            "all": true
+          },
+          "@10": {
+            "any": true,
+            "all": true
+          }
+        },
+        "gold_rank": [
+          1
+        ]
+      }
+    },
+    {
+      "instance_id": "sympy__sympy-17655",
+      "gold": [
+        "sympy/geometry/point.py"
+      ],
+      "n_files": 770,
+      "gold_in_index": true,
+      "content": {
+        "top5": [
+          "sympy/geometry/point.py",
+          "sympy/geometry/polygon.py",
+          "sympy/geometry/line.py",
+          "sympy/geometry/ellipse.py",
+          "sympy/geometry/entity.py"
+        ],
+        "hits": {
+          "@1": {
+            "any": true,
+            "all": true
+          },
+          "@3": {
+            "any": true,
+            "all": true
+          },
+          "@5": {
+            "any": true,
+            "all": true
+          },
+          "@10": {
+            "any": true,
+            "all": true
+          }
+        },
+        "gold_rank": [
+          1
+        ]
+      },
+      "symbols": {
+        "top5": [
+          "sympy/geometry/point.py",
+          "sympy/geometry/plane.py",
+          "sympy/geometry/ellipse.py",
+          "sympy/geometry/entity.py",
+          "sympy/diffgeom/diffgeom.py"
+        ],
+        "hits": {
+          "@1": {
+            "any": true,
+            "all": true
+          },
+          "@3": {
+            "any": true,
+            "all": true
+          },
+          "@5": {
+            "any": true,
+            "all": true
+          },
+          "@10": {
+            "any": true,
+            "all": true
+          }
+        },
+        "gold_rank": [
+          1
+        ]
+      }
+    },
+    {
+      "instance_id": "django__django-12308",
+      "gold": [
+        "django/contrib/admin/utils.py"
+      ],
+      "n_files": 830,
+      "gold_in_index": true,
+      "content": {
+        "top5": [
+          "django/contrib/admin/options.py",
+          "django/template/defaulttags.py",
+          "django/contrib/admin/helpers.py",
+          "django/db/models/fields/json.py",
+          "django/db/backends/mysql/base.py"
+        ],
+        "hits": {
+          "@1": {
+            "any": false,
+            "all": false
+          },
+          "@3": {
+            "any": false,
+            "all": false
+          },
+          "@5": {
+            "any": false,
+            "all": false
+          },
+          "@10": {
+            "any": false,
+            "all": false
+          }
+        },
+        "gold_rank": [
+          11
+        ]
+      },
+      "symbols": {
+        "top5": [
+          "django/contrib/admin/tests.py",
+          "django/forms/utils.py",
+          "django/contrib/admin/utils.py",
+          "django/db/models/fields/json.py",
+          "django/contrib/postgres/forms/jsonb.py"
+        ],
+        "hits": {
+          "@1": {
+            "any": false,
+            "all": false
+          },
+          "@3": {
+            "any": true,
+            "all": true
+          },
+          "@5": {
+            "any": true,
+            "all": true
+          },
+          "@10": {
+            "any": true,
+            "all": true
+          }
+        },
+        "gold_rank": [
+          3
+        ]
+      }
+    },
+    {
+      "instance_id": "sphinx-doc__sphinx-9258",
+      "gold": [
+        "sphinx/domains/python.py"
+      ],
+      "n_files": 184,
+      "gold_in_index": true,
+      "content": {
+        "top5": [
+          "doc/usage/extensions/example_numpy.py",
+          "sphinx/application.py",
+          "doc/usage/extensions/example_google.py",
+          "sphinx/domains/python.py",
+          "sphinx/addnodes.py"
+        ],
+        "hits": {
+          "@1": {
+            "any": false,
+            "all": false
+          },
+          "@3": {
+            "any": false,
+            "all": false
+          },
+          "@5": {
+            "any": true,
+            "all": true
+          },
+          "@10": {
+            "any": true,
+            "all": true
+          }
+        },
+        "gold_rank": [
+          4
+        ]
+      },
+      "symbols": {
+        "top5": [
+          "sphinx/domains/python.py",
+          "doc/usage/extensions/example_numpy.py",
+          "doc/usage/extensions/example_google.py",
+          "sphinx/pycode/parser.py",
+          "sphinx/domains/rst.py"
+        ],
+        "hits": {
+          "@1": {
+            "any": true,
+            "all": true
+          },
+          "@3": {
+            "any": true,
+            "all": true
+          },
+          "@5": {
+            "any": true,
+            "all": true
+          },
+          "@10": {
+            "any": true,
+            "all": true
+          }
+        },
+        "gold_rank": [
+          1
+        ]
+      }
+    },
+    {
+      "instance_id": "sympy__sympy-12096",
+      "gold": [
+        "sympy/core/function.py"
+      ],
+      "n_files": 628,
+      "gold_in_index": true,
+      "content": {
+        "top5": [
+          "sympy/utilities/lambdify.py",
+          "sympy/plotting/experimental_lambdify.py",
+          "sympy/core/function.py",
+          "sympy/utilities/autowrap.py",
+          "examples/advanced/autowrap_integrators.py"
+        ],
+        "hits": {
+          "@1": {
+            "any": false,
+            "all": false
+          },
+          "@3": {
+            "any": true,
+            "all": true
+          },
+          "@5": {
+            "any": true,
+            "all": true
+          },
+          "@10": {
+            "any": true,
+            "all": true
+          }
+        },
+        "gold_rank": [
+          3
+        ]
+      },
+      "symbols": {
+        "top5": [
+          "sympy/utilities/lambdify.py",
+          "sympy/core/evalf.py",
+          "sympy/core/function.py",
+          "sympy/printing/llvmjitcode.py",
+          "sympy/core/operations.py"
+        ],
+        "hits": {
+          "@1": {
+            "any": false,
+            "all": false
+          },
+          "@3": {
+            "any": true,
+            "all": true
+          },
+          "@5": {
+            "any": true,
+            "all": true
+          },
+          "@10": {
+            "any": true,
+            "all": true
+          }
+        },
+        "gold_rank": [
+          3
+        ]
+      }
+    },
+    {
+      "instance_id": "django__django-11299",
+      "gold": [
+        "django/db/models/sql/query.py"
+      ],
+      "n_files": 820,
+      "gold_in_index": true,
+      "content": {
+        "top5": [
+          "django/db/backends/sqlite3/schema.py",
+          "django/db/backends/base/schema.py",
+          "django/core/management/commands/inspectdb.py",
+          "django/db/backends/base/features.py",
+          "django/db/backends/mysql/schema.py"
+        ],
+        "hits": {
+          "@1": {
+            "any": false,
+            "all": false
+          },
+          "@3": {
+            "any": false,
+            "all": false
+          },
+          "@5": {
+            "any": false,
+            "all": false
+          },
+          "@10": {
+            "any": false,
+            "all": false
+          }
+        },
+        "gold_rank": [
+          14
+        ]
+      },
+      "symbols": {
+        "top5": [
+          "django/db/backends/base/schema.py",
+          "django/db/backends/sqlite3/schema.py",
+          "django/db/migrations/questioner.py",
+          "django/db/backends/sqlite3/introspection.py",
+          "django/contrib/contenttypes/models.py"
+        ],
+        "hits": {
+          "@1": {
+            "any": false,
+            "all": false
+          },
+          "@3": {
+            "any": false,
+            "all": false
+          },
+          "@5": {
+            "any": false,
+            "all": false
+          },
+          "@10": {
+            "any": false,
+            "all": false
+          }
+        },
+        "gold_rank": [
+          44
+        ]
+      }
+    },
+    {
+      "instance_id": "sphinx-doc__sphinx-8459",
+      "gold": [
+        "sphinx/ext/autodoc/typehints.py"
+      ],
+      "n_files": 188,
+      "gold_in_index": true,
+      "content": {
+        "top5": [
+          "sphinx/ext/autodoc/__init__.py",
+          "sphinx/ext/napoleon/__init__.py",
+          "doc/conf.py",
+          "sphinx/application.py",
+          "sphinx/util/inspect.py"
+        ],
+        "hits": {
+          "@1": {
+            "any": false,
+            "all": false
+          },
+          "@3": {
+            "any": false,
+            "all": false
+          },
+          "@5": {
+            "any": false,
+            "all": false
+          },
+          "@10": {
+            "any": true,
+            "all": true
+          }
+        },
+        "gold_rank": [
+          6
+        ]
+      },
+      "symbols": {
+        "top5": [
+          "sphinx/ext/autodoc/__init__.py",
+          "sphinx/ext/napoleon/__init__.py",
+          "doc/conf.py",
+          "sphinx/search/it.py",
+          "sphinx/util/inspect.py"
+        ],
+        "hits": {
+          "@1": {
+            "any": false,
+            "all": false
+          },
+          "@3": {
+            "any": false,
+            "all": false
+          },
+          "@5": {
+            "any": false,
+            "all": false
+          },
+          "@10": {
+            "any": true,
+            "all": true
+          }
+        },
+        "gold_rank": [
+          7
+        ]
+      }
+    },
+    {
+      "instance_id": "django__django-13112",
+      "gold": [
+        "django/db/models/fields/related.py"
+      ],
+      "n_files": 846,
+      "gold_in_index": true,
+      "content": {
+        "top5": [
+          "django/contrib/sitemaps/__init__.py",
+          "django/contrib/auth/__init__.py",
+          "django/contrib/auth/apps.py",
+          "django/conf/global_settings.py",
+          "django/contrib/postgres/apps.py"
+        ],
+        "hits": {
+          "@1": {
+            "any": false,
+            "all": false
+          },
+          "@3": {
+            "any": false,
+            "all": false
+          },
+          "@5": {
+            "any": false,
+            "all": false
+          },
+          "@10": {
+            "any": false,
+            "all": false
+          }
+        },
+        "gold_rank": [
+          39
+        ]
+      },
+      "symbols": {
+        "top5": [
+          "django/contrib/contenttypes/apps.py",
+          "django/contrib/sites/apps.py",
+          "django/contrib/sitemaps/apps.py",
+          "django/contrib/sessions/apps.py",
+          "django/contrib/messages/apps.py"
+        ],
+        "hits": {
+          "@1": {
+            "any": false,
+            "all": false
+          },
+          "@3": {
+            "any": false,
+            "all": false
+          },
+          "@5": {
+            "any": false,
+            "all": false
+          },
+          "@10": {
+            "any": false,
+            "all": false
+          }
+        },
+        "gold_rank": [
+          48
+        ]
+      }
+    },
+    {
+      "instance_id": "pytest-dev__pytest-7432",
+      "gold": [
+        "src/_pytest/skipping.py"
+      ],
+      "n_files": 84,
+      "gold_in_index": true,
+      "content": {
+        "top5": [
+          "src/_pytest/skipping.py",
+          "src/_pytest/outcomes.py",
+          "src/_pytest/hookspec.py",
+          "src/_pytest/config/__init__.py",
+          "src/_pytest/terminal.py"
+        ],
+        "hits": {
+          "@1": {
+            "any": true,
+            "all": true
+          },
+          "@3": {
+            "any": true,
+            "all": true
+          },
+          "@5": {
+            "any": true,
+            "all": true
+          },
+          "@10": {
+            "any": true,
+            "all": true
+          }
+        },
+        "gold_rank": [
+          1
+        ]
+      },
+      "symbols": {
+        "top5": [
+          "src/_pytest/skipping.py",
+          "src/_pytest/outcomes.py",
+          "src/_pytest/unittest.py",
+          "src/_pytest/mark/structures.py",
+          "bench/skip.py"
+        ],
+        "hits": {
+          "@1": {
+            "any": true,
+            "all": true
+          },
+          "@3": {
+            "any": true,
+            "all": true
+          },
+          "@5": {
+            "any": true,
+            "all": true
+          },
+          "@10": {
+            "any": true,
+            "all": true
+          }
+        },
+        "gold_rank": [
+          1
+        ]
+      }
+    },
+    {
+      "instance_id": "django__django-13741",
+      "gold": [
+        "django/contrib/auth/forms.py"
+      ],
+      "n_files": 853,
+      "gold_in_index": true,
+      "content": {
+        "top5": [
+          "django/contrib/auth/forms.py",
+          "django/contrib/auth/models.py",
+          "django/conf/global_settings.py",
+          "django/contrib/auth/base_user.py",
+          "django/forms/models.py"
+        ],
+        "hits": {
+          "@1": {
+            "any": true,
+            "all": true
+          },
+          "@3": {
+            "any": true,
+            "all": true
+          },
+          "@5": {
+            "any": true,
+            "all": true
+          },
+          "@10": {
+            "any": true,
+            "all": true
+          }
+        },
+        "gold_rank": [
+          1
+        ]
+      },
+      "symbols": {
+        "top5": [
+          "django/contrib/auth/forms.py",
+          "django/contrib/auth/base_user.py",
+          "django/contrib/postgres/forms/array.py",
+          "django/forms/models.py",
+          "django/contrib/auth/views.py"
+        ],
+        "hits": {
+          "@1": {
+            "any": true,
+            "all": true
+          },
+          "@3": {
+            "any": true,
+            "all": true
+          },
+          "@5": {
+            "any": true,
+            "all": true
+          },
+          "@10": {
+            "any": true,
+            "all": true
+          }
+        },
+        "gold_rank": [
+          1
+        ]
+      }
+    },
+    {
+      "instance_id": "django__django-10880",
+      "gold": [
+        "django/db/models/aggregates.py"
+      ],
+      "n_files": 823,
+      "gold_in_index": true,
+      "content": {
+        "top5": [
+          "django/db/models/sql/query.py",
+          "django/db/models/sql/compiler.py",
+          "django/db/models/aggregates.py",
+          "django/db/backends/base/features.py",
+          "django/contrib/admin/views/main.py"
+        ],
+        "hits": {
+          "@1": {
+            "any": false,
+            "all": false
+          },
+          "@3": {
+            "any": true,
+            "all": true
+          },
+          "@5": {
+            "any": true,
+            "all": true
+          },
+          "@10": {
+            "any": true,
+            "all": true
+          }
+        },
+        "gold_rank": [
+          3
+        ]
+      },
+      "symbols": {
+        "top5": [
+          "django/db/models/sql/query.py",
+          "django/utils/dateformat.py",
+          "django/db/migrations/exceptions.py",
+          "django/db/models/query.py",
+          "django/template/exceptions.py"
+        ],
+        "hits": {
+          "@1": {
+            "any": false,
+            "all": false
+          },
+          "@3": {
+            "any": false,
+            "all": false
+          },
+          "@5": {
+            "any": false,
+            "all": false
+          },
+          "@10": {
+            "any": false,
+            "all": false
+          }
+        },
+        "gold_rank": [
+          28
+        ]
+      }
+    },
+    {
+      "instance_id": "django__django-14404",
+      "gold": [
+        "django/contrib/admin/sites.py"
+      ],
+      "n_files": 854,
+      "gold_in_index": true,
+      "content": {
+        "top5": [
+          "django/core/handlers/asgi.py",
+          "django/core/handlers/wsgi.py",
+          "django/contrib/admin/sites.py",
+          "django/middleware/locale.py",
+          "django/middleware/common.py"
+        ],
+        "hits": {
+          "@1": {
+            "any": false,
+            "all": false
+          },
+          "@3": {
+            "any": true,
+            "all": true
+          },
+          "@5": {
+            "any": true,
+            "all": true
+          },
+          "@10": {
+            "any": true,
+            "all": true
+          }
+        },
+        "gold_rank": [
+          3
+        ]
+      },
+      "symbols": {
+        "top5": [
+          "django/middleware/common.py",
+          "django/urls/base.py",
+          "django/core/exceptions.py",
+          "django/views/generic/base.py",
+          "django/core/handlers/wsgi.py"
+        ],
+        "hits": {
+          "@1": {
+            "any": false,
+            "all": false
+          },
+          "@3": {
+            "any": false,
+            "all": false
+          },
+          "@5": {
+            "any": false,
+            "all": false
+          },
+          "@10": {
+            "any": true,
+            "all": true
+          }
+        },
+        "gold_rank": [
+          8
+        ]
+      }
+    },
+    {
+      "instance_id": "matplotlib__matplotlib-24149",
+      "gold": [
+        "lib/matplotlib/axes/_axes.py"
+      ],
+      "n_files": 774,
+      "gold_in_index": true,
+      "content": {
+        "top5": [
+          "lib/matplotlib/axes/_axes.py",
+          "lib/matplotlib/cbook/__init__.py",
+          "lib/matplotlib/__init__.py",
+          "lib/matplotlib/axes/_base.py",
+          "lib/matplotlib/figure.py"
+        ],
+        "hits": {
+          "@1": {
+            "any": true,
+            "all": true
+          },
+          "@3": {
+            "any": true,
+            "all": true
+          },
+          "@5": {
+            "any": true,
+            "all": true
+          },
+          "@10": {
+            "any": true,
+            "all": true
+          }
+        },
+        "gold_rank": [
+          1
+        ]
+      },
+      "symbols": {
+        "top5": [
+          "examples/subplots_axes_and_figures/fahrenheit_celsius_scales.py",
+          "lib/matplotlib/__init__.py",
+          "examples/user_interfaces/embedding_in_wx3_sgskip.py",
+          "lib/matplotlib/cbook/__init__.py",
+          "lib/matplotlib/tri/triangulation.py"
+        ],
+        "hits": {
+          "@1": {
+            "any": false,
+            "all": false
+          },
+          "@3": {
+            "any": false,
+            "all": false
+          },
+          "@5": {
+            "any": false,
+            "all": false
+          },
+          "@10": {
+            "any": true,
+            "all": true
+          }
+        },
+        "gold_rank": [
+          8
+        ]
+      }
+    },
+    {
+      "instance_id": "django__django-15930",
+      "gold": [
+        "django/db/models/expressions.py"
+      ],
+      "n_files": 859,
+      "gold_in_index": true,
+      "content": {
+        "top5": [
+          "django/db/models/sql/compiler.py",
+          "django/db/models/query.py",
+          "django/db/models/sql/query.py",
+          "django/db/backends/oracle/operations.py",
+          "django/db/models/query_utils.py"
+        ],
+        "hits": {
+          "@1": {
+            "any": false,
+            "all": false
+          },
+          "@3": {
+            "any": false,
+            "all": false
+          },
+          "@5": {
+            "any": false,
+            "all": false
+          },
+          "@10": {
+            "any": true,
+            "all": true
+          }
+        },
+        "gold_rank": [
+          6
+        ]
+      },
+      "symbols": {
+        "top5": [
+          "django/db/models/expressions.py",
+          "django/core/checks/templates.py",
+          "django/forms/widgets.py",
+          "django/contrib/auth/backends.py",
+          "django/contrib/auth/models.py"
+        ],
+        "hits": {
+          "@1": {
+            "any": true,
+            "all": true
+          },
+          "@3": {
+            "any": true,
+            "all": true
+          },
+          "@5": {
+            "any": true,
+            "all": true
+          },
+          "@10": {
+            "any": true,
+            "all": true
+          }
+        },
+        "gold_rank": [
+          1
+        ]
+      }
+    },
+    {
+      "instance_id": "django__django-14915",
+      "gold": [
+        "django/forms/models.py"
+      ],
+      "n_files": 855,
+      "gold_in_index": true,
+      "content": {
+        "top5": [
+          "django/forms/widgets.py",
+          "django/contrib/admin/widgets.py",
+          "django/contrib/admin/options.py",
+          "django/forms/models.py",
+          "django/forms/boundfield.py"
+        ],
+        "hits": {
+          "@1": {
+            "any": false,
+            "all": false
+          },
+          "@3": {
+            "any": false,
+            "all": false
+          },
+          "@5": {
+            "any": true,
+            "all": true
+          },
+          "@10": {
+            "any": true,
+            "all": true
+          }
+        },
+        "gold_rank": [
+          4
+        ]
+      },
+      "symbols": {
+        "top5": [
+          "django/forms/widgets.py",
+          "django/forms/boundfield.py",
+          "django/contrib/admin/widgets.py",
+          "django/contrib/postgres/fields/array.py",
+          "django/contrib/postgres/forms/array.py"
+        ],
+        "hits": {
+          "@1": {
+            "any": false,
+            "all": false
+          },
+          "@3": {
+            "any": false,
+            "all": false
+          },
+          "@5": {
+            "any": false,
+            "all": false
+          },
+          "@10": {
+            "any": false,
+            "all": false
+          }
+        },
+        "gold_rank": [
+          19
+        ]
+      }
+    },
+    {
+      "instance_id": "django__django-15499",
+      "gold": [
+        "django/db/migrations/operations/models.py"
+      ],
+      "n_files": 859,
+      "gold_in_index": true,
+      "content": {
+        "top5": [
+          "django/db/migrations/operations/__init__.py",
+          "django/db/migrations/operations/models.py",
+          "django/db/migrations/optimizer.py",
+          "django/db/migrations/autodetector.py",
+          "django/db/migrations/operations/base.py"
+        ],
+        "hits": {
+          "@1": {
+            "any": false,
+            "all": false
+          },
+          "@3": {
+            "any": true,
+            "all": true
+          },
+          "@5": {
+            "any": true,
+            "all": true
+          },
+          "@10": {
+            "any": true,
+            "all": true
+          }
+        },
+        "gold_rank": [
+          2
+        ]
+      },
+      "symbols": {
+        "top5": [
+          "django/db/migrations/operations/models.py",
+          "django/contrib/sessions/backends/db.py",
+          "django/db/migrations/state.py",
+          "django/contrib/gis/db/backends/spatialite/schema.py",
+          "django/db/backends/base/schema.py"
+        ],
+        "hits": {
+          "@1": {
+            "any": true,
+            "all": true
+          },
+          "@3": {
+            "any": true,
+            "all": true
+          },
+          "@5": {
+            "any": true,
+            "all": true
+          },
+          "@10": {
+            "any": true,
+            "all": true
+          }
+        },
+        "gold_rank": [
+          1
+        ]
+      }
+    },
+    {
+      "instance_id": "django__django-13297",
+      "gold": [
+        "django/views/generic/base.py"
+      ],
+      "n_files": 851,
+      "gold_in_index": true,
+      "content": {
+        "top5": [
+          "django/db/backends/sqlite3/operations.py",
+          "django/core/checks/urls.py",
+          "django/contrib/auth/urls.py",
+          "django/contrib/admin/templatetags/admin_urls.py",
+          "django/contrib/staticfiles/urls.py"
+        ],
+        "hits": {
+          "@1": {
+            "any": false,
+            "all": false
+          },
+          "@3": {
+            "any": false,
+            "all": false
+          },
+          "@5": {
+            "any": false,
+            "all": false
+          },
+          "@10": {
+            "any": true,
+            "all": true
+          }
+        },
+        "gold_rank": [
+          10
+        ]
+      },
+      "symbols": {
+        "top5": [
+          "django/db/backends/sqlite3/operations.py",
+          "django/core/checks/urls.py",
+          "django/contrib/admindocs/urls.py",
+          "django/contrib/auth/urls.py",
+          "django/contrib/flatpages/urls.py"
+        ],
+        "hits": {
+          "@1": {
+            "any": false,
+            "all": false
+          },
+          "@3": {
+            "any": false,
+            "all": false
+          },
+          "@5": {
+            "any": false,
+            "all": false
+          },
+          "@10": {
+            "any": true,
+            "all": true
+          }
+        },
+        "gold_rank": [
+          9
+        ]
+      }
+    },
+    {
+      "instance_id": "pylint-dev__pylint-4970",
+      "gold": [
+        "pylint/checkers/similar.py"
+      ],
+      "n_files": 125,
+      "gold_in_index": true,
+      "content": {
+        "top5": [
+          "pylint/checkers/similar.py",
+          "pylint/checkers/base.py",
+          "pylint/checkers/typecheck.py",
+          "pylint/checkers/refactoring/refactoring_checker.py",
+          "pylint/checkers/format.py"
+        ],
+        "hits": {
+          "@1": {
+            "any": true,
+            "all": true
+          },
+          "@3": {
+            "any": true,
+            "all": true
+          },
+          "@5": {
+            "any": true,
+            "all": true
+          },
+          "@10": {
+            "any": true,
+            "all": true
+          }
+        },
+        "gold_rank": [
+          1
+        ]
+      },
+      "symbols": {
+        "top5": [
+          "pylint/extensions/code_style.py",
+          "pylint/checkers/format.py",
+          "pylint/message/message_id_store.py",
+          "pylint/checkers/similar.py",
+          "script/fix_documentation.py"
+        ],
+        "hits": {
+          "@1": {
+            "any": false,
+            "all": false
+          },
+          "@3": {
+            "any": false,
+            "all": false
+          },
+          "@5": {
+            "any": true,
+            "all": true
+          },
+          "@10": {
+            "any": true,
+            "all": true
+          }
+        },
+        "gold_rank": [
+          4
+        ]
+      }
+    },
+    {
+      "instance_id": "pytest-dev__pytest-5809",
+      "gold": [
+        "src/_pytest/pastebin.py"
+      ],
+      "n_files": 81,
+      "gold_in_index": true,
+      "content": {
+        "top5": [
+          "src/_pytest/pastebin.py",
+          "src/_pytest/capture.py",
+          "src/_pytest/doctest.py",
+          "src/_pytest/junitxml.py",
+          "src/_pytest/reports.py"
+        ],
+        "hits": {
+          "@1": {
+            "any": true,
+            "all": true
+          },
+          "@3": {
+            "any": true,
+            "all": true
+          },
+          "@5": {
+            "any": true,
+            "all": true
+          },
+          "@10": {
+            "any": true,
+            "all": true
+          }
+        },
+        "gold_rank": [
+          1
+        ]
+      },
+      "symbols": {
+        "top5": [
+          "doc/en/example/assertion/failure_demo.py",
+          "src/_pytest/assertion/rewrite.py",
+          "src/_pytest/pastebin.py",
+          "src/_pytest/debugging.py",
+          "src/_pytest/warning_types.py"
+        ],
+        "hits": {
+          "@1": {
+            "any": false,
+            "all": false
+          },
+          "@3": {
+            "any": true,
+            "all": true
+          },
+          "@5": {
+            "any": true,
+            "all": true
+          },
+          "@10": {
+            "any": true,
+            "all": true
+          }
+        },
+        "gold_rank": [
+          3
+        ]
+      }
+    },
+    {
+      "instance_id": "psf__requests-1921",
+      "gold": [
+        "requests/sessions.py"
+      ],
+      "n_files": 75,
+      "gold_in_index": true,
+      "content": {
+        "top5": [
+          "requests/sessions.py",
+          "requests/models.py",
+          "requests/adapters.py",
+          "requests/packages/urllib3/util.py",
+          "requests/utils.py"
+        ],
+        "hits": {
+          "@1": {
+            "any": true,
+            "all": true
+          },
+          "@3": {
+            "any": true,
+            "all": true
+          },
+          "@5": {
+            "any": true,
+            "all": true
+          },
+          "@10": {
+            "any": true,
+            "all": true
+          }
+        },
+        "gold_rank": [
+          1
+        ]
+      },
+      "symbols": {
+        "top5": [
+          "requests/sessions.py",
+          "requests/utils.py",
+          "requests/models.py",
+          "requests/cookies.py",
+          "requests/adapters.py"
+        ],
+        "hits": {
+          "@1": {
+            "any": true,
+            "all": true
+          },
+          "@3": {
+            "any": true,
+            "all": true
+          },
+          "@5": {
+            "any": true,
+            "all": true
+          },
+          "@10": {
+            "any": true,
+            "all": true
+          }
+        },
+        "gold_rank": [
+          1
+        ]
+      }
+    },
+    {
+      "instance_id": "sphinx-doc__sphinx-8475",
+      "gold": [
+        "sphinx/builders/linkcheck.py"
+      ],
+      "n_files": 188,
+      "gold_in_index": true,
+      "content": {
+        "top5": [
+          "sphinx/builders/linkcheck.py",
+          "sphinx/ext/intersphinx.py",
+          "sphinx/util/requests.py",
+          "sphinx/domains/python.py",
+          "sphinx/domains/cpp.py"
+        ],
+        "hits": {
+          "@1": {
+            "any": true,
+            "all": true
+          },
+          "@3": {
+            "any": true,
+            "all": true
+          },
+          "@5": {
+            "any": true,
+            "all": true
+          },
+          "@10": {
+            "any": true,
+            "all": true
+          }
+        },
+        "gold_rank": [
+          1
+        ]
+      },
+      "symbols": {
+        "top5": [
+          "sphinx/util/requests.py",
+          "sphinx/ext/autosectionlabel.py",
+          "sphinx/transforms/post_transforms/__init__.py",
+          "sphinx/ext/napoleon/docstring.py",
+          "sphinx/domains/cpp.py"
+        ],
+        "hits": {
+          "@1": {
+            "any": false,
+            "all": false
+          },
+          "@3": {
+            "any": false,
+            "all": false
+          },
+          "@5": {
+            "any": false,
+            "all": false
+          },
+          "@10": {
+            "any": false,
+            "all": false
+          }
+        },
+        "gold_rank": [
+          12
+        ]
+      }
+    },
+    {
+      "instance_id": "django__django-15104",
+      "gold": [
+        "django/db/migrations/autodetector.py"
+      ],
+      "n_files": 857,
+      "gold_in_index": true,
+      "content": {
+        "top5": [
+          "django/core/management/commands/migrate.py",
+          "django/core/management/base.py",
+          "django/core/management/__init__.py",
+          "django/db/backends/base/creation.py",
+          "django/core/management/commands/test.py"
+        ],
+        "hits": {
+          "@1": {
+            "any": false,
+            "all": false
+          },
+          "@3": {
+            "any": false,
+            "all": false
+          },
+          "@5": {
+            "any": false,
+            "all": false
+          },
+          "@10": {
+            "any": true,
+            "all": true
+          }
+        },
+        "gold_rank": [
+          6
+        ]
+      },
+      "symbols": {
+        "top5": [
+          "django/core/management/commands/test.py",
+          "django/core/management/__init__.py",
+          "django/db/backends/base/creation.py",
+          "django/db/migrations/autodetector.py",
+          "django/core/management/base.py"
+        ],
+        "hits": {
+          "@1": {
+            "any": false,
+            "all": false
+          },
+          "@3": {
+            "any": false,
+            "all": false
+          },
+          "@5": {
+            "any": true,
+            "all": true
+          },
+          "@10": {
+            "any": true,
+            "all": true
+          }
+        },
+        "gold_rank": [
+          4
+        ]
+      }
+    },
+    {
+      "instance_id": "pylint-dev__pylint-6903",
+      "gold": [
+        "pylint/lint/run.py"
+      ],
+      "n_files": 777,
+      "gold_in_index": true,
+      "content": {
+        "top5": [
+          "pylint/lint/run.py",
+          "pylint/lint/parallel.py",
+          "pylint/epylint.py",
+          "pylint/lint/base_options.py",
+          "pylint/lint/pylinter.py"
+        ],
+        "hits": {
+          "@1": {
+            "any": true,
+            "all": true
+          },
+          "@3": {
+            "any": true,
+            "all": true
+          },
+          "@5": {
+            "any": true,
+            "all": true
+          },
+          "@10": {
+            "any": true,
+            "all": true
+          }
+        },
+        "gold_rank": [
+          1
+        ]
+      },
+      "symbols": {
+        "top5": [
+          "pylint/lint/run.py",
+          "pylint/lint/parallel.py",
+          "pylint/testutils/lint_module_test.py",
+          "pylint/lint/expand_modules.py",
+          "pylint/testutils/_primer/primer.py"
+        ],
+        "hits": {
+          "@1": {
+            "any": true,
+            "all": true
+          },
+          "@3": {
+            "any": true,
+            "all": true
+          },
+          "@5": {
+            "any": true,
+            "all": true
+          },
+          "@10": {
+            "any": true,
+            "all": true
+          }
+        },
+        "gold_rank": [
+          1
+        ]
+      }
+    },
+    {
+      "instance_id": "sphinx-doc__sphinx-10435",
+      "gold": [
+        "sphinx/writers/latex.py"
+      ],
+      "n_files": 181,
+      "gold_in_index": true,
+      "content": {
+        "top5": [
+          "sphinx/highlighting.py",
+          "sphinx/writers/latex.py",
+          "sphinx/addnodes.py",
+          "sphinx/application.py",
+          "sphinx/builders/latex/__init__.py"
+        ],
+        "hits": {
+          "@1": {
+            "any": false,
+            "all": false
+          },
+          "@3": {
+            "any": true,
+            "all": true
+          },
+          "@5": {
+            "any": true,
+            "all": true
+          },
+          "@10": {
+            "any": true,
+            "all": true
+          }
+        },
+        "gold_rank": [
+          2
+        ]
+      },
+      "symbols": {
+        "top5": [
+          "sphinx/directives/code.py",
+          "sphinx/transforms/post_transforms/code.py",
+          "sphinx/ext/doctest.py",
+          "sphinx/domains/python.py",
+          "sphinx/pycode/parser.py"
+        ],
+        "hits": {
+          "@1": {
+            "any": false,
+            "all": false
+          },
+          "@3": {
+            "any": false,
+            "all": false
+          },
+          "@5": {
+            "any": false,
+            "all": false
+          },
+          "@10": {
+            "any": false,
+            "all": false
+          }
+        },
+        "gold_rank": [
+          17
+        ]
+      }
+    },
+    {
+      "instance_id": "django__django-12741",
+      "gold": [
+        "django/core/management/commands/flush.py",
+        "django/db/backends/base/operations.py"
+      ],
+      "n_files": 829,
+      "gold_in_index": true,
+      "content": {
+        "top5": [
+          "django/core/management/commands/flush.py",
+          "django/db/backends/base/operations.py",
+          "django/db/backends/base/creation.py",
+          "django/db/models/expressions.py",
+          "django/db/models/sql/compiler.py"
+        ],
+        "hits": {
+          "@1": {
+            "any": true,
+            "all": false
+          },
+          "@3": {
+            "any": true,
+            "all": true
+          },
+          "@5": {
+            "any": true,
+            "all": true
+          },
+          "@10": {
+            "any": true,
+            "all": true
+          }
+        },
+        "gold_rank": [
+          1,
+          2
+        ]
+      },
+      "symbols": {
+        "top5": [
+          "django/db/models/sql/compiler.py",
+          "django/db/backends/mysql/base.py",
+          "django/core/management/sql.py",
+          "django/db/backends/base/operations.py",
+          "django/db/backends/postgresql/operations.py"
+        ],
+        "hits": {
+          "@1": {
+            "any": false,
+            "all": false
+          },
+          "@3": {
+            "any": false,
+            "all": false
+          },
+          "@5": {
+            "any": true,
+            "all": false
+          },
+          "@10": {
+            "any": true,
+            "all": false
+          }
+        },
+        "gold_rank": [
+          32,
+          4
+        ]
+      }
+    },
+    {
+      "instance_id": "django__django-14376",
+      "gold": [
+        "django/db/backends/mysql/base.py",
+        "django/db/backends/mysql/client.py"
+      ],
+      "n_files": 854,
+      "gold_in_index": true,
+      "content": {
+        "top5": [
+          "django/db/backends/mysql/base.py",
+          "docs/conf.py",
+          "django/core/cache/backends/memcached.py",
+          "django/db/backends/oracle/base.py",
+          "django/db/backends/postgresql/base.py"
+        ],
+        "hits": {
+          "@1": {
+            "any": true,
+            "all": false
+          },
+          "@3": {
+            "any": true,
+            "all": false
+          },
+          "@5": {
+            "any": true,
+            "all": false
+          },
+          "@10": {
+            "any": true,
+            "all": false
+          }
+        },
+        "gold_rank": [
+          1,
+          28
+        ]
+      },
+      "symbols": {
+        "top5": [
+          "django/db/backends/mysql/features.py",
+          "django/contrib/gis/db/backends/mysql/base.py",
+          "django/db/backends/mysql/validation.py",
+          "django/db/backends/mysql/client.py",
+          "django/db/backends/mysql/creation.py"
+        ],
+        "hits": {
+          "@1": {
+            "any": false,
+            "all": false
+          },
+          "@3": {
+            "any": false,
+            "all": false
+          },
+          "@5": {
+            "any": true,
+            "all": false
+          },
+          "@10": {
+            "any": true,
+            "all": false
+          }
+        },
+        "gold_rank": [
+          30,
+          4
+        ]
+      }
+    },
+    {
+      "instance_id": "sympy__sympy-20916",
+      "gold": [
+        "sympy/printing/conventions.py"
+      ],
+      "n_files": 847,
+      "gold_in_index": true,
+      "content": {
+        "top5": [
+          "sympy/printing/pretty/pretty_symbology.py",
+          "sympy/printing/pretty/pretty.py",
+          "sympy/abc.py",
+          "sympy/utilities/iterables.py",
+          "isympy.py"
+        ],
+        "hits": {
+          "@1": {
+            "any": false,
+            "all": false
+          },
+          "@3": {
+            "any": false,
+            "all": false
+          },
+          "@5": {
+            "any": false,
+            "all": false
+          },
+          "@10": {
+            "any": false,
+            "all": false
+          }
+        },
+        "gold_rank": [
+          52
+        ]
+      },
+      "symbols": {
+        "top5": [
+          "examples/intermediate/trees.py",
+          "sympy/polys/polyquinticconst.py",
+          "sympy/physics/quantum/shor.py",
+          "sympy/physics/quantum/qasm.py",
+          "sympy/plotting/pygletplot/plot_mode_base.py"
+        ],
+        "hits": {
+          "@1": {
+            "any": false,
+            "all": false
+          },
+          "@3": {
+            "any": false,
+            "all": false
+          },
+          "@5": {
+            "any": false,
+            "all": false
+          },
+          "@10": {
+            "any": false,
+            "all": false
+          }
+        },
+        "gold_rank": [
+          665
+        ]
+      }
+    },
+    {
+      "instance_id": "scikit-learn__scikit-learn-13496",
+      "gold": [
+        "sklearn/ensemble/iforest.py"
+      ],
+      "n_files": 554,
+      "gold_in_index": true,
+      "content": {
+        "top5": [
+          "sklearn/ensemble/forest.py",
+          "sklearn/ensemble/iforest.py",
+          "sklearn/ensemble/bagging.py",
+          "sklearn/ensemble/gradient_boosting.py",
+          "examples/plot_anomaly_comparison.py"
+        ],
+        "hits": {
+          "@1": {
+            "any": false,
+            "all": false
+          },
+          "@3": {
+            "any": true,
+            "all": true
+          },
+          "@5": {
+            "any": true,
+            "all": true
+          },
+          "@10": {
+            "any": true,
+            "all": true
+          }
+        },
+        "gold_rank": [
+          2
+        ]
+      },
+      "symbols": {
+        "top5": [
+          "sklearn/feature_extraction/image.py",
+          "examples/ensemble/plot_isolation_forest.py",
+          "sklearn/ensemble/forest.py",
+          "sklearn/ensemble/_gb_losses.py",
+          "sklearn/ensemble/iforest.py"
+        ],
+        "hits": {
+          "@1": {
+            "any": false,
+            "all": false
+          },
+          "@3": {
+            "any": false,
+            "all": false
+          },
+          "@5": {
+            "any": true,
+            "all": true
+          },
+          "@10": {
+            "any": true,
+            "all": true
+          }
+        },
+        "gold_rank": [
+          5
+        ]
+      }
+    },
+    {
+      "instance_id": "django__django-11119",
+      "gold": [
+        "django/template/engine.py"
+      ],
+      "n_files": 820,
+      "gold_in_index": true,
+      "content": {
+        "top5": [
+          "django/template/base.py",
+          "django/template/defaulttags.py",
+          "django/template/engine.py",
+          "django/template/context.py",
+          "django/template/backends/django.py"
+        ],
+        "hits": {
+          "@1": {
+            "any": false,
+            "all": false
+          },
+          "@3": {
+            "any": true,
+            "all": true
+          },
+          "@5": {
+            "any": true,
+            "all": true
+          },
+          "@10": {
+            "any": true,
+            "all": true
+          }
+        },
+        "gold_rank": [
+          3
+        ]
+      },
+      "symbols": {
+        "top5": [
+          "django/template/engine.py",
+          "django/template/loader.py",
+          "django/forms/renderers.py",
+          "django/template/defaulttags.py",
+          "django/template/utils.py"
+        ],
+        "hits": {
+          "@1": {
+            "any": true,
+            "all": true
+          },
+          "@3": {
+            "any": true,
+            "all": true
+          },
+          "@5": {
+            "any": true,
+            "all": true
+          },
+          "@10": {
+            "any": true,
+            "all": true
+          }
+        },
+        "gold_rank": [
+          1
+        ]
+      }
+    },
+    {
+      "instance_id": "django__django-14765",
+      "gold": [
+        "django/db/migrations/state.py"
+      ],
+      "n_files": 854,
+      "gold_in_index": true,
+      "content": {
+        "top5": [
+          "django/db/migrations/graph.py",
+          "django/db/migrations/state.py",
+          "django/db/models/fields/files.py",
+          "django/db/migrations/loader.py",
+          "django/db/migrations/executor.py"
+        ],
+        "hits": {
+          "@1": {
+            "any": false,
+            "all": false
+          },
+          "@3": {
+            "any": true,
+            "all": true
+          },
+          "@5": {
+            "any": true,
+            "all": true
+          },
+          "@10": {
+            "any": true,
+            "all": true
+          }
+        },
+        "gold_rank": [
+          2
+        ]
+      },
+      "symbols": {
+        "top5": [
+          "django/conf/locale/it/__init__.py",
+          "django/conf/locale/it/formats.py",
+          "django/db/models/deletion.py",
+          "django/utils/dateformat.py",
+          "django/conf/locale/es_PR/__init__.py"
+        ],
+        "hits": {
+          "@1": {
+            "any": false,
+            "all": false
+          },
+          "@3": {
+            "any": false,
+            "all": false
+          },
+          "@5": {
+            "any": false,
+            "all": false
+          },
+          "@10": {
+            "any": false,
+            "all": false
+          }
+        },
+        "gold_rank": [
+          11
+        ]
+      }
+    },
+    {
+      "instance_id": "django__django-16145",
+      "gold": [
+        "django/core/management/commands/runserver.py"
+      ],
+      "n_files": 861,
+      "gold_in_index": true,
+      "content": {
+        "top5": [
+          "django/core/management/commands/runserver.py",
+          "django/core/servers/basehttp.py",
+          "django/core/management/__init__.py",
+          "django/core/management/commands/testserver.py",
+          "django/conf/global_settings.py"
+        ],
+        "hits": {
+          "@1": {
+            "any": true,
+            "all": true
+          },
+          "@3": {
+            "any": true,
+            "all": true
+          },
+          "@5": {
+            "any": true,
+            "all": true
+          },
+          "@10": {
+            "any": true,
+            "all": true
+          }
+        },
+        "gold_rank": [
+          1
+        ]
+      },
+      "symbols": {
+        "top5": [
+          "django/contrib/staticfiles/management/commands/runserver.py",
+          "django/core/management/commands/runserver.py",
+          "django/utils/http.py",
+          "django/http/response.py",
+          "django/http/__init__.py"
+        ],
+        "hits": {
+          "@1": {
+            "any": false,
+            "all": false
+          },
+          "@3": {
+            "any": true,
+            "all": true
+          },
+          "@5": {
+            "any": true,
+            "all": true
+          },
+          "@10": {
+            "any": true,
+            "all": true
+          }
+        },
+        "gold_rank": [
+          2
+        ]
+      }
+    },
+    {
+      "instance_id": "pylint-dev__pylint-7277",
+      "gold": [
+        "pylint/__init__.py"
+      ],
+      "n_files": 850,
+      "gold_in_index": true,
+      "content": {
+        "top5": [
+          "pylint/__init__.py",
+          "pylint/epylint.py",
+          "pylint/lint/pylinter.py",
+          "pylint/lint/run.py",
+          "pylint/config/config_initialization.py"
+        ],
+        "hits": {
+          "@1": {
+            "any": true,
+            "all": true
+          },
+          "@3": {
+            "any": true,
+            "all": true
+          },
+          "@5": {
+            "any": true,
+            "all": true
+          },
+          "@10": {
+            "any": true,
+            "all": true
+          }
+        },
+        "gold_rank": [
+          1
+        ]
+      },
+      "symbols": {
+        "top5": [
+          "pylint/lint/utils.py",
+          "pylint/__init__.py",
+          "pylint/testutils/utils.py",
+          "doc/data/messages/c/consider-using-sys-exit/bad.py",
+          "doc/data/messages/c/consider-using-sys-exit/good.py"
+        ],
+        "hits": {
+          "@1": {
+            "any": false,
+            "all": false
+          },
+          "@3": {
+            "any": true,
+            "all": true
+          },
+          "@5": {
+            "any": true,
+            "all": true
+          },
+          "@10": {
+            "any": true,
+            "all": true
+          }
+        },
+        "gold_rank": [
+          2
+        ]
+      }
+    },
+    {
+      "instance_id": "psf__requests-1724",
+      "gold": [
+        "requests/sessions.py"
+      ],
+      "n_files": 74,
+      "gold_in_index": true,
+      "content": {
+        "top5": [
+          "requests/sessions.py",
+          "requests/packages/urllib3/connectionpool.py",
+          "requests/models.py",
+          "requests/api.py",
+          "requests/packages/urllib3/request.py"
+        ],
+        "hits": {
+          "@1": {
+            "any": true,
+            "all": true
+          },
+          "@3": {
+            "any": true,
+            "all": true
+          },
+          "@5": {
+            "any": true,
+            "all": true
+          },
+          "@10": {
+            "any": true,
+            "all": true
+          }
+        },
+        "gold_rank": [
+          1
+        ]
+      },
+      "symbols": {
+        "top5": [
+          "requests/sessions.py",
+          "requests/packages/urllib3/request.py",
+          "requests/api.py",
+          "requests/adapters.py",
+          "requests/models.py"
+        ],
+        "hits": {
+          "@1": {
+            "any": true,
+            "all": true
+          },
+          "@3": {
+            "any": true,
+            "all": true
+          },
+          "@5": {
+            "any": true,
+            "all": true
+          },
+          "@10": {
+            "any": true,
+            "all": true
+          }
+        },
+        "gold_rank": [
+          1
+        ]
+      }
+    },
+    {
+      "instance_id": "matplotlib__matplotlib-23476",
+      "gold": [
+        "lib/matplotlib/figure.py"
+      ],
+      "n_files": 773,
+      "gold_in_index": true,
+      "content": {
+        "top5": [
+          "setupext.py",
+          "setup.py",
+          "lib/matplotlib/__init__.py",
+          "lib/matplotlib/backends/_backend_tk.py",
+          "tutorials/introductory/customizing.py"
+        ],
+        "hits": {
+          "@1": {
+            "any": false,
+            "all": false
+          },
+          "@3": {
+            "any": false,
+            "all": false
+          },
+          "@5": {
+            "any": false,
+            "all": false
+          },
+          "@10": {
+            "any": false,
+            "all": false
+          }
+        },
+        "gold_rank": [
+          25
+        ]
+      },
+      "symbols": {
+        "top5": [
+          "setupext.py",
+          "lib/matplotlib/backends/backend_qtagg.py",
+          "lib/matplotlib/backends/backend_macosx.py",
+          "lib/matplotlib/__init__.py",
+          "lib/matplotlib/_pylab_helpers.py"
+        ],
+        "hits": {
+          "@1": {
+            "any": false,
+            "all": false
+          },
+          "@3": {
+            "any": false,
+            "all": false
+          },
+          "@5": {
+            "any": false,
+            "all": false
+          },
+          "@10": {
+            "any": false,
+            "all": false
+          }
+        },
+        "gold_rank": [
+          16
+        ]
+      }
+    },
+    {
+      "instance_id": "sympy__sympy-22714",
+      "gold": [
+        "sympy/geometry/point.py"
+      ],
+      "n_files": 885,
+      "gold_in_index": true,
+      "content": {
+        "top5": [
+          "release/fabfile.py",
+          "sympy/parsing/sympy_parser.py",
+          "sympy/core/sympify.py",
+          "sympy/__init__.py",
+          "sympy/geometry/point.py"
+        ],
+        "hits": {
+          "@1": {
+            "any": false,
+            "all": false
+          },
+          "@3": {
+            "any": false,
+            "all": false
+          },
+          "@5": {
+            "any": true,
+            "all": true
+          },
+          "@10": {
+            "any": true,
+            "all": true
+          }
+        },
+        "gold_rank": [
+          5
+        ]
+      },
+      "symbols": {
+        "top5": [
+          "sympy/parsing/sympy_parser.py",
+          "sympy/utilities/_compilation/util.py",
+          "sympy/geometry/plane.py",
+          "sympy/geometry/point.py",
+          "sympy/integrals/rubi/parsetools/parse.py"
+        ],
+        "hits": {
+          "@1": {
+            "any": false,
+            "all": false
+          },
+          "@3": {
+            "any": false,
+            "all": false
+          },
+          "@5": {
+            "any": true,
+            "all": true
+          },
+          "@10": {
+            "any": true,
+            "all": true
+          }
+        },
+        "gold_rank": [
+          4
+        ]
+      }
+    },
+    {
+      "instance_id": "pallets__flask-5014",
+      "gold": [
+        "src/flask/blueprints.py"
+      ],
+      "n_files": 33,
+      "gold_in_index": true,
+      "content": {
+        "top5": [
+          "src/flask/app.py",
+          "src/flask/sessions.py",
+          "src/flask/config.py",
+          "src/flask/helpers.py",
+          "src/flask/ctx.py"
+        ],
+        "hits": {
+          "@1": {
+            "any": false,
+            "all": false
+          },
+          "@3": {
+            "any": false,
+            "all": false
+          },
+          "@5": {
+            "any": false,
+            "all": false
+          },
+          "@10": {
+            "any": true,
+            "all": true
+          }
+        },
+        "gold_rank": [
+          10
+        ]
+      },
+      "symbols": {
+        "top5": [
+          "src/flask/app.py",
+          "src/flask/wrappers.py",
+          "src/flask/blueprints.py",
+          "src/flask/helpers.py",
+          "src/flask/sessions.py"
+        ],
+        "hits": {
+          "@1": {
+            "any": false,
+            "all": false
+          },
+          "@3": {
+            "any": true,
+            "all": true
+          },
+          "@5": {
+            "any": true,
+            "all": true
+          },
+          "@10": {
+            "any": true,
+            "all": true
+          }
+        },
+        "gold_rank": [
+          3
+        ]
+      }
+    },
+    {
+      "instance_id": "scikit-learn__scikit-learn-13328",
+      "gold": [
+        "sklearn/linear_model/huber.py"
+      ],
+      "n_files": 554,
+      "gold_in_index": true,
+      "content": {
+        "top5": [
+          "sklearn/linear_model/huber.py",
+          "sklearn/neighbors/nca.py",
+          "sklearn/linear_model/stochastic_gradient.py",
+          "sklearn/gaussian_process/gpr.py",
+          "sklearn/linear_model/logistic.py"
+        ],
+        "hits": {
+          "@1": {
+            "any": true,
+            "all": true
+          },
+          "@3": {
+            "any": true,
+            "all": true
+          },
+          "@5": {
+            "any": true,
+            "all": true
+          },
+          "@10": {
+            "any": true,
+            "all": true
+          }
+        },
+        "gold_rank": [
+          1
+        ]
+      },
+      "symbols": {
+        "top5": [
+          "sklearn/linear_model/huber.py",
+          "examples/linear_model/plot_sgd_loss_functions.py",
+          "sklearn/metrics/scorer.py",
+          "examples/linear_model/plot_huber_vs_ridge.py",
+          "sklearn/utils/optimize.py"
+        ],
+        "hits": {
+          "@1": {
+            "any": true,
+            "all": true
+          },
+          "@3": {
+            "any": true,
+            "all": true
+          },
+          "@5": {
+            "any": true,
+            "all": true
+          },
+          "@10": {
+            "any": true,
+            "all": true
+          }
+        },
+        "gold_rank": [
+          1
+        ]
+      }
+    },
+    {
+      "instance_id": "matplotlib__matplotlib-22719",
+      "gold": [
+        "lib/matplotlib/category.py"
+      ],
+      "n_files": 792,
+      "gold_in_index": true,
+      "content": {
+        "top5": [
+          "lib/matplotlib/category.py",
+          "lib/matplotlib/__init__.py",
+          "lib/matplotlib/axes/_axes.py",
+          "lib/matplotlib/axes/_base.py",
+          "lib/matplotlib/cbook/__init__.py"
+        ],
+        "hits": {
+          "@1": {
+            "any": true,
+            "all": true
+          },
+          "@3": {
+            "any": true,
+            "all": true
+          },
+          "@5": {
+            "any": true,
+            "all": true
+          },
+          "@10": {
+            "any": true,
+            "all": true
+          }
+        },
+        "gold_rank": [
+          1
+        ]
+      },
+      "symbols": {
+        "top5": [
+          "lib/matplotlib/units.py",
+          "lib/matplotlib/category.py",
+          "examples/units/basic_units.py",
+          "examples/units/evans_test.py",
+          "lib/matplotlib/_api/deprecation.py"
+        ],
+        "hits": {
+          "@1": {
+            "any": false,
+            "all": false
+          },
+          "@3": {
+            "any": true,
+            "all": true
+          },
+          "@5": {
+            "any": true,
+            "all": true
+          },
+          "@10": {
+            "any": true,
+            "all": true
+          }
+        },
+        "gold_rank": [
+          2
+        ]
+      }
+    },
+    {
+      "instance_id": "django__django-16642",
+      "gold": [
+        "django/http/response.py"
+      ],
+      "n_files": 863,
+      "gold_in_index": true,
+      "content": {
+        "top5": [
+          "django/views/static.py",
+          "django/utils/text.py",
+          "django/views/debug.py",
+          "docs/conf.py",
+          "django/conf/global_settings.py"
+        ],
+        "hits": {
+          "@1": {
+            "any": false,
+            "all": false
+          },
+          "@3": {
+            "any": false,
+            "all": false
+          },
+          "@5": {
+            "any": false,
+            "all": false
+          },
+          "@10": {
+            "any": false,
+            "all": false
+          }
+        },
+        "gold_rank": [
+          12
+        ]
+      },
+      "symbols": {
+        "top5": [
+          "django/core/files/base.py",
+          "django/core/files/uploadedfile.py",
+          "django/db/models/fields/files.py",
+          "django/views/debug.py",
+          "django/http/response.py"
+        ],
+        "hits": {
+          "@1": {
+            "any": false,
+            "all": false
+          },
+          "@3": {
+            "any": false,
+            "all": false
+          },
+          "@5": {
+            "any": true,
+            "all": true
+          },
+          "@10": {
+            "any": true,
+            "all": true
+          }
+        },
+        "gold_rank": [
+          5
+        ]
+      }
+    },
+    {
+      "instance_id": "django__django-14787",
+      "gold": [
+        "django/utils/decorators.py"
+      ],
+      "n_files": 855,
+      "gold_in_index": true,
+      "content": {
+        "top5": [
+          "django/utils/decorators.py",
+          "django/template/base.py",
+          "django/utils/functional.py",
+          "django/utils/autoreload.py",
+          "django/apps/registry.py"
+        ],
+        "hits": {
+          "@1": {
+            "any": true,
+            "all": true
+          },
+          "@3": {
+            "any": true,
+            "all": true
+          },
+          "@5": {
+            "any": true,
+            "all": true
+          },
+          "@10": {
+            "any": true,
+            "all": true
+          }
+        },
+        "gold_rank": [
+          1
+        ]
+      },
+      "symbols": {
+        "top5": [
+          "django/utils/inspect.py",
+          "django/utils/decorators.py",
+          "django/views/decorators/vary.py",
+          "django/core/checks/templates.py",
+          "django/utils/functional.py"
+        ],
+        "hits": {
+          "@1": {
+            "any": false,
+            "all": false
+          },
+          "@3": {
+            "any": true,
+            "all": true
+          },
+          "@5": {
+            "any": true,
+            "all": true
+          },
+          "@10": {
+            "any": true,
+            "all": true
+          }
+        },
+        "gold_rank": [
+          2
+        ]
+      }
+    }
+  ]
+}

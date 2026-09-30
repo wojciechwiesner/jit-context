@@ -6,12 +6,22 @@ a degraded payload with issues instead of raising.
 """
 from __future__ import annotations
 
+import json
 import os
 import sqlite3
 import time
 
-from helpers.api import ApiHandler, Request
-from helpers import plugins
+try:
+    from helpers.api import ApiHandler, Request
+except ImportError:
+    class ApiHandler(object):  # type: ignore
+        def __init__(self, *args, **kwargs): pass
+    class Request(object):  # type: ignore
+        pass
+try:
+    from helpers import plugins
+except ImportError:
+    plugins = None  # type: ignore
 
 
 _DB = os.path.join(
@@ -132,9 +142,67 @@ def _rules(cfg, verdicts, counts, conn):
     return issues
 
 
+def _last_turn_audit() -> dict:
+    audit_dir_env = os.environ.get("JIT_AUDIT_DIR")
+    if audit_dir_env:
+        audits_dir = audit_dir_env
+    else:
+        data_dir_env = os.environ.get("JIT_CONTEXT_DATA_DIR")
+        if data_dir_env:
+            audits_dir = os.path.join(data_dir_env, "audits")
+        else:
+            audits_dir = os.path.join(os.path.dirname(_DB), "audits")
+
+    score = None
+    findings: list[str] = []
+    open_mods = 0
+
+    mods_json = os.path.join(audits_dir, "mods.json")
+    if os.path.isfile(mods_json):
+        try:
+            with open(mods_json, "r", encoding="utf-8") as f:
+                mods_data = json.load(f)
+                if isinstance(mods_data, dict):
+                    open_mods = sum(
+                        1
+                        for m in mods_data.values()
+                        if isinstance(m, dict) and m.get("status") == "open"
+                    )
+        except Exception:
+            pass
+
+    if os.path.isdir(audits_dir):
+        try:
+            jsonl_files = [
+                os.path.join(audits_dir, f)
+                for f in os.listdir(audits_dir)
+                if f.endswith(".jsonl")
+            ]
+            if jsonl_files:
+                latest_file = max(jsonl_files, key=os.path.getmtime)
+                with open(latest_file, "r", encoding="utf-8") as f:
+                    lines = [line.strip() for line in f if line.strip()]
+                    if lines:
+                        last_rec = json.loads(lines[-1])
+                        score = last_rec.get("score")
+                        raw_findings = last_rec.get("findings", [])
+                        findings = [
+                            f["key"] if isinstance(f, dict) else str(f)
+                            for f in raw_findings
+                        ]
+        except Exception:
+            pass
+
+    return {
+        "score": score,
+        "findings": findings,
+        "open_mods": open_mods,
+    }
+
+
 class Status(ApiHandler):
     async def process(self, input: dict, request: Request) -> dict:
-        cfg = plugins.get_plugin_config("jit_context") or {}
+        cfg = plugins.get_plugin_config("jit_context") or {} if plugins else {}
         conn = _safe(_ro, None)
         verdicts = _verdicts(conn)
         tel = _telemetry(conn)
@@ -171,4 +239,5 @@ class Status(ApiHandler):
             },
             "counts": counts,
             "issues": issues,
+            "turn_audit": _last_turn_audit(),
         }

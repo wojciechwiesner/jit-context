@@ -123,6 +123,16 @@ def test_grounding_computed_via_python():
     assert answer_grounding("42", events) == "COMPUTED"
 
 
+def test_grounding_rejects_substring_matches():
+    page = [_ev("The backtick operator in Unlambda; released 2017; EC 1.11.1.7 peroxidase.")]
+    assert answer_grounding("o", page) == "UNGROUNDED"
+    assert answer_grounding("17", page) == "UNGROUNDED"
+    assert answer_grounding("1.7", page) == "UNGROUNDED"
+    assert answer_grounding("backtick", page) == "GROUNDED_EXACT"
+    assert answer_grounding("1.11.1.7", page) == "GROUNDED_EXACT"
+    assert answer_grounding("2017", page) == "GROUNDED_EXACT"
+
+
 # --- Rozwaga (judge) ---------------------------------------------------------------------
 
 def test_judge_agreement_needs_no_llm():

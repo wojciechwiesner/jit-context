@@ -358,6 +358,15 @@
       font-size: 10px;
       font-weight: 600;
     }
+    .status-err {
+      color: var(--rose);
+      background: rgba(244, 63, 94, 0.12);
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      font-weight: 600;
+    }
   </style>
 </head>
 <body>
@@ -416,7 +425,7 @@
       </div>
     </div>
     <div>
-      <span class="status-ok" style="font-size: 11px; padding: 4px 10px;">10 / 10 INVARIANTS PASS</span>
+      <span class="status-ok" id="banner-invariants" style="font-size: 11px; padding: 4px 10px;">INVARIANTS: checking…</span>
     </div>
   </div>
 
@@ -478,7 +487,7 @@
         </div>
         <span class="card-badge" style="background: var(--emerald-glow); color: var(--emerald);">Epistemics</span>
       </div>
-      <div class="card-num" style="color: var(--emerald);" id="val-invariants">10 / 10</div>
+      <div class="card-num" style="color: var(--emerald);" id="val-invariants">–</div>
       <div class="card-desc">Direct User Wins • Anti-Self-Poisoning (I4)</div>
     </div>
   </div>
@@ -744,6 +753,30 @@
 
     loadData();
     setInterval(loadData, 2500);
+
+    // Invariant badge comes from /health (evaluate_all_invariants), never from static markup.
+    async function loadInvariants() {
+      const banner = document.getElementById('banner-invariants');
+      const card = document.getElementById('val-invariants');
+      try {
+        const res = await fetch('/health');
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        const inv = (await res.json()).invariants || {};
+        const total = Object.keys(inv).length;
+        const passed = Object.values(inv).filter(v => String(v).toUpperCase() === 'PASS').length;
+        const ok = total > 0 && passed === total;
+        banner.textContent = passed + ' / ' + total + ' INVARIANTS ' + (ok ? 'PASS' : 'FAIL');
+        banner.className = ok ? 'status-ok' : 'status-err';
+        card.textContent = passed + ' / ' + total;
+        card.style.color = ok ? 'var(--emerald)' : 'var(--rose, #f87171)';
+      } catch (e) {
+        banner.textContent = 'INVARIANTS: unavailable';
+        banner.className = 'status-err';
+        card.textContent = '?';
+      }
+    }
+    loadInvariants();
+    setInterval(loadInvariants, 30000);
   </script>
 </body>
 </html>

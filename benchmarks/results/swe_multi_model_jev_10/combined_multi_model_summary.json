@@ -1,0 +1,128 @@
+{
+  "gemini-3.5-flash-lite": {
+    "label": "Google Gemini 3.5 Flash-Lite (Free)",
+    "elapsed_s": 175.2,
+    "summary": {
+      "bez_jit": {
+        "passed": 7,
+        "pass_rate": "7/10 (70%)",
+        "total_time_s": 70.9,
+        "avg_turns": 6.8,
+        "avg_time_per_turn_s": 1.04,
+        "total_tokens": 46243,
+        "prompt_tokens": 43314,
+        "candidate_tokens": 2929,
+        "discovery_ops": 50,
+        "jev_cost_usd": 0
+      },
+      "jit_bez_jev": {
+        "passed": 9,
+        "pass_rate": "9/10 (90%)",
+        "total_time_s": 54.7,
+        "avg_turns": 5.2,
+        "avg_time_per_turn_s": 1.05,
+        "total_tokens": 57483,
+        "prompt_tokens": 54705,
+        "candidate_tokens": 2778,
+        "discovery_ops": 30,
+        "jev_cost_usd": 0
+      },
+      "jit_z_jev": {
+        "passed": 9,
+        "pass_rate": "9/10 (90%)",
+        "total_time_s": 39.0,
+        "avg_turns": 4.0,
+        "avg_time_per_turn_s": 0.97,
+        "total_tokens": 38202,
+        "prompt_tokens": 36349,
+        "candidate_tokens": 1853,
+        "discovery_ops": 23,
+        "jev_cost_usd": 0.000313
+      }
+    }
+  },
+  "gemini-2.5-flash": {
+    "label": "Google Gemini 2.5 Flash (Free)",
+    "elapsed_s": 318.1,
+    "summary": {
+      "bez_jit": {
+        "passed": 10,
+        "pass_rate": "10/10 (100%)",
+        "total_time_s": 62.2,
+        "avg_turns": 4.5,
+        "avg_time_per_turn_s": 1.38,
+        "total_tokens": 29671,
+        "prompt_tokens": 22413,
+        "candidate_tokens": 1687,
+        "discovery_ops": 24,
+        "jev_cost_usd": 0
+      },
+      "jit_bez_jev": {
+        "passed": 10,
+        "pass_rate": "10/10 (100%)",
+        "total_time_s": 134.4,
+        "avg_turns": 3.6,
+        "avg_time_per_turn_s": 3.73,
+        "total_tokens": 54046,
+        "prompt_tokens": 29940,
+        "candidate_tokens": 1700,
+        "discovery_ops": 10,
+        "jev_cost_usd": 0
+      },
+      "jit_z_jev": {
+        "passed": 10,
+        "pass_rate": "10/10 (100%)",
+        "total_time_s": 111.0,
+        "avg_turns": 2.9,
+        "avg_time_per_turn_s": 3.83,
+        "total_tokens": 45820,
+        "prompt_tokens": 25513,
+        "candidate_tokens": 1487,
+        "discovery_ops": 1,
+        "jev_cost_usd": 0.000313
+      }
+    }
+  },
+  "qwen/qwen-2.5-7b-instruct": {
+    "label": "Qwen 2.5 7B Instruct (OpenRouter)",
+    "elapsed_s": 208.9,
+    "summary": {
+      "bez_jit": {
+        "passed": 5,
+        "pass_rate": "5/10 (50%)",
+        "total_time_s": 63.0,
+        "avg_turns": 6.5,
+        "avg_time_per_turn_s": 0.97,
+        "total_tokens": 38075,
+        "prompt_tokens": 35664,
+        "candidate_tokens": 2411,
+        "discovery_ops": 29,
+        "jev_cost_usd": 0
+      },
+      "jit_bez_jev": {
+        "passed": 3,
+        "pass_rate": "3/10 (30%)",
+        "total_time_s": 71.7,
+        "avg_turns": 6.0,
+        "avg_time_per_turn_s": 1.2,
+        "total_tokens": 57137,
+        "prompt_tokens": 53766,
+        "candidate_tokens": 3371,
+        "discovery_ops": 9,
+        "jev_cost_usd": 0
+      },
+      "jit_z_jev": {
+        "passed": 5,
+        "pass_rate": "5/10 (50%)",
+        "total_time_s": 63.4,
+        "avg_turns": 5.2,
+        "avg_time_per_turn_s": 1.22,
+        "total_tokens": 49815,
+        "prompt_tokens": 47033,
+        "candidate_tokens": 2782,
+        "discovery_ops": 6,
+        "jev_cost_usd": 0.000313
+      }
+    }
+  }
+}

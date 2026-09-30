@@ -1,0 +1,100 @@
+============================================================
+SWE-bench Verified 10-task OpenRouter benchmark
+Model: qwen/qwen-2.5-7b-instruct
+Tasks: sphinx-doc__sphinx-9698,django__django-13512,astropy__astropy-7166,sphinx-doc__sphinx-7889,sphinx-doc__sphinx-9711,django__django-11163,django__django-15863,django__django-11179,pydata__xarray-4356,django__django-15315
+Output: /Users/wojciechwiesner/.hermes/research/hermes-jit-context-os-v0.1/benchmarks/swe_verified_lfm/runs/openrouter_qwen7b_10
+Start: 2026-09-28 10:21:10
+============================================================
+=== [ARM: jit] START 2026-09-28 10:21:10 ===
+[jit] sphinx-doc__sphinx-9698: turns=25 wall=21.5s ptok=40968 patches_ok=0 parse_fail=21 finished=False diff_lines=0
+<unknown>:1: SyntaxWarning: invalid escape sequence '\.'
+<unknown>:1: SyntaxWarning: invalid escape sequence '\.'
+<unknown>:1: SyntaxWarning: invalid escape sequence '\.'
+<unknown>:1: SyntaxWarning: invalid escape sequence '\.'
+[jit] django__django-13512: turns=7 wall=5.4s ptok=6275 patches_ok=1 parse_fail=0 finished=True diff_lines=13
+[jit] astropy__astropy-7166: turns=17 wall=13.6s ptok=15350 patches_ok=0 parse_fail=0 finished=True diff_lines=0
+[jit] sphinx-doc__sphinx-7889: turns=25 wall=20.6s ptok=42150 patches_ok=0 parse_fail=25 finished=False diff_lines=0
+[jit] sphinx-doc__sphinx-9711: turns=13 wall=11.9s ptok=13772 patches_ok=0 parse_fail=0 finished=True diff_lines=0
+[jit] django__django-11163: turns=25 wall=28.1s ptok=57928 patches_ok=0 parse_fail=0 finished=False diff_lines=0
+[jit] django__django-15863: turns=4 wall=2.8s ptok=5983 patches_ok=1 parse_fail=0 finished=True diff_lines=13
+<unknown>:1: SyntaxWarning: invalid escape sequence '\.'
+<unknown>:1: SyntaxWarning: invalid escape sequence '\.'
+<unknown>:1: SyntaxWarning: invalid escape sequence '\.'
+<unknown>:1: SyntaxWarning: invalid escape sequence '\.'
+[jit] django__django-11179: turns=7 wall=6.1s ptok=4739 patches_ok=1 parse_fail=0 finished=True diff_lines=13
+<unknown>:1: SyntaxWarning: invalid escape sequence '\.'
+[jit] pydata__xarray-4356: turns=4 wall=3.5s ptok=3449 patches_ok=1 parse_fail=0 finished=True diff_lines=13
+<unknown>:1: SyntaxWarning: invalid escape sequence '\('
+[jit] django__django-15315: turns=25 wall=38.8s ptok=64122 patches_ok=0 parse_fail=0 finished=False diff_lines=0
+=== [ARM: jit] FINISHED 2026-09-28 10:24:02 ===
+=== [ARM: bare] START 2026-09-28 10:24:02 ===
+[bare] sphinx-doc__sphinx-9698: turns=25 wall=22.7s ptok=52357 patches_ok=0 parse_fail=0 finished=False diff_lines=0
+<unknown>:1: SyntaxWarning: invalid escape sequence '\.'
+<unknown>:1: SyntaxWarning: invalid escape sequence '\.'
+<unknown>:1: SyntaxWarning: invalid escape sequence '\.'
+<unknown>:1: SyntaxWarning: invalid escape sequence '\.'
+<unknown>:1: SyntaxWarning: invalid escape sequence '\.'
+<unknown>:1: SyntaxWarning: invalid escape sequence '\.'
+[bare] django__django-13512: turns=25 wall=31.2s ptok=75605 patches_ok=0 parse_fail=0 finished=False diff_lines=0
+[bare] astropy__astropy-7166: turns=25 wall=19.4s ptok=22860 patches_ok=0 parse_fail=0 finished=False diff_lines=0
+[bare] sphinx-doc__sphinx-7889: turns=25 wall=22.5s ptok=42150 patches_ok=0 parse_fail=25 finished=False diff_lines=0
+[bare] sphinx-doc__sphinx-9711: turns=25 wall=20.8s ptok=41086 patches_ok=0 parse_fail=0 finished=False diff_lines=0
+<unknown>:1: SyntaxWarning: invalid escape sequence '\.'
+<unknown>:1: SyntaxWarning: invalid escape sequence '\.'
+<unknown>:1: SyntaxWarning: invalid escape sequence '\.'
+<unknown>:1: SyntaxWarning: invalid escape sequence '\.'
+<unknown>:1: SyntaxWarning: invalid escape sequence '\.'
+<unknown>:1: SyntaxWarning: invalid escape sequence '\.'
+<unknown>:1: SyntaxWarning: invalid escape sequence '\.'
+<unknown>:1: SyntaxWarning: invalid escape sequence '\.'
+<unknown>:1: SyntaxWarning: invalid escape sequence '\.'
+<unknown>:1: SyntaxWarning: invalid escape sequence '\.'
+<unknown>:1: SyntaxWarning: invalid escape sequence '\.'
+<unknown>:1: SyntaxWarning: invalid escape sequence '\.'
+<unknown>:1: SyntaxWarning: invalid escape sequence '\.'
+<unknown>:1: SyntaxWarning: invalid escape sequence '\.'
+<unknown>:1: SyntaxWarning: invalid escape sequence '\.'
+<unknown>:1: SyntaxWarning: invalid escape sequence '\.'
+<unknown>:1: SyntaxWarning: invalid escape sequence '\.'
+<unknown>:1: SyntaxWarning: invalid escape sequence '\.'
+<unknown>:1: SyntaxWarning: invalid escape sequence '\.'
+<unknown>:1: SyntaxWarning: invalid escape sequence '\.'
+<unknown>:1: SyntaxWarning: invalid escape sequence '\.'
+<unknown>:1: SyntaxWarning: invalid escape sequence '\.'
+<unknown>:1: SyntaxWarning: invalid escape sequence '\.'
+<unknown>:1: SyntaxWarning: invalid escape sequence '\.'
+<unknown>:1: SyntaxWarning: invalid escape sequence '\.'
+[bare] django__django-11163: turns=25 wall=22.7s ptok=25930 patches_ok=0 parse_fail=0 finished=False diff_lines=0
+[bare] django__django-15863: turns=5 wall=4.9s ptok=6703 patches_ok=2 parse_fail=0 finished=True diff_lines=15
+<unknown>:1: SyntaxWarning: invalid escape sequence '\.'
+<unknown>:1: SyntaxWarning: invalid escape sequence '\.'
+<unknown>:1: SyntaxWarning: invalid escape sequence '\.'
+<unknown>:1: SyntaxWarning: invalid escape sequence '\.'
+<unknown>:1: SyntaxWarning: invalid escape sequence '\.'
+<unknown>:1: SyntaxWarning: invalid escape sequence '\.'
+<unknown>:1: SyntaxWarning: invalid escape sequence '\.'
+<unknown>:1: SyntaxWarning: invalid escape sequence '\.'
+<unknown>:1: SyntaxWarning: invalid escape sequence '\.'
+<unknown>:1: SyntaxWarning: invalid escape sequence '\.'
+<unknown>:1: SyntaxWarning: invalid escape sequence '\.'
+<unknown>:1: SyntaxWarning: invalid escape sequence '\.'
+<unknown>:1: SyntaxWarning: invalid escape sequence '\.'
+<unknown>:1: SyntaxWarning: invalid escape sequence '\.'
+<unknown>:1: SyntaxWarning: invalid escape sequence '\.'
+<unknown>:1: SyntaxWarning: invalid escape sequence '\.'
+<unknown>:1: SyntaxWarning: invalid escape sequence '\.'
+<unknown>:1: SyntaxWarning: invalid escape sequence '\.'
+<unknown>:1: SyntaxWarning: invalid escape sequence '\.'
+<unknown>:1: SyntaxWarning: invalid escape sequence '\.'
+<unknown>:1: SyntaxWarning: invalid escape sequence '\.'
+<unknown>:1: SyntaxWarning: invalid escape sequence '\.'
+<unknown>:1: SyntaxWarning: invalid escape sequence '\.'
+<unknown>:1: SyntaxWarning: invalid escape sequence '\.'
+<unknown>:1: SyntaxWarning: invalid escape sequence '\.'
+[bare] django__django-11179: turns=25 wall=21.8s ptok=24705 patches_ok=0 parse_fail=0 finished=False diff_lines=0
+<unknown>:1: SyntaxWarning: invalid escape sequence '\.'
+[bare] pydata__xarray-4356: turns=4 wall=3.0s ptok=2867 patches_ok=1 parse_fail=0 finished=True diff_lines=13
+<unknown>:1: SyntaxWarning: invalid escape sequence '\('
+[bare] django__django-15315: turns=25 wall=37.5s ptok=53273 patches_ok=0 parse_fail=0 finished=False diff_lines=0
+=== [ARM: bare] FINISHED 2026-09-28 10:27:46 ===
+=== ALL ARMS FINISHED 2026-09-28 10:27:46 ===

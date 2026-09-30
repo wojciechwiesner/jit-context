@@ -1,0 +1,1 @@
+{"instance_id": "astropy__astropy-7166", "arm": "v2", "turns": 12, "prompt_tokens": 24551, "completion_tokens": 1817, "parse_failures": 0, "fallback_calls": 0, "tool_errors": 0, "repeat_calls": 0, "edits_ok": 0, "edits_failed": 2, "syntax_reverts": 0, "match_modes": {}, "finish_rejected": 1, "finished": true, "ctx_overflow": 0, "wall_s": 47.7, "patch_lines": 0}

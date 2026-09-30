@@ -492,9 +492,9 @@ DASHBOARD_HTML = """<!DOCTYPE html>
       <div class="card-sub">Measured live via turn_telemetry (p95 &lt; 3ms)</div>
     </div>
     <div class="card">
-      <div class="card-title">Invariants I1–I10</div>
-      <div class="card-value" style="color: var(--success);" id="val-invariants">10 / 10</div>
-      <div class="card-sub">Safety & Epistemic Authority: PASS</div>
+      <div class="card-title">Invariants</div>
+      <div class="card-value" style="color: var(--success);" id="val-invariants">–</div>
+      <div class="card-sub" id="sub-invariants">Evaluated live via /health</div>
     </div>
   </div>
 
@@ -624,6 +624,13 @@ DASHBOARD_HTML = """<!DOCTYPE html>
     
     loadData();
     setInterval(loadData, 1500);
+    fetch('/health').then(r => r.json()).then(d => {
+      const inv = d.invariants || {};
+      const total = Object.keys(inv).length;
+      const passed = Object.values(inv).filter(v => String(v).toUpperCase() === 'PASS').length;
+      document.getElementById('val-invariants').textContent = passed + ' / ' + total;
+      document.getElementById('sub-invariants').textContent = passed === total && total > 0 ? 'All invariants PASS' : 'Invariant FAILURE';
+    }).catch(() => { document.getElementById('val-invariants').textContent = '?'; });
   </script>
 </body>
 </html>"""

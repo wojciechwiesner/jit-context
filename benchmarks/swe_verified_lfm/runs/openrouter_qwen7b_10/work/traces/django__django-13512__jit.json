@@ -1,0 +1,62 @@
+[
+ {
+  "role": "system",
+  "content": "You are a software engineer fixing a GitHub issue in a Python repository.\nThe repository root is the current directory; use repo-relative paths like 'pkg/module.py'.\nYou cannot run code, shell commands or tests. Only the tools below exist.\n\nReply with exactly ONE tool call and nothing else, in this format:\n<|tool_call_start|>[read_file(path='pkg/module.py', start=100, end=160)]<|tool_call_end|>\n\nTools:\n- search(pattern, path=\".\")          regex search in *.py files, returns file:line: text\n- find_file(name)                    find files whose path contains name (glob like *.py allowed)\n- read_file(path, start=1, end=None) read lines [start, end] with line numbers (max 200 lines)\n- patch(path, old_string, new_string) replace an exact unique snippet in a file\n- finish()                           call when the fix is complete\n\nWorkflow: locate the relevant code, read it, apply a minimal fix with patch, then finish.\nDo not modify test files. old_string must match the file exactly, including indentation."
+ },
+ {
+  "role": "user",
+  "content": "Repository: django/django\n\n<issue>\nAdmin doesn't display properly unicode chars in JSONFields.\nDescription\n\t \n\t\t(last modified by ZhaoQi99)\n\t \n>>> import json\n>>> print json.dumps('中国')\n\"\\u4e2d\\u56fd\"\njson.dumps use ASCII encoding by default when serializing Chinese.\nSo when we edit a JsonField which contains Chinese character in Django admin,it will appear in ASCII characters.\nI have try to fix this this problem in ​https://github.com/adamchainz/django-mysql/pull/714.And it works prefectly.\n\n</issue>\n\nStart by locating the relevant code."
+ },
+ {
+  "role": "assistant",
+  "content": "<|tool_call_start|>[search(pattern='json\\.dumps.*ASCII', path='django/db/utils.py')]<|tool_call_end|>"
+ },
+ {
+  "role": "user",
+  "content": "[tool search result]\n(no matches)"
+ },
+ {
+  "role": "assistant",
+  "content": "<|tool_call_start|>[search(pattern='json\\.dumps.*default', path='django/db/utils.py')]<|tool_call_end|>"
+ },
+ {
+  "role": "user",
+  "content": "[tool search result]\n(no matches)"
+ },
+ {
+  "role": "assistant",
+  "content": "<|tool_call_start|>[search(pattern='json\\.dumps.*ensure_ascii', path='django/db/utils.py')]<|tool_call_end|>"
+ },
+ {
+  "role": "user",
+  "content": "[tool search result]\n(no matches)"
+ },
+ {
+  "role": "assistant",
+  "content": "<|tool_call_start|>[search(pattern='json\\.dumps.*ensure_ascii', path='django/db/models/fields/json.py')]<|tool_call_end|>"
+ },
+ {
+  "role": "user",
+  "content": "[tool search result]\n(no matches)"
+ },
+ {
+  "role": "assistant",
+  "content": "<|tool_call_start|>[read_file(path='django/db/models/fields/json.py', start=100, end=160)]<|tool_call_end|>"
+ },
+ {
+  "role": "user",
+  "content": "[tool read_file result]\ndjango/db/models/fields/json.py (520 lines total)\n100:                 params={'value': value},\n101:             )\n102: \n103:     def value_to_string(self, obj):\n104:         return self.value_from_object(obj)\n105: \n106:     def formfield(self, **kwargs):\n107:         return super().formfield(**{\n108:             'form_class': forms.JSONField,\n109:             'encoder': self.encoder,\n110:             'decoder': self.decoder,\n111:             **kwargs,\n112:         })\n113: \n114: \n115: def compile_json_path(key_transforms, include_root=True):\n116:     path = ['$'] if include_root else []\n117:     for key_transform in key_transforms:\n118:         try:\n119:             num = int(key_transform)\n120:         except ValueError:  # non-integer\n121:             path.append('.')\n122:             path.append(json.dumps(key_transform))\n123:         else:\n124:             path.append('[%s]' % num)\n125:     return ''.join(path)\n126: \n127: \n128: class DataContains(PostgresOperatorLookup):\n129:     lookup_name = 'contains'\n130:     postgres_operator = '@>'\n131: \n132:     def as_sql(self, compiler, connection):\n133:         if not connection.features.supports_json_field_contains:\n134:             raise NotSupportedError(\n135:                 'contains lookup is not supported on this database backend.'\n136:             )\n137:         lhs, lhs_params = self.process_lhs(compiler, connection)\n138:         rhs, rhs_params = self.process_rhs(compiler, connection)\n139:         params = tuple(lhs_params) + tuple(rhs_params)\n140:         return 'JSON_CONTAINS(%s, %s)' % (lhs, rhs), params\n141: \n142: \n143: class ContainedBy(PostgresOperatorLookup):\n144:     lookup_name = 'contained_by'\n145:     postgres_operator = '<@'\n146: \n147:     def as_sql(self, compiler, connection):\n148:         if not connection.features.supports_json_field_contains:\n149:             raise NotSupportedError(\n150:                 'contained_by lookup is not supported on this database backend.'\n151:             )\n152:         lhs, lhs_params = self.process_lhs(compiler, connection)\n153:         rhs, rhs_params = self.process_rhs(compiler, connection)\n154:         params = tuple(rhs_params) + tuple(lhs_params)\n155:         return 'JSON_CONTAINS(%s, %s)' % (rhs, lhs), params\n156: \n157: \n158: class HasKeyLookup(PostgresOperatorLookup):\n159:     logical_operator = None\n160: "
+ },
+ {
+  "role": "assistant",
+  "content": "<|tool_call_start|>[patch(path='django/db/models/fields/json.py', old_string='json.dumps(key_transform)', new_string='json.dumps(key_transform, ensure_ascii=False)')]<|tool_call_end|>"
+ },
+ {
+  "role": "user",
+  "content": "[tool patch result]\nOK: patched django/db/models/fields/json.py"
+ },
+ {
+  "role": "assistant",
+  "content": "<|tool_call_start|>[finish()]<|tool_call_end|>"
+ }
+]

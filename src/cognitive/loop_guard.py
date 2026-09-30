@@ -68,6 +68,9 @@ class LoopGuard:
     max_nudges: int = 2
     novelty_threshold: float = 0.10
     near_repeat_threshold: float = 0.75
+    # Ablation switch: when False, repeat-skipping and stall nudges are off; only the
+    # plain turn budget (forced answer on the last turn) remains, identical for all arms.
+    enabled: bool = True
 
     _signatures: Set[str] = field(default_factory=set)
     _queries: List[Set[str]] = field(default_factory=list)
@@ -82,6 +85,8 @@ class LoopGuard:
 
     def classify_call(self, tool: str, args: Dict[str, Any]) -> Optional[str]:
         """Return a repeat label before executing a call, or None if the call is new."""
+        if not self.enabled:
+            return None
         sig = _call_signature(tool, args)
         if sig in self._signatures:
             return "exact_repeat"
@@ -122,6 +127,8 @@ class LoopGuard:
                 "gathered above, give your best final answer. If uncertain, still commit "
                 "to the most likely value. End with: FINAL ANSWER: <value>",
             )
+        if not self.enabled:
+            return GuardVerdict(CONTINUE)
         if self._no_progress_streak >= self.stall_window:
             self._no_progress_streak = 0
             self.nudges += 1

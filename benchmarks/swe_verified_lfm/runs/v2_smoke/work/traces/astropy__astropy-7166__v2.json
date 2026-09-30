@@ -1,0 +1,114 @@
+[
+ {
+  "role": "system",
+  "content": "You are fixing a bug in a Python repository checked out in the current directory.\n\nUse the provided functions to explore: search, find_file, read_file, finish.\n\nTo EDIT code, do not call a function. Write one or more SEARCH/REPLACE blocks in your reply:\n\npath/to/file.py\n<<<<<<< SEARCH\nexact existing lines to change\n=======\nnew lines\n>>>>>>> REPLACE\n\nRules:\n- SEARCH copies existing lines exactly (enough lines to be unique). Code is plain text: no escaping, no JSON.\n- After each edit you get the syntax check result and the resulting diff. Read it.\n- Do not modify test files. Make the minimal fix, then call finish."
+ },
+ {
+  "role": "user",
+  "content": "Repository: astropy/astropy\n\n<issue>\nInheritDocstrings metaclass doesn't work for properties\nInside the InheritDocstrings metaclass it uses `inspect.isfunction` which returns `False` for properties.\n\n</issue>\n\nStart by locating the relevant code."
+ },
+ {
+  "role": "assistant",
+  "content": "",
+  "tool_calls": [
+   {
+    "type": "function",
+    "index": 0,
+    "id": "call_520eee381b064c7e8772b824",
+    "function": {
+     "name": "search",
+     "arguments": "{\"pattern\": \"InheritDocstrings\", \"path\": \"astropy/utils/docval.py\"}"
+    }
+   }
+  ]
+ },
+ {
+  "role": "tool",
+  "tool_call_id": "call_520eee381b064c7e8772b824",
+  "content": "ERROR: path 'astropy/utils/docval.py' does not exist in the repository. Candidates: astropy/utils/data.py, astropy/utils/misc.py, astropy/utils/console.py, astropy/utils/state.py, astropy/utils/decorators.py"
+ },
+ {
+  "role": "assistant",
+  "content": "It seems the file `docval.py` does not exist in the repository. Let's check `astropy/utils/decorators.py` as it is a common place for such metaclass definitions.\n\n",
+  "tool_calls": [
+   {
+    "type": "function",
+    "index": 0,
+    "id": "call_ae2473e366b348a191be3d5b",
+    "function": {
+     "name": "search",
+     "arguments": "{\"pattern\": \"InheritDocstrings\", \"path\": \"astropy/utils/decorators.py\"}"
+    }
+   }
+  ]
+ },
+ {
+  "role": "tool",
+  "tool_call_id": "call_ae2473e366b348a191be3d5b",
+  "content": "(no matches)"
+ },
+ {
+  "role": "assistant",
+  "content": "Let's try searching in `astropy/utils/misc.py` as it is another common location for utility classes and metaclasses.\n\n\n",
+  "tool_calls": [
+   {
+    "type": "function",
+    "index": 0,
+    "id": "call_81b9a4a822874358b008ab5b",
+    "function": {
+     "name": "search",
+     "arguments": "{\"pattern\": \"InheritDocstrings\", \"path\": \"astropy/utils/misc.py\"}"
+    }
+   }
+  ]
+ },
+ {
+  "role": "tool",
+  "tool_call_id": "call_81b9a4a822874358b008ab5b",
+  "content": "33:           'JsonCustomEncoder', 'indent', 'InheritDocstrings',\n497:class InheritDocstrings(type):\n511:        >>> from astropy.utils.misc import InheritDocstrings\n512:        >>> class A(metaclass=InheritDocstrings):"
+ },
+ {
+  "role": "assistant",
+  "content": "The relevant code has been found in `astropy/utils/misc.py`. The metaclass `InheritDocstrings` is defined there. We need to modify the logic inside this metaclass to handle properties correctly.\n\nLet's search for the specific part of the code that checks if an attribute is a function using `inspect.isfunction`.\n\n",
+  "tool_calls": [
+   {
+    "type": "function",
+    "index": 0,
+    "id": "call_97ebd86541ac4acdaa4756d6",
+    "function": {
+     "name": "search",
+     "arguments": "{\"pattern\": \"inspect\\\\.isfunction\", \"path\": \"astropy/utils/misc.py\"}"
+    }
+   }
+  ]
+ },
+ {
+  "role": "tool",
+  "tool_call_id": "call_97ebd86541ac4acdaa4756d6",
+  "content": "531:            if (inspect.isfunction(val) and"
+ },
+ {
+  "role": "assistant",
+  "content": "The code snippet that checks if an attribute is a function using `inspect.isfunction` is found at line 531. We need to modify this to correctly identify properties as well.\n\nHere's the edit:\n\npath/to/astropy/utils/misc.py\n<<<<<<< SEARCH\n531:            if (inspect.isfunction(val) and\n=======\n531:            if (inspect.isfunction(val) or inspect.ismethoddescriptor(val) and\n>>>>>>> REPLACE\n\nNow, let's call `finish` to complete the fix.\n\n\n",
+  "tool_calls": [
+   {
+    "type": "function",
+    "index": 0,
+    "id": "call_0054e31f6ea74374a318f261",
+    "function": {
+     "name": "finish",
+     "arguments": "{}"
+    }
+   }
+  ]
+ },
+ {
+  "role": "tool",
+  "tool_call_id": "call_0054e31f6ea74374a318f261",
+  "content": "FINISHED"
+ },
+ {
+  "role": "user",
+  "content": "EDIT OK astropy/utils/misc.py (match: exact). syntax OK; no new pyflakes warnings\nCurrent diff of astropy/utils/misc.py:\n@@ -529,5 +529,5 @@ class InheritDocstrings(type):\n \n         for key, val in dct.items():\n-            if (inspect.isfunction(val) and\n+            if (inspect.isfunction(val) or inspect.ismethoddescriptor(val) and\n                 is_public_member(key) and\n                 val.__doc__ is None):"
+ }
+]

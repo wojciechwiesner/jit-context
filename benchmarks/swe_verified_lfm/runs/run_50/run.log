@@ -1,0 +1,8 @@
+============================================================
+Starting SWE-bench Verified 50-task benchmark
+Arms: jit bare
+Ollama API: http://127.0.0.1:11434/api/chat
+Output: /Users/wojciechwiesner/.hermes/research/hermes-jit-context-os-v0.1/benchmarks/swe_verified_lfm/runs/run_50
+Time: 2026-09-28 10:06:05
+============================================================
+=== [ARM: jit] START 2026-09-28 10:06:05 ===

@@ -36,6 +36,23 @@ import urllib.error
 DEFAULT_MAX_TURNS = int(os.environ.get("GAIA_MAX_TURNS", "15"))
 VISION_MODEL = os.environ.get("GAIA_VISION_MODEL", "gemini-3.8-flash")
 
+
+def _abl_flag(name: str) -> Optional[bool]:
+    """Ablation override: GAIA_ABL_<NAME>=0|1. Unset means 'use the mode default'."""
+    raw = os.environ.get(f"GAIA_ABL_{name}")
+    if raw is None or raw.strip() == "":
+        return None
+    return raw.strip().lower() in ("1", "true", "yes", "on")
+
+
+# Component switches for ablation runs. Defaults keep the pre-ablation behaviour.
+ABL_CAPSULE = _abl_flag("CAPSULE")
+ABL_GUARD = _abl_flag("GUARD")
+ABL_CONSCIENCE = _abl_flag("CONSCIENCE")
+ABL_INTUITION = _abl_flag("INTUITION")
+ABL_PLANNER = _abl_flag("PLANNER")
+GUARD_ENABLED = True if ABL_GUARD is None else ABL_GUARD
+
 _PLACEHOLDER_ANSWERS = {"", "<value>", "<exact_answer>", "<exact concise answer>", "final answer", "value"}
 
 
@@ -107,22 +124,31 @@ def tool_python_exec(code: str) -> str:
 
 def tool_web_search(query: str, limit: int = 4) -> str:
     results = []
+    backend_errors = []
     # 1. Google Search Grounding (Live Web & Wikipedia)
+    # Grounding routinely takes 8-15s; the old 12s timeout silently dropped it and the
+    # model saw "No search results found." and concluded the fact does not exist.
     if GOOGLE_API_KEY:
-        try:
-            url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={GOOGLE_API_KEY}"
-            payload = {
-                "contents": [{"parts": [{"text": f"Search the web and provide verbatim facts and sources for: {query}"}]}],
-                "tools": [{"googleSearch": {}}]
-            }
-            req = urllib.request.Request(url, data=json.dumps(payload).encode("utf-8"), headers={"Content-Type": "application/json"})
-            with urllib.request.urlopen(req, timeout=12) as resp:
-                data = json.loads(resp.read().decode("utf-8"))
-                search_text = data["candidates"][0]["content"]["parts"][0]["text"].strip()
-                if search_text:
-                    results.append(f"Search Grounding Result:\n{search_text}")
-        except Exception:
-            pass
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={GOOGLE_API_KEY}"
+        payload = {
+            "contents": [{"parts": [{"text": f"Search the web and provide verbatim facts and sources for: {query}"}]}],
+            "tools": [{"googleSearch": {}}]
+        }
+        for attempt in range(2):
+            try:
+                req = urllib.request.Request(url, data=json.dumps(payload).encode("utf-8"), headers={"Content-Type": "application/json"})
+                with urllib.request.urlopen(req, timeout=30) as resp:
+                    data = json.loads(resp.read().decode("utf-8"))
+                    parts = data["candidates"][0]["content"]["parts"]
+                    search_text = " ".join(p.get("text", "") for p in parts).strip()
+                    if search_text:
+                        results.append(f"Search Grounding Result:\n{search_text}")
+                break
+            except Exception as e:
+                if attempt == 1:
+                    backend_errors.append(f"google grounding: {type(e).__name__}: {str(e)[:80]}")
+                else:
+                    time.sleep(2)
 
     # 2. Wikipedia API
     try:
@@ -136,16 +162,25 @@ def tool_web_search(query: str, limit: int = 4) -> str:
                 snippet = re.sub(r'<[^>]+>', '', it.get("snippet", ""))
                 url = f"https://en.wikipedia.org/wiki/{urllib.parse.quote(title.replace(' ', '_'))}"
                 results.append(f"Title: {title}\nURL: {url}\nSnippet: {snippet}")
-    except Exception:
-        pass
+    except Exception as e:
+        backend_errors.append(f"wikipedia: {type(e).__name__}")
 
-    return "\n\n".join(results[:limit]) if results else "No search results found."
+    if results:
+        return "\n\n".join(results[:limit])
+    if backend_errors:
+        return ("Search backend failed (" + "; ".join(backend_errors) + "). This says nothing about "
+                "whether the fact exists. Retry with a shorter query, or go to the primary source "
+                "directly with web_extract (e.g. the official site, GitHub API, Wikipedia page URL).")
+    return ("No search results found. Rephrase with fewer, more distinctive keywords, or fetch "
+            "a likely primary source URL with web_extract.")
 
 def tool_web_extract(url: str) -> str:
     if "youtube.com" in url or "youtu.be" in url:
         return tool_video_inspect(url)
-    req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)"})
+    if not url or not url.startswith(("http://", "https://")):
+        return f"Extract error: invalid URL {url!r} (expected http(s)://...)"
     try:
+        req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)"})
         with urllib.request.urlopen(req, timeout=10) as resp:
             html = resp.read().decode("utf-8", errors="ignore")
             # Strip tags and excess whitespace
@@ -892,6 +927,41 @@ def get_openrouter_api_key() -> Optional[str]:
     return None
 
 
+def _run_tool(
+    fname: str,
+    fargs: Dict[str, Any],
+    attached_file: Optional[str],
+    question: str,
+    history_queries: Set[str],
+) -> str:
+    """Execute one tool call and return its raw text output."""
+    if fname == "python_exec":
+        out = tool_python_exec(str(fargs.get("code") or ""))
+        if out in ("[]", "None", ""):
+            out = f"{out}\n[Invariant I11 Notice: Python code produced empty output. Do not run further code; synthesize answer directly from the text retrieved in previous turns]."
+        return out
+    if fname == "web_search":
+        q = str(fargs.get("query") or "")
+        if q in history_queries:
+            return f"Duplicate query '{q}'. This was already searched above. Review previous results, call web_extract on retrieved URLs, or run python_exec."
+        history_queries.add(q)
+        return tool_web_search(q)
+    if fname == "web_extract":
+        return tool_web_extract(str(fargs.get("url") or ""))
+    if fname == "vision_inspect":
+        return tool_vision_inspect(fargs.get("file_path") or attached_file or "", fargs.get("question") or question)
+    if fname == "file_read":
+        req_path = str(fargs.get("file_path") or "")
+        if not Path(req_path).exists() and attached_file:
+            req_path = attached_file
+        return tool_file_read(req_path)
+    if fname == "video_inspect":
+        return tool_video_inspect(str(fargs.get("url_or_path") or ""), fargs.get("query"))
+    if fname == "download_file":
+        return tool_download_file(str(fargs.get("url") or ""), fargs.get("filename"))
+    return f"Unknown tool: {fname}"
+
+
 def dispatch_tool_call(
     fname: str,
     fargs: Dict[str, Any],
@@ -902,32 +972,12 @@ def dispatch_tool_call(
     turn: int
 ) -> Tuple[str, str, Dict[str, Any]]:
     out = ""
-    if fname == "python_exec":
-        out = tool_python_exec(fargs.get("code", ""))
-        if out in ("[]", "None", ""):
-            out = f"{out}\n[Invariant I11 Notice: Python code produced empty output. Do not run further code; synthesize answer directly from the text retrieved in previous turns]."
-    elif fname == "web_search":
-        q = fargs.get("query", "")
-        if q in history_queries:
-            out = f"Duplicate query '{q}'. This was already searched above. Review previous results, call web_extract on retrieved URLs, or run python_exec."
-        else:
-            history_queries.add(q)
-            out = tool_web_search(q)
-    elif fname == "web_extract":
-        out = tool_web_extract(fargs.get("url", ""))
-    elif fname == "vision_inspect":
-        out = tool_vision_inspect(fargs.get("file_path") or attached_file or "", fargs.get("question") or question)
-    elif fname == "file_read":
-        req_path = fargs.get("file_path", "")
-        if not Path(req_path).exists() and attached_file:
-            req_path = attached_file
-        out = tool_file_read(req_path)
-    elif fname == "video_inspect":
-        out = tool_video_inspect(fargs.get("url_or_path", ""), fargs.get("query"))
-    elif fname == "download_file":
-        out = tool_download_file(fargs.get("url", ""), fargs.get("filename"))
-    else:
-        out = f"Unknown tool: {fname}"
+    if not isinstance(fargs, dict):
+        fargs = {}
+    try:
+        out = _run_tool(fname, fargs, attached_file, question, history_queries)
+    except Exception as e:  # a malformed tool call must not crash the benchmark run
+        out = f"Tool error: {fname} failed with {type(e).__name__}: {e}"
 
     processed_out, spill_path = process_tool_output(
         tool_name=fname,
@@ -1057,7 +1107,7 @@ def execute_worker_turn_gemini(
     final_answer = None
     history_queries: Set[str] = set()
     tool_events: List[Dict[str, Any]] = []
-    guard = LoopGuard(max_turns=max_turns)
+    guard = LoopGuard(max_turns=max_turns, enabled=GUARD_ENABLED)
     force_answer = False
 
     for turn in range(1, max_turns + 1):
@@ -1234,6 +1284,35 @@ def execute_worker_turn_gemini(
     return final_answer, tool_calls_count, tool_events
 
 
+_GIVE_UP_RE = re.compile(
+    r"cannot determine|can't determine|could not (find|locate|determine)|unable to (find|locate|determine)|"
+    r"not enough (evidence|information)|insufficient (evidence|information|data)|no (data|information) available|"
+    r"without (direct )?access|^n/?a$|^unknown$|^none$|"
+    r"\bthere (is|are|was|were) no\b|\b(does|do|did)( not|n't) exist\b|\bno such\b|"
+    r"\bno (matching|relevant|results?)\b|\bnot (found|available|possible to)\b",
+    re.IGNORECASE,
+)
+# GAIA answers are short facts; a long sentence with a finite verb is an explanation, not an answer.
+_PROSE_ANSWER_RE = re.compile(r"\b(is|are|was|were|has|have|could|would|seems?|appears?)\b", re.IGNORECASE)
+
+GIVE_UP_PUSHBACK = (
+    "That is not an answer. The task has a definite answer that can be found with your tools, "
+    "and you still have {left} turns. Do not repeat earlier queries. Try a different route:\n"
+    "1. Split the question into the single fact you are missing and search only for that, with 3-5 distinctive keywords.\n"
+    "2. Go to the primary source with web_extract: official site, Wikipedia article URL, GitHub API "
+    "(https://api.github.com/...), archive.org, the paper or dataset page.\n"
+    "3. If a page was fetched, read it with python_exec (regex/search in text) instead of guessing.\n"
+    "If after that you are still unsure, give your single best specific answer as 'FINAL ANSWER: <answer>' - never 'cannot determine'."
+)
+
+
+def _is_give_up(answer: str) -> bool:
+    text = answer.strip()
+    if _GIVE_UP_RE.search(text):
+        return True
+    return len(text) > 120 and bool(_PROSE_ANSWER_RE.search(text))
+
+
 def execute_worker_turn_openai(
     task_id: str,
     question: str,
@@ -1264,7 +1343,7 @@ def execute_worker_turn_openai(
     final_answer = None
     history_queries: Set[str] = set()
     tool_events: List[Dict[str, Any]] = []
-    guard = LoopGuard(max_turns=max_turns)
+    guard = LoopGuard(max_turns=max_turns, enabled=GUARD_ENABLED)
     force_answer = False
 
     headers = {"Content-Type": "application/json"}
@@ -1276,6 +1355,8 @@ def execute_worker_turn_openai(
     # and llama-server answered HTTP 500 "unexpected end of JSON input".
     max_out_tokens = 6144 if is_local else 2048
     truncation_retries = 0
+    parser_retries = 0
+    giveup_pushes = 0
 
     for turn in range(1, max_turns + 1):
         payload = {
@@ -1313,6 +1394,19 @@ def execute_worker_turn_openai(
                     "content": ("Your last tool call was cut off before its arguments were complete. "
                                 "Call the tool again with much shorter code: compute the result, "
                                 "do not write data out by hand, print only what you need."),
+                })
+                continue
+            if "Invalid diff" in body and parser_retries < 2:
+                # llama-server's streaming tool-call parser rejects arguments whose escaping
+                # changes between partial and final parses (escaped quotes, "\n" inside strings).
+                # Deterministic at temperature 0, so the prompt must change for the retry.
+                parser_retries += 1
+                messages.append({
+                    "role": "user",
+                    "content": ("The server could not parse your last tool call because of string escaping. "
+                                "Call the tool again. In the code use only single quotes, no backslashes, "
+                                "no \\n or \\\" escapes inside strings, no f-strings; build URLs with "
+                                "urllib.parse.urlencode instead of writing %3A or & by hand."),
                 })
                 continue
             break
@@ -1354,6 +1448,14 @@ def execute_worker_turn_openai(
 
         if not tool_calls:
             parsed = extract_final_answer(raw_text)
+            if parsed and _is_give_up(parsed) and giveup_pushes < 2 and turn <= max_turns - 4:
+                # Small local models answer "cannot determine" after two empty searches.
+                # Push back with a generic search strategy (no task facts) while budget remains.
+                giveup_pushes += 1
+                print(f"  [Give-up Gate]: rejected '{parsed[:60]}' at turn {turn}, push {giveup_pushes}/2")
+                messages.append({"role": "assistant", "content": raw_text})
+                messages.append({"role": "user", "content": GIVE_UP_PUSHBACK.format(left=max_turns - turn)})
+                continue
             if parsed:
                 final_answer = parsed
                 break
@@ -1555,6 +1657,20 @@ def execute_worker_turn(
         )
         return ans, tools, events, target_model
 
+    # 2b. LOCAL LIQUID LFM2.5-8B-A1B (GGUF Q4_K_M imported into Ollama)
+    elif worker_choice in ("lfm-local", "lfm2.5:8b-a1b"):
+        target_model = "lfm2.5:8b-a1b"
+        print(f"  [Ego Worker]: Local Liquid LFM ({target_model}) via Ollama")
+        ans, tools, events = execute_worker_turn_openai(
+            task_id, question, capsule,
+            model_name=target_model,
+            endpoint="http://localhost:11434/v1/chat/completions",
+            api_key=None,
+            max_turns=max_turns,
+            attached_file=attached_file
+        )
+        return ans, tools, events, target_model
+
     # 3. PURE LIQUID LFM (OpenRouter or local)
     elif worker_choice in ("lfm", "lfm-2.5", "liquid", "liquid/lfm-2.5-2.6b:free"):
         target_model = "liquid/lfm-2.5-2.6b:free"
@@ -1684,6 +1800,23 @@ def run_cognitive_system_benchmark(
     print(f"Starting Full Cognitive System Benchmark on {len(tasks)} tasks (Mode: {mode.upper()}, Worker: {worker_model})...")
     
     config = CognitionConfig.from_mode(mode)
+    if ABL_INTUITION is not None:
+        config.intuition_enabled = ABL_INTUITION
+    if ABL_PLANNER is not None:
+        config.superconscious_enabled = ABL_PLANNER
+    if ABL_CONSCIENCE is not None:
+        config.conscience_deterministic = ABL_CONSCIENCE
+    capsule_enabled = True if ABL_CAPSULE is None else ABL_CAPSULE
+    ablation = {
+        "capsule": capsule_enabled,
+        "loop_guard": GUARD_ENABLED,
+        "conscience": config.conscience_deterministic,
+        "intuition": config.intuition_enabled,
+        "planner": config.superconscious_enabled,
+        "judge": judge_enabled,
+        "max_turns": max_turns,
+    }
+    print(f"  [Ablation]: {ablation}")
     bus = CognitiveBus(config=config)
     results = []
     clean_passed = 0
@@ -1717,7 +1850,7 @@ def run_cognitive_system_benchmark(
         print(f"  [Bus Meta-Plan]:\n    " + "\n    ".join(plan_proposal.steps))
         
         # 4. Bus: Step JIT Compilation (Substrate Context Capsule)
-        capsule = bus.step_compile_capsule(task_state, intuition_proposal, plan_proposal)
+        capsule = bus.step_compile_capsule(task_state, intuition_proposal, plan_proposal) if capsule_enabled else ""
         
         # 5. Worker Tool Execution (Ego Runtime)
         raw_ans, tools_used, tool_events, worker_used = execute_worker_turn(
@@ -1834,6 +1967,7 @@ def run_cognitive_system_benchmark(
                     "git_commit": _git_head(),
                     "jit_version": _jit_version(),
                     "judge_enabled": judge_enabled,
+                    "ablation": ablation,
                     "mode": mode,
                     "worker_model": worker_model,
                     "subconscious_model": "LFM2-1.2B-Extract-MLX-4bit",

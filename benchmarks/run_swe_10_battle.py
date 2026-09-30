@@ -22,6 +22,7 @@ from __future__ import annotations
 import copy
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -38,6 +39,7 @@ if str(SRC_DIR) not in sys.path:
 
 ENV_PATH = Path.home() / ".hermes" / ".env"
 GOOGLE_API_KEY = None
+OPENROUTER_API_KEY = None
 if ENV_PATH.exists():
     for line in ENV_PATH.read_text().splitlines():
         if not line or line.startswith("#") or "=" not in line:
@@ -47,6 +49,8 @@ if ENV_PATH.exists():
         value = value.strip().strip('"').strip("'")
         if key == "GOOGLE_API_KEY":
             GOOGLE_API_KEY = value
+        if key == "OPENROUTER_API_KEY":
+            OPENROUTER_API_KEY = value
         if key == "JEV_OPENROUTER_KEY" and value and not os.environ.get(key):
             os.environ[key] = value
 
@@ -508,8 +512,11 @@ def verify_baseline_failure(base_dir: Path, test_file: str) -> bool:
     if not (base_dir / "_pytest").exists():
         env["PYTHONPATH"] = str(base_dir)
     cmd = ["python3", "-m", "pytest", str(base_dir / test_file)]
-    res = subprocess.run(cmd, env=env, capture_output=True, text=True)
-    return res.returncode != 0
+    try:
+        res = subprocess.run(cmd, env=env, capture_output=True, text=True, timeout=12)
+        return res.returncode != 0
+    except subprocess.TimeoutExpired:
+        return True
 
 
 # -------------------------------------------------------------------------
@@ -604,9 +611,11 @@ def build_jit_capsule(
 {numbered_lines}
   [ACTIVE INVARIANTS]
     • ZERO FAKE: Your code patch is verified directly via real pytest execution.
+    • SURGICAL PATCHING RULE: Always inspect the exact target lines using read_file before patching to confirm indentation (e.g. 4 spaces) and avoid syntax errors.
     • RETURN FORMAT: Return ONLY valid JSON matching:
-      {{"tool": "patch", "path": "{top_file}", "old_string": "exact unique text", "new_string": "replacement text"}}
-      OR use tool calls: search_files, read_file, patch, run_tests, done.
+      {{"tool": "read_file", "path": "{top_file}", "offset": 1, "limit": 40}} OR
+      {{"tool": "patch", "path": "{top_file}", "old_string": "exact unique text", "new_string": "replacement text"}} OR
+      {{"tool": "run_tests"}} OR {{"tool": "done"}}
 </ONA_CONTEXT>"""
     return capsule, evidence
 
@@ -617,7 +626,9 @@ def build_jit_capsule(
 def run_agentic_task(
     task: Dict[str, Any],
     mode: str,
-    max_turns: int = 6
+    model: str = "gemini-2.5-flash",
+    provider: str = "gemini",
+    max_turns: int = 8
 ) -> Dict[str, Any]:
     task_dir = BENCH_TMP / mode / task["id"]
     setup_task_repo(task_dir, task)
@@ -645,7 +656,12 @@ You have the following tools available:
 4. {"tool": "run_tests"} -> executes pytest on the repository test suite
 5. {"tool": "done", "summary": "explanation"} -> finishes the task
 
-Respond ONLY with a single JSON object corresponding to your tool call.
+CRITICAL RULES:
+- Before applying a patch, use read_file on the target file around the suspect lines to verify exact whitespace and surrounding lines.
+- Target the smallest specific code block to change (e.g. the specific lines inside def __init__ or the target function), do NOT replace outer class definitions.
+- Ensure old_string is an exact, verbatim snippet from the file, and new_string maintains clean 4-space indentation.
+- After applying a patch, always run run_tests to verify the fix.
+- Respond ONLY with a single JSON object corresponding to your tool call.
 """
 
     initial_user_msg = ""
@@ -677,9 +693,15 @@ Problem Statement:
 
 Solve this bug using the surgical patch tool. The target file and working set are provided in the capsule above."""
 
-    messages = [
-        {"role": "user", "parts": [{"text": f"{sys_instructions}\n\n{initial_user_msg}"}]}
-    ]
+    if provider == "gemini":
+        messages = [
+            {"role": "user", "parts": [{"text": f"{sys_instructions}\n\n{initial_user_msg}"}]}
+        ]
+    else:
+        messages = [
+            {"role": "system", "content": sys_instructions},
+            {"role": "user", "content": initial_user_msg}
+        ]
 
     total_tokens = 0
     prompt_tokens = 0
@@ -689,40 +711,117 @@ Solve this bug using the surgical patch tool. The target file and working set ar
     last_error = None
     t0 = time.time()
 
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key={GOOGLE_API_KEY}"
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={GOOGLE_API_KEY}"
 
     turn = 0
     for turn in range(1, max_turns + 1):
-        payload = {
-            "contents": messages,
-            "generationConfig": {
-                "temperature": 0.0,
-                "responseMimeType": "application/json"
-            }
-        }
-
-        req = urllib.request.Request(
-            url,
-            data=json.dumps(payload).encode(),
-            headers={"Content-Type": "application/json"}
-        )
-
         tool_call = None
         text = ""
-        for attempt in range(3):
-            try:
-                with urllib.request.urlopen(req, timeout=35) as resp:
-                    data = json.loads(resp.read().decode())
-                    text = data["candidates"][0]["content"]["parts"][0]["text"]
-                    usage = data.get("usageMetadata", {})
-                    total_tokens += usage.get("totalTokenCount", 0)
-                    prompt_tokens += usage.get("promptTokenCount", 0)
-                    candidate_tokens += usage.get("candidatesTokenCount", 0)
-                    tool_call = json.loads(text)
-                    break
-            except Exception as e:
-                last_error = f"API/Parse Error: {e}"
-                time.sleep(1.0 * (attempt + 1))
+
+        if provider == "gemini":
+            payload = {
+                "contents": messages,
+                "generationConfig": {
+                    "temperature": 0.0,
+                    "responseMimeType": "application/json"
+                }
+            }
+            req = urllib.request.Request(
+                url,
+                data=json.dumps(payload).encode(),
+                headers={"Content-Type": "application/json"}
+            )
+            for attempt in range(4):
+                try:
+                    with urllib.request.urlopen(req, timeout=14) as resp:
+                        data = json.loads(resp.read().decode())
+                        text = data["candidates"][0]["content"]["parts"][0]["text"]
+                        usage = data.get("usageMetadata", {})
+                        total_tokens += usage.get("totalTokenCount", 0)
+                        prompt_tokens += usage.get("promptTokenCount", 0)
+                        candidate_tokens += usage.get("candidatesTokenCount", 0)
+                        tool_call = json.loads(text)
+                        break
+                except Exception as e:
+                    last_error = f"Gemini API/Parse Error: {e}"
+                    time.sleep(1.0 * (attempt + 1))
+
+        elif provider == "openrouter":
+            payload = {
+                "model": model,
+                "messages": messages,
+                "temperature": 0.0,
+                "response_format": {"type": "json_object"}
+            }
+            req = urllib.request.Request(
+                "https://openrouter.ai/api/v1/chat/completions",
+                data=json.dumps(payload).encode("utf-8"),
+                headers={
+                    "Authorization": f"Bearer {OPENROUTER_API_KEY}",
+                    "Content-Type": "application/json",
+                    "HTTP-Referer": "https://theones.io",
+                    "X-Title": "JIT-Benchmark"
+                }
+            )
+            for attempt in range(4):
+                try:
+                    with urllib.request.urlopen(req, timeout=14) as resp:
+                        data = json.loads(resp.read().decode("utf-8"))
+                        text = data["choices"][0]["message"].get("content", "")
+                        usage = data.get("usage", {})
+                        total_tokens += usage.get("total_tokens", 0)
+                        prompt_tokens += usage.get("prompt_tokens", 0)
+                        candidate_tokens += usage.get("completion_tokens", 0)
+                        clean_text = text.strip()
+                        if "```json" in clean_text:
+                            clean_text = clean_text.split("```json", 1)[1].split("```", 1)[0].strip()
+                        elif "```" in clean_text:
+                            clean_text = clean_text.split("```", 1)[1].split("```", 1)[0].strip()
+                        m_json = re.search(r"\{.*\}", clean_text, re.DOTALL)
+                        if m_json:
+                            clean_text = m_json.group(0)
+                        tool_call = json.loads(clean_text)
+                        break
+                except Exception as e:
+                    last_error = f"OpenRouter API/Parse Error: {e}"
+                    time.sleep(1.0 * (attempt + 1))
+
+        elif provider == "ollama":
+            payload = {
+                "model": model,
+                "messages": messages,
+                "temperature": 0.0,
+                "stream": False,
+                "format": "json"
+            }
+            req = urllib.request.Request(
+                "http://localhost:11434/api/chat",
+                data=json.dumps(payload).encode("utf-8"),
+                headers={"Content-Type": "application/json"}
+            )
+            for attempt in range(4):
+                try:
+                    with urllib.request.urlopen(req, timeout=90) as resp:
+                        data = json.loads(resp.read().decode("utf-8"))
+                        text = data.get("message", {}).get("content", "")
+                        eval_c = data.get("eval_count", 0)
+                        p_eval_c = data.get("prompt_eval_count", 0)
+                        total_tokens += (eval_c + p_eval_c)
+                        prompt_tokens += p_eval_c
+                        candidate_tokens += eval_c
+                        clean_text = text.strip()
+                        if "```json" in clean_text:
+                            clean_text = clean_text.split("```json", 1)[1].split("```", 1)[0].strip()
+                        elif "```" in clean_text:
+                            clean_text = clean_text.split("```", 1)[1].split("```", 1)[0].strip()
+                        m_json = re.search(r"\{.*\}", clean_text, re.DOTALL)
+                        if m_json:
+                            clean_text = m_json.group(0)
+                        tool_call = json.loads(clean_text)
+                        break
+                except Exception as e:
+                    last_error = f"Ollama API/Parse Error: {e}"
+                    time.sleep(1.0 * (attempt + 1))
         if not tool_call:
             break
 
@@ -765,28 +864,70 @@ Solve this bug using the surgical patch tool. The target file and working set ar
             if not rel_path or not target_p.exists() or target_p.is_dir():
                 tool_output = f"Error: Path '{rel_path}' is invalid, is a directory, or does not exist."
             else:
-                old_s = tool_call.get("old_string", "")
-                new_s = tool_call.get("new_string", "")
+                def _strip_line_nums(s: str) -> str:
+                    lines = s.split("\n")
+                    if all(re.match(r"^\s*\d+\|\s?", l) for l in lines if l.strip()):
+                        return "\n".join(re.sub(r"^\s*\d+\|\s?", "", l) for l in lines)
+                    return s
+
+                old_s = _strip_line_nums(tool_call.get("old_string", ""))
+                new_s = _strip_line_nums(tool_call.get("new_string", ""))
                 content = target_p.read_text()
-                if old_s not in content:
-                    tool_output = "Error: old_string not found in file. Patch failed."
-                else:
+                new_content = None
+                if old_s in content:
                     new_content = content.replace(old_s, new_s, 1)
-                    target_p.write_text(new_content)
-                    tool_output = f"Success: Patch applied cleanly to '{rel_path}'."
+                else:
+                    # Strategy 2: Single-line indentation-insensitive match
+                    old_lines = [l for l in old_s.splitlines() if l.strip()]
+                    content_lines = content.splitlines()
+                    if len(old_lines) == 1:
+                        target = old_lines[0].strip()
+                        matches = [i for i, l in enumerate(content_lines) if l.strip() == target]
+                        if len(matches) == 1:
+                            idx = matches[0]
+                            orig_line = content_lines[idx]
+                            base_indent = orig_line[:len(orig_line) - len(orig_line.lstrip())]
+                            non_empty_new = [l for l in new_s.splitlines() if l.strip()]
+                            new_base = min(len(l) - len(l.lstrip()) for l in non_empty_new) if non_empty_new else 0
+                            new_lines = []
+                            for nl in new_s.splitlines():
+                                if nl.strip():
+                                    rel_indent = max(0, len(nl) - len(nl.lstrip()) - new_base)
+                                    new_lines.append(base_indent + (" " * rel_indent) + nl.lstrip())
+                                else:
+                                    new_lines.append("")
+                            content_lines[idx:idx+1] = new_lines
+                            new_content = "\n".join(content_lines) + ("\n" if content.endswith("\n") else "")
+
+                if new_content is None:
+                    tool_output = f"Error: old_string not found in file '{rel_path}'. Use read_file(path='{rel_path}', offset=1, limit=50) to verify exact whitespace and line indentation before patching."
+                else:
+                    if rel_path.endswith(".py"):
+                        try:
+                            compile(new_content, rel_path, "exec")
+                        except SyntaxError as syn_err:
+                            tool_output = f"Error: Patch introduces Python SyntaxError: {syn_err}. File untouched. Check indentation."
+                            new_content = None
+                    if new_content is not None:
+                        target_p.write_text(new_content)
+                        tool_output = f"Success: Patch applied cleanly to '{rel_path}'."
 
         elif tool_name == "run_tests":
             env = os.environ.copy()
             if not (task_dir / "_pytest").exists():
                 env["PYTHONPATH"] = str(task_dir)
             cmd = ["python3", "-m", "pytest", str(task_dir / task["test_file"])]
-            res = subprocess.run(cmd, env=env, capture_output=True, text=True)
-            if res.returncode == 0:
-                tool_output = "Pytest: ALL TESTS PASSED (exit code 0)."
-                task_passed = True
-            else:
-                out_summary = res.stdout[-400:] if res.stdout else res.stderr[-400:]
-                tool_output = f"Pytest: TESTS FAILED (exit code {res.returncode}):\n{out_summary}"
+            try:
+                res = subprocess.run(cmd, env=env, capture_output=True, text=True, timeout=12)
+                if res.returncode == 0:
+                    tool_output = "Pytest: ALL TESTS PASSED (exit code 0)."
+                    task_passed = True
+                else:
+                    out_summary = res.stdout[-400:] if res.stdout else res.stderr[-400:]
+                    tool_output = f"Pytest: TESTS FAILED (exit code {res.returncode}):\n{out_summary}"
+                    task_passed = False
+            except subprocess.TimeoutExpired:
+                tool_output = "Pytest: TIMEOUT (tests took longer than 12s, possible infinite loop or deadlock)."
                 task_passed = False
 
         elif tool_name == "done":
@@ -796,8 +937,12 @@ Solve this bug using the surgical patch tool. The target file and working set ar
             tool_output = f"Unknown tool: {tool_name}"
 
         # Feed tool result back to agent
-        messages.append({"role": "model", "parts": [{"text": text}]})
-        messages.append({"role": "user", "parts": [{"text": f"Tool Result:\n{tool_output}\n\nNext tool call:"}]})
+        if provider == "gemini":
+            messages.append({"role": "model", "parts": [{"text": text}]})
+            messages.append({"role": "user", "parts": [{"text": f"Tool Result:\n{tool_output}\n\nNext tool call:"}]})
+        else:
+            messages.append({"role": "assistant", "content": text})
+            messages.append({"role": "user", "content": f"Tool Result:\n{tool_output}\n\nNext tool call:"})
 
         # Early exit if tests passed and agent patched
         if tool_name == "run_tests" and task_passed:
@@ -807,8 +952,11 @@ Solve this bug using the surgical patch tool. The target file and working set ar
     env = os.environ.copy()
     if not (task_dir / "_pytest").exists():
         env["PYTHONPATH"] = str(task_dir)
-    final_res = subprocess.run(["python3", "-m", "pytest", str(task_dir / task["test_file"])], env=env, capture_output=True, text=True)
-    verified_pass = (final_res.returncode == 0)
+    try:
+        final_res = subprocess.run(["python3", "-m", "pytest", str(task_dir / task["test_file"])], env=env, capture_output=True, text=True, timeout=12)
+        verified_pass = (final_res.returncode == 0)
+    except subprocess.TimeoutExpired:
+        verified_pass = False
     wall_time = round(time.time() - t0, 2)
 
     return {
@@ -830,8 +978,22 @@ Solve this bug using the surgical patch tool. The target file and working set ar
 # -------------------------------------------------------------------------
 # Main Execution Runner
 # -------------------------------------------------------------------------
-def main(modes: List[str] | None = None, out_path: Path | None = None):
+def main(
+    modes: List[str] | None = None,
+    model: str = "gemini-2.5-flash",
+    provider: str | None = None,
+    limit_tasks: int | None = None,
+    out_path: Path | None = None
+):
     modes = modes or ["bez_jit", "jit_bez_jev", "jit_z_jev"]
+    if not provider:
+        if any(k in model.lower() for k in ["lfm", "norn", "ollama", "llama3"]):
+            provider = "ollama"
+        elif "/" in model or "qwen" in model or "nemotron" in model:
+            provider = "openrouter"
+        else:
+            provider = "gemini"
+
     mode_labels = {
         "bez_jit": "1. BEZ JIT (Raw Baseline)",
         "jit_bez_jev": "2. Z JIT (BEZ JEV - Heuristic Token)",
@@ -842,30 +1004,33 @@ def main(modes: List[str] | None = None, out_path: Path | None = None):
         shutil.rmtree(BENCH_TMP)
     BENCH_TMP.mkdir(parents=True)
 
+    tasks_to_run = TASKS[:limit_tasks] if limit_tasks else TASKS
+
     print("=" * 70)
-    print(" ⚔️  SWE AGENT COMPARATIVE BENCHMARK: 10 TASKS × 3 MODES")
-    print("=======================================================")
-    print("• Model:               Gemini 3.8 Flash (temperature: 0.0)")
+    print(f" ⚔️  SWE AGENT COMPARATIVE BENCHMARK: {len(tasks_to_run)} TASKS × {len(modes)} MODES")
+    print("=" * 70)
+    print(f"• Model:               {model} ({provider}) (temperature: 0.0)")
     print("• JEV Engine:          ~typesafe/jev-latest via OpenRouter (/api/alpha/decisions)")
     print("• Verification:        Physical pytest execution on disk (exit code == 0)")
-    print("• Tasks:               10 isolated SWE-bench-style fixtures, not full checkouts")
+    print(f"• Tasks:               {len(tasks_to_run)} isolated SWE-bench-style fixtures")
     print("=" * 70)
 
     all_results = {m: [] for m in modes}
 
-    for t_idx, task in enumerate(TASKS, 1):
-        print(f"\n[{t_idx:2d}/10] 🎯 TASK: {task['id']} — {task['title'][:50]}...")
+    for t_idx, task in enumerate(tasks_to_run, 1):
+        print(f"\n[{t_idx:2d}/{len(tasks_to_run)}] 🎯 TASK: {task['id']} — {task['title'][:50]}...")
         
         for m in modes:
             print(f"   ├─ Running {mode_labels[m]}...", end="", flush=True)
-            res = run_agentic_task(task, mode=m, max_turns=8)
+            res = run_agentic_task(task, mode=m, model=model, provider=provider, max_turns=8)
             all_results[m].append(res)
             
             icon = "✅ PASS" if res["passed"] else "❌ FAIL"
             print(f" -> {icon} | {res['wall_time_s']}s | turns: {res['turns']} | tok: {res['tokens']} | disc: {res['discovery_ops']}")
         
         # Save intermediate snapshot
-        out_file = Path("/tmp/swe_agent_10_comparison_results.json")
+        out_file = out_path or Path("/tmp/swe_agent_10_comparison_results.json")
+        out_file.parent.mkdir(parents=True, exist_ok=True)
         out_file.write_text(json.dumps({"details": all_results}, indent=2))
 
     # -------------------------------------------------------------------------
@@ -882,7 +1047,7 @@ def main(modes: List[str] | None = None, out_path: Path | None = None):
     for m in modes:
         res_list = all_results[m]
         passed_count = sum(1 for r in res_list if r["passed"])
-        pass_rate = f"{passed_count}/10 ({passed_count/10*100:.0f}%)"
+        pass_rate = f"{passed_count}/{len(tasks_to_run)} ({passed_count/len(tasks_to_run)*100:.0f}%)"
         total_time = round(sum(r["wall_time_s"] for r in res_list), 1)
         avg_turns = round(sum(r["turns"] for r in res_list) / len(res_list), 1)
         total_tokens = sum(r["tokens"] for r in res_list)
@@ -935,7 +1100,16 @@ def main(modes: List[str] | None = None, out_path: Path | None = None):
 if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser()
-    parser.add_argument("--modes", default="jit_z_jev", help="Comma-separated: bez_jit,jit_bez_jev,jit_z_jev")
-    parser.add_argument("--out", default=str(ROOT_DIR / "benchmarks/results/swe_10_jev_live_agent_loop.json"))
+    parser.add_argument("--modes", default="bez_jit,jit_bez_jev,jit_z_jev", help="Comma-separated: bez_jit,jit_bez_jev,jit_z_jev")
+    parser.add_argument("--model", default="gemini-2.5-flash", help="Model name (e.g. gemini-2.5-flash, gemini-3.5-flash-lite, qwen/qwen-2.5-7b-instruct)")
+    parser.add_argument("--provider", default=None, help="gemini or openrouter")
+    parser.add_argument("--limit-tasks", type=int, default=None, help="Limit number of tasks (e.g. 5 or 10)")
+    parser.add_argument("--out", default=None, help="Output JSON path")
     args = parser.parse_args()
-    main([m.strip() for m in args.modes.split(",") if m.strip()], Path(args.out))
+    main(
+        modes=[m.strip() for m in args.modes.split(",") if m.strip()],
+        model=args.model,
+        provider=args.provider,
+        limit_tasks=args.limit_tasks,
+        out_path=Path(args.out) if args.out else None
+    )
