@@ -144,10 +144,11 @@ def call_ollama_v1(messages: List[Dict[str, Any]], model: str) -> Dict[str, Any]
         "model": model,
         "messages": messages,
         "tools": TOOLS,
-        "temperature": 0.0
+        "stream": False,
+        "options": {"temperature": 0.0}
     }
     req = urllib.request.Request(
-        "http://127.0.0.1:11434/v1/chat/completions",
+        "http://127.0.0.1:11434/api/chat",
         data=json.dumps(payload).encode("utf-8"),
         headers={"Content-Type": "application/json"}
     )
@@ -159,17 +160,26 @@ def call_ollama_v1(messages: List[Dict[str, Any]], model: str) -> Dict[str, Any]
         raise RuntimeError(f"Ollama connection failed on http://127.0.0.1:11434: {e}. Is Ollama running?")
     lat = time.time() - t0
     
-    choice = data.get("choices", [{}])[0]
-    msg = choice.get("message", {})
-    usage = data.get("usage", {})
+    msg = data.get("message", {})
+    raw_tc = msg.get("tool_calls", [])
+    normalized_tool_calls = []
+    for tc in raw_tc:
+        fn = tc.get("function", {})
+        normalized_tool_calls.append({
+            "id": tc.get("id", "call_1"),
+            "function": {
+                "name": fn.get("name"),
+                "arguments": fn.get("arguments", {})
+            }
+        })
     
     return {
         "message": msg,
         "content": msg.get("content", ""),
-        "thinking": msg.get("reasoning", ""),
-        "tool_calls": msg.get("tool_calls", []),
+        "thinking": msg.get("thinking", ""),
+        "tool_calls": normalized_tool_calls,
         "latency_s": lat,
-        "tokens": usage.get("completion_tokens", 0)
+        "tokens": data.get("eval_count", 0)
     }
 
 def run_local_worker(
@@ -213,7 +223,13 @@ def run_local_worker(
         except Exception as e:
             if verbose:
                 print(f"❌ Error calling local model: {e}")
-            return {"success": False, "error": str(e), "turns": turn, "wall_time_s": round(time.time() - start_time, 2)}
+            return {
+                "success": False,
+                "error": str(e),
+                "turns": turn,
+                "patches_applied": patches_applied,
+                "wall_time_s": round(time.time() - start_time, 2)
+            }
         
         total_tokens += resp["tokens"]
         msg = resp["message"]
@@ -227,6 +243,7 @@ def run_local_worker(
             continue
 
         messages.append(msg)
+        executed_tools = []
 
         for tc in tool_calls:
             fn = tc.get("function", {})
@@ -287,7 +304,8 @@ def run_local_worker(
                             print(f"     ✅ Patched: {rel_path}")
 
             elif name == "run_tests":
-                cmd = args.get("cmd") or test_cmd
+                # Enforce configured test_cmd so agent cannot bypass test suite
+                cmd = test_cmd or args.get("cmd")
                 if not cmd:
                     if (workspace_dir / "pytest.ini").exists() or (workspace_dir / "tests").exists() or any(workspace_dir.glob("test_*.py")):
                         cmd = "python3 -m pytest -q"
@@ -314,7 +332,10 @@ def run_local_worker(
                 tool_output = f"Unknown tool '{name}'."
 
             turn_log.append({"turn": turn, "action": action_desc, "output": tool_output[:200]})
-            messages.append({"role": "tool", "tool_call_id": tc.get("id"), "content": tool_output})
+            executed_tools.append(f"Tool Result [{name}]:\n{tool_output}")
+
+        if executed_tools:
+            messages.append({"role": "user", "content": "\n\n".join(executed_tools)})
 
         if passed:
             break
