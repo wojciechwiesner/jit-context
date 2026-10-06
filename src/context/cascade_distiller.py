@@ -266,30 +266,32 @@ def call_llm_classifier(
         except Exception:
             pass
 
-    # Tier 2: Local Offline Fallback via Ollama (single fast probe, max 1.0s)
-    local_model = os.environ.get("JIT_LOCAL_MODEL", "qwen3.8:jit")
-    try:
-        ollama_payload = {
-            "model": local_model,
-            "prompt": f"{CLASSIFIER_PROMPT}\n\nINPUT TO CLASSIFY:\n{prefiltered}",
-            "format": "json",
-            "stream": False,
-            "options": {
-                "temperature": 0.1,
-                "num_predict": 400
+    # Tier 2: Local Offline Fallback via Ollama (single fast probe)
+    local_model = os.environ.get("JIT_LOCAL_MODEL", "lfm2.5:2.6b-64k")
+    local_timeout = float(os.environ.get("JIT_LOCAL_TIMEOUT", "2.5"))
+    for candidate_model in [local_model, "qwen3.8:jit", "qwen2.5-coder:7b"]:
+        try:
+            ollama_payload = {
+                "model": candidate_model,
+                "prompt": f"{CLASSIFIER_PROMPT}\n\nINPUT TO CLASSIFY:\n{prefiltered}",
+                "format": "json",
+                "stream": False,
+                "options": {
+                    "temperature": 0.1,
+                    "num_predict": 400
+                }
             }
-        }
-        r_ol = requests.post("http://localhost:11434/api/generate", json=ollama_payload, timeout=1.0)
-        if r_ol.status_code == 200:
-            content = r_ol.json().get("response", "")
-            cleaned = re.sub(r"^```(?:json)?\s*", "", content.strip(), flags=re.MULTILINE)
-            cleaned = re.sub(r"\s*```$", "", cleaned.strip(), flags=re.MULTILINE)
-            parsed = json.loads(cleaned)
-            val = validate_classifier_output(parsed, raw_source_text=raw_text, trusted_scope=trusted_scope)
-            if val:
-                return val
-    except Exception:
-        pass
+            r_ol = requests.post("http://localhost:11434/api/generate", json=ollama_payload, timeout=local_timeout)
+            if r_ol.status_code == 200:
+                content = r_ol.json().get("response", "")
+                cleaned = re.sub(r"^```(?:json)?\s*", "", content.strip(), flags=re.MULTILINE)
+                cleaned = re.sub(r"\s*```$", "", cleaned.strip(), flags=re.MULTILINE)
+                parsed = json.loads(cleaned)
+                val = validate_classifier_output(parsed, raw_source_text=raw_text, trusted_scope=trusted_scope)
+                if val:
+                    return val
+        except Exception:
+            continue
 
     return None
 

@@ -416,7 +416,7 @@ def run_init(target_path: Path, tier: str = "standard", goal: Optional[str] = No
     }
 
 def main():
-    known_cmds = {"init", "mode", "config", "configure", "off", "on", "status", "doctor", "stream", "jev", "install", "uninstall", "-h", "--help"}
+    known_cmds = {"init", "mode", "config", "configure", "off", "on", "status", "doctor", "stream", "jev", "worker", "solve", "install", "uninstall", "-h", "--help"}
     if len(sys.argv) > 1 and sys.argv[1] not in known_cmds:
         sys.argv.insert(1, "init")
 
@@ -451,6 +451,15 @@ def main():
     jev_parser = subparsers.add_parser("jev", help="Run JEV probabilistic decision engine diagnostics and live probe")
     jev_parser.add_argument("action", nargs="?", default="status", choices=["status", "probe", "test"], help="Action (status, probe)")
     jev_parser.add_argument("--query", type=str, default="drzewo decyzyjne i silnik reguł probabilistycznych", help="Test query for JEV probe")
+
+    # jit worker / solve (Local Edge Autonomous Worker)
+    worker_parser = subparsers.add_parser("worker", aliases=["solve"], help="Run autonomous local edge worker (LFM 2.5 / Qwen) with JIT capsule to fix bug")
+    worker_parser.add_argument("task", nargs="?", default=None, help="Bug description or goal to solve")
+    worker_parser.add_argument("--dir", default=".", help="Workspace directory (default: current dir)")
+    worker_parser.add_argument("--test", default=None, help="Test command to verify (default: auto-detect)")
+    worker_parser.add_argument("--model", default="lfm2.5:2.6b-64k", help="Local model name (default: lfm2.5:2.6b-64k)")
+    worker_parser.add_argument("--jev", action="store_true", help="Enable JEV Bayesian scoring")
+    worker_parser.add_argument("--max-turns", type=int, default=6, help="Max agent turns (default: 6)")
 
     # jit install / uninstall: wire JIT Context into Claude Code, Hermes, OpenCode, Agent Zero
     from installer import cli as installer_cli
@@ -695,6 +704,30 @@ def main():
         except Exception as e:
             print(f"Błąd uruchamiania JEV: {e}", file=sys.stderr)
             sys.exit(1)
+
+    # Subcommand: jit worker / solve
+    if cmd in ("worker", "solve"):
+        task = getattr(args, "task", None)
+        if not task and unknown:
+            task = " ".join(unknown)
+        if not task:
+            print("Usage: jit solve \"<description of bug or goal>\" [--model lfm2.5:2.6b-64k] [--dir .] [--test \"cmd\"]")
+            sys.exit(1)
+        from worker.local_agent import run_local_worker
+        res = run_local_worker(
+            task=task,
+            workspace_dir=Path(getattr(args, "dir", ".")),
+            test_cmd=getattr(args, "test", None),
+            model=getattr(args, "model", "lfm2.5:2.6b-64k"),
+            use_jev=getattr(args, "jev", False),
+            max_turns=getattr(args, "max_turns", 6),
+            verbose=True
+        )
+        print("\n" + "=" * 60)
+        status = "✅ PASS" if res["success"] else "❌ FAIL"
+        print(f"JIT Edge Worker Result: {status} | Turns: {res['turns']} | Patches: {res['patches_applied']} | Time: {res['wall_time_s']}s")
+        print("=" * 60)
+        sys.exit(0 if res["success"] else 1)
 
     target_path = "."
     tier = "standard"

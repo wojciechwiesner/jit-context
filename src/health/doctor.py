@@ -105,6 +105,13 @@ def run_doctor() -> bool:
     # 6. Context Capsule Compilation
     try:
         conn = get_db()
+        # Warm-up run to exclude initial module loading and cold regex compilation
+        _ = compile_context(
+            conn=conn,
+            session_id="doctor_check_warmup",
+            user_message="Warmup",
+            conversation_history=[]
+        )
         t0 = time.perf_counter()
         capsule = compile_context(
             conn=conn,
