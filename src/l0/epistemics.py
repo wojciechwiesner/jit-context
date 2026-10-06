@@ -96,6 +96,7 @@ def validate_retry_attempt(
 from pathlib import Path
 import re
 from cognitive.contracts import GateDecision, RepairTicket, EvidenceObject
+from l0.claim_support import SUPPORTED, claim_support
 
 
 def evaluate_conscience_gate(
@@ -194,13 +195,18 @@ def evaluate_conscience_gate(
     # 4. EVIDENCE CHECKS. Conscience never rewrites content; it only labels confidence.
     #    Before 2026-09-26 every non-empty answer was VERIFIED (53/53 in the GAIA run),
     #    so "verified" carried no information. Now VERIFIED requires all three checks.
+    #    Traceability ("answer text occurs in tool output") and support ("the
+    #    evidence backs the claim") are separate checks; see l0/claim_support.py.
     grounding = answer_grounding(clean_ans, tool_events)
+    support = claim_support(grounding, _norm_evidence(clean_ans), _norm_evidence(_evidence_text(tool_events)))
     format_issues = check_answer_format(clean_ans, question)
     forced = any(e.get("status") == "FORCED_ANSWER" or e.get("forced_answer") for e in tool_events)
 
     problems = []
     if grounding == "UNGROUNDED":
         problems.append("UNGROUNDED")
+    if support != SUPPORTED:
+        problems.append(support)
     if format_issues:
         problems.append("FORMAT:" + ",".join(format_issues))
     if forced:
@@ -212,14 +218,14 @@ def evaluate_conscience_gate(
             candidate_answer=raw_str,
             verified_answer=clean_ans,
             reason="|".join(problems),
-            evidence_refs=[grounding],
+            evidence_refs=[grounding, support],
         )
     return GateDecision(
         decision="VERIFIED",
         candidate_answer=raw_str,
         verified_answer=clean_ans,
         reason=f"GATE_PASSED:{grounding}",
-        evidence_refs=[grounding],
+        evidence_refs=[grounding, support],
     )
 
 
