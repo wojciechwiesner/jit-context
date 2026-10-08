@@ -18,34 +18,15 @@ Implements the 3-Stage Epistemic Preservation Pipeline for Tool Outputs:
 from __future__ import annotations
 
 import hashlib
-import json
-import os
 import re
 import time
-import urllib.parse
-import urllib.request
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
+from l0.borg_llm import call_borg_chat
+
 
 SPILLOVER_DIR = Path("/tmp/jit_tools")
-
-
-def get_google_api_key() -> Optional[str]:
-    """Retrieve Google API key from env or ~/.hermes/.env."""
-    key = os.environ.get("GOOGLE_API_KEY")
-    if key:
-        return key.strip().strip("\"'").strip()
-    env_path = os.path.expanduser("~/.hermes/.env")
-    if os.path.exists(env_path):
-        try:
-            with open(env_path, "r", encoding="utf-8") as f:
-                for line in f:
-                    if line.startswith("GOOGLE_API_KEY="):
-                        return line.split("=", 1)[1].strip().strip("\"'").strip()
-        except Exception:
-            pass
-    return None
 
 
 def spill_to_tmp(tool_name: str, raw_output: str, session_id: str = "default") -> Path:
@@ -109,20 +90,6 @@ def llm_distill(
     target_max_chars: int = 15000
 ) -> str:
     """Stage 3: Distill oversized content with LLM, strictly preserving epistemic facts."""
-    api_key = get_google_api_key()
-    if not api_key:
-        # Fallback if no LLM key: keep head + tail with explicit omission note
-        half = target_max_chars // 2
-        head = cleaned_text[:half]
-        tail = cleaned_text[-half:]
-        return (
-            f"{head}\n\n"
-            f"[... OMITTED {len(cleaned_text) - target_max_chars} chars of repetitive data ...]\n"
-            f"[Full raw output preserved at: {spill_path}]\n\n"
-            f"{tail}"
-        )
-
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={api_key}"
     prompt = f"""You are the Epistemic Distiller of Hermes JIT Context OS.
 Your mission: Compress this oversized tool output ({tool_name}) into a comprehensive, high-density factual digest.
 
@@ -137,24 +104,11 @@ Tool Output ({len(cleaned_text)} chars):
 {cleaned_text}
 \"\"\"
 """
-    payload = {
-        "contents": [{"parts": [{"text": prompt}]}],
-        "generationConfig": {
-            "temperature": 0.0,
-            "maxOutputTokens": 4096,
-            "thinkingConfig": {"thinkingBudget": 0}
-        }
-    }
-    req = urllib.request.Request(
-        url,
-        data=json.dumps(payload).encode("utf-8"),
-        headers={"Content-Type": "application/json"}
-    )
     try:
-        with urllib.request.urlopen(req, timeout=25) as resp:
-            data = json.loads(resp.read().decode("utf-8"))
-            distilled = data["candidates"][0]["content"]["parts"][0]["text"].strip()
-            return f"{distilled}\n\n[Full raw output ({len(cleaned_text)} chars) preserved at: {spill_path}]"
+        distilled = call_borg_chat(
+            prompt, timeout=25, max_tokens=4096, temperature=0.0, json_mode=False
+        ).strip()
+        return f"{distilled}\n\n[Full raw output ({len(cleaned_text)} chars) preserved at: {spill_path}]"
     except Exception as e:
         # Graceful fallback: return head + tail with pointer
         half = target_max_chars // 2

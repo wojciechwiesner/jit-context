@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- Classifier and epistemic distiller now call the fast Borg-hosted LLM (`llm.borg.tools`, OpenAI-compatible, default model `gemini-3.1-flash-lite`) through the new shared client `src/l0/borg_llm.py` instead of direct Gemini `generativelanguage.googleapis.com` calls with the rate-limited `GOOGLE_API_KEY`. Base URL/model are configurable via `JIT_LLM_BASE_URL` / `JIT_LLM_MODEL`; the client fails loudly on missing `BORG_TOOLS_LLM_TOKEN`, non-200 responses, or non-HTTPS (non-loopback) endpoints, and the classifier keeps its validated local Ollama fallback. Regression tests: `src/tests/test_borg_llm.py`.
+
 ### Added
 - Local Edge Autonomous Worker (`src/worker/` and `jit solve` / `jit worker` CLI command): enables running 100% offline agentic bugfixing using local edge models (LiquidAI LFM 2.5 2.6B-64k, Qwen 3.8/2.5) on Apple Silicon Metal via Ollama. Automatically compiles the JIT workspace capsule, executes a multi-turn tool calling loop (`search_files`, `read_file`, `patch`, `run_tests`), applies surgical patches, and verifies fixes with test suite (exit 0).
 - SWE-Bench empirical benchmark for edge models (`benchmarks/run_swe_local_lfm.py`): empirical evaluation of `lfm2.5:2.6b-64k` across `bez_jit`, `jit_bez_jev`, and `jit_z_jev` on real repository tasks (`django__django-15400`), proving -40% turn reduction, -67% discovery reduction, -32% wall clock speedup (14.4s vs 21.2s), and 100% test suite pass rate with zero cloud LLM cost.

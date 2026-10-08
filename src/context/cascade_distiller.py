@@ -21,26 +21,15 @@ import re
 import json
 import time
 import math
+import logging
 import requests
 from typing import Dict, Any, List, Optional, Tuple, Set
 
 from context.renderer import escape_xml_attr, escape_xml_content
+from l0.borg_llm import call_borg_chat
 
 ALLOWED_COMPLEXITY: Set[str] = {"status", "direct_fix", "feature", "refactoring"}
-
-
-def get_google_api_key() -> Optional[str]:
-    # Check ~/.hermes/.env
-    env_path = os.path.expanduser("~/.hermes/.env")
-    if os.path.exists(env_path):
-        try:
-            with open(env_path, "r", encoding="utf-8") as f:
-                for line in f:
-                    if line.startswith("GOOGLE_API_KEY="):
-                        return line.split("=", 1)[1].strip()
-        except Exception:
-            pass
-    return os.environ.get("GOOGLE_API_KEY")
+logger = logging.getLogger(__name__)
 
 
 def fast_deterministic_prefilter(raw_text: str) -> str:
@@ -232,39 +221,26 @@ def validate_classifier_output(
 
 def call_llm_classifier(
     raw_text: str,
-    timeout: float = 1.5,
+    timeout: float = 3.5,
     trusted_scope: str = "general"
 ) -> Optional[Dict[str, Any]]:
-    """Calls Gemini Flash using direct GOOGLE_API_KEY with local Ollama fallback, strictly validated (max 1.5s deadline)."""
+    """Classify with Borg's fast model, then try local Ollama if unavailable."""
     prefiltered = fast_deterministic_prefilter(raw_text[:6000])
+    prompt = f"{CLASSIFIER_PROMPT}\n\nINPUT TO CLASSIFY:\n{prefiltered}"
 
-    # Tier 1: Cloud SOTA via Google Gemini Flash
-    key = get_google_api_key()
-    if key:
-        url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={key}"
-        payload = {
-            "contents": [
-                {"role": "user", "parts": [{"text": f"{CLASSIFIER_PROMPT}\n\nINPUT TO CLASSIFY:\n{prefiltered}"}]}
-            ],
-            "generationConfig": {
-                "temperature": 0.1,
-                "responseMimeType": "application/json",
-                "maxOutputTokens": 2000,
-                "thinkingConfig": {
-                    "thinkingBudget": 0
-                }
-            }
-        }
-        try:
-            r = requests.post(url, json=payload, timeout=timeout)
-            if r.status_code == 200:
-                content = r.json().get("candidates", [{}])[0].get("content", {}).get("parts", [{}])[0].get("text", "")
-                cleaned = re.sub(r"^```(?:json)?\s*", "", content.strip(), flags=re.MULTILINE)
-                cleaned = re.sub(r"\s*```$", "", cleaned.strip(), flags=re.MULTILINE)
-                parsed = json.loads(cleaned)
-                return validate_classifier_output(parsed, raw_source_text=raw_text, trusted_scope=trusted_scope)
-        except Exception:
-            pass
+    try:
+        content = call_borg_chat(
+            prompt, timeout=timeout, max_tokens=2000, temperature=0.1, json_mode=True
+        )
+        cleaned = re.sub(r"^```(?:json)?\s*", "", content.strip(), flags=re.MULTILINE)
+        cleaned = re.sub(r"\s*```$", "", cleaned.strip(), flags=re.MULTILINE)
+        parsed = json.loads(cleaned)
+        validated = validate_classifier_output(parsed, raw_source_text=raw_text, trusted_scope=trusted_scope)
+        if validated:
+            return validated
+        logger.warning("Borg classifier returned an ungrounded result; trying local model")
+    except (RuntimeError, ValueError, TypeError) as exc:
+        logger.warning("Borg classifier failed (%s); trying local model", type(exc).__name__)
 
     # Tier 2: Local Offline Fallback via Ollama (single fast probe)
     local_model = os.environ.get("JIT_LOCAL_MODEL", "lfm2.5:2.6b-64k")
