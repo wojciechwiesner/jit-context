@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- `jit init`: external resources are deduplicated by (type, target); a project with both SQLAlchemy and SQLModel listed `context7 sqlmodel` twice. Test: `src/tests/test_init_dossier.py::test_external_resources_dedupe_shared_target`.
+
 ### Changed
 - Classifier and epistemic distiller now call the fast Borg-hosted LLM (`llm.borg.tools`, OpenAI-compatible, default model `gemini-3.1-flash-lite`) through the new shared client `src/l0/borg_llm.py` instead of direct Gemini `generativelanguage.googleapis.com` calls with the rate-limited `GOOGLE_API_KEY`. Base URL/model are configurable via `JIT_LLM_BASE_URL` / `JIT_LLM_MODEL`; the client fails loudly on missing `BORG_TOOLS_LLM_TOKEN`, non-200 responses, or non-HTTPS (non-loopback) endpoints, and the classifier keeps its validated local Ollama fallback. Regression tests: `src/tests/test_borg_llm.py`.
 

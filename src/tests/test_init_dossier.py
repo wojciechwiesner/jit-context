@@ -90,3 +90,17 @@ def test_lookup_prefers_versioned_then_legacy(tmp_path, monkeypatch):
     versioned.unlink()
     found_legacy = find_obsidian_project_dossier("hermes-jit-context-os-v0.1")
     assert found_legacy == stripped
+
+
+def test_external_resources_dedupe_shared_target(tmp_path):
+    """SQLAlchemy + SQLModel both map to context7 sqlmodel: list it once."""
+    scanner = init_mod.ProjectScanner(tmp_path)
+    resources = scanner.infer_required_external_knowledge(
+        {"frameworks": ["Docker", "FastAPI"], "databases": ["SQLAlchemy", "SQLModel"]}
+    )
+    keys = [(r["type"], r["target"]) for r in resources]
+    assert keys == [
+        ("knowhow", "devops/deployment-pitfalls"),
+        ("context7", "fastapi"),
+        ("context7", "sqlmodel"),
+    ]

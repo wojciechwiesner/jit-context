@@ -182,7 +182,15 @@ class ProjectScanner:
             elif "Prisma" in db:
                 resources.append({"type": "context7", "target": "prisma", "description": "Prisma client schema migration rules"})
 
-        return resources
+        # Several stack signals map to one resource (SQLAlchemy + SQLModel -> sqlmodel).
+        unique: List[Dict[str, str]] = []
+        seen = set()
+        for res in resources:
+            key = (res["type"], res["target"])
+            if key not in seen:
+                seen.add(key)
+                unique.append(res)
+        return unique
 
 def fetch_and_synthesize_deep_knowledge(target_dir: Path, stack: Dict[str, Any], tier: str = "deep") -> Dict[str, str]:
     """Generates authoritative, up-to-date cheat sheets and links relevant knowhow."""
