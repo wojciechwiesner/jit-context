@@ -1,8 +1,10 @@
 """SessionOverlay & WAL append logic implementing Invariants I1, I2, I7."""
 
+import os
 import time
 import uuid
 import sqlite3
+from contextlib import closing
 from typing import Optional, List, Dict, Tuple
 from l0.recent_fence import compute_content_hash
 from l0.epistemics import get_authority_for_role
@@ -181,12 +183,33 @@ def update_session_cwd(conn: sqlite3.Connection, session_id: str, cwd: str) -> N
         pass
 
 def get_session_cwd(conn: sqlite3.Connection, session_id: str) -> Optional[str]:
-    """Retrieve last known working directory for this session."""
+    """Last known working directory for this session.
+
+    Prefers the cwd observed from terminal tool output (overlay). Until a terminal tool runs
+    (first turn, or a delegated child that only uses file tools) it falls back to the cwd
+    Hermes recorded for this exact session id in ~/.hermes/state.db. That value is
+    session-scoped, so it cannot bleed context across sessions the way process cwd would.
+    """
     try:
         cursor = conn.execute("SELECT last_cwd FROM sessions WHERE session_id = ?", (session_id,))
         row = cursor.fetchone()
-        return row[0] if row and row[0] else None
+        if row and row[0]:
+            return row[0]
     except Exception:
+        pass
+    return get_hermes_session_cwd(session_id)
+
+
+def get_hermes_session_cwd(session_id: str) -> Optional[str]:
+    """cwd stored by Hermes for this session (read-only, fail-open to None)."""
+    db_path = os.environ.get("HERMES_STATE_DB") or os.path.expanduser("~/.hermes/state.db")
+    if not session_id or not os.path.exists(db_path):
+        return None
+    try:
+        with closing(sqlite3.connect(f"file:{db_path}?mode=ro", uri=True, timeout=0.2)) as hermes_db:
+            row = hermes_db.execute("SELECT cwd FROM sessions WHERE id = ?", (session_id,)).fetchone()
+        return row[0] if row and row[0] else None
+    except sqlite3.Error:
         return None
 
 
