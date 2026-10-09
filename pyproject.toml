@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "jit-context"
-version = "0.3.0"
+version = "0.4.0"
 description = "JIT-JEV Context OS: Epistemic Context Runtime & System 1 Gate for AI Agents"
 readme = "README.md"
 authors = [{ name = "Wojciech Wiesner", email = "wojciech@theones.io" }]
@@ -52,7 +52,7 @@ namespaces = true
 include = ["cognitive*", "context*", "health*", "installer*", "l0*", "l1*", "l2*", "telemetry*"]
 
 [tool.setuptools.package-data]
-health = ["*.html"]
+health = ["*.html", "*.css", "*.js"]
 
 [tool.setuptools.data-files]
 "share/jit-context" = ["src/plugin.yaml"]

@@ -8,8 +8,12 @@ Routes:
   GET /api/snapshot?run=<id>&session=<id>       -> benchmark run + cognition + JIT + JEV
   GET /api/stream?run=<id>                      -> SSE tail of the benchmark run.log
   GET /healthz                                  -> liveness probe for cmux Dock / launchd
+  GET /mc                                       -> Mission Control (live + cockpit + history)
+  GET /api/mc/projects | project?slug= | sessions?project=&hours=&limit= | whoami
+  GET /cockpit/<slug>                           -> the project's .planning/state.html
 
 Read-only by design: the panel never writes to run directories or telemetry databases.
+Access: loopback, or borg nginx with a Borg SSO identity header (health.mission_access).
 """
 from __future__ import annotations
 
@@ -21,7 +25,8 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, urlparse
 
-from health import livestream_data, livestream_session
+from health import livestream_data, livestream_session, mission_routes
+from health.mission_access import check_access
 
 HERE = Path(__file__).parent
 STATIC = {
@@ -29,6 +34,7 @@ STATIC = {
     "livestream_common.js": "text/javascript; charset=utf-8",
     "livestream_session.js": "text/javascript; charset=utf-8",
     "livestream_bench.js": "text/javascript; charset=utf-8",
+    **mission_routes.MC_STATIC,
 }
 DEFAULT_PORT = int(os.environ.get("JIT_LIVESTREAM_PORT", "8766"))
 BACKLOG_LINES = 400
@@ -52,16 +58,29 @@ class Handler(BaseHTTPRequestHandler):
     def _json(self, fn) -> None:
         try:
             self._send(200, json.dumps(fn(), default=str).encode(), "application/json")
+        except mission_routes.NotFound as exc:
+            self._send(404, json.dumps({"error": str(exc)}).encode(), "application/json")
         except Exception as exc:  # surface the real error, never a fake payload
             self._send(500, json.dumps({"error": f"{type(exc).__name__}: {exc}"}).encode(), "application/json")
 
     def do_GET(self) -> None:  # noqa: N802 - stdlib naming
+        access = check_access(self.client_address[0], self.headers)
+        if not access.allowed:
+            self._send(403, b'{"error":"forbidden"}', "application/json")
+            return
         url = urlparse(self.path)
         query = parse_qs(url.query)
         run_id = (query.get("run") or [None])[0]
         session_id = (query.get("session") or [None])[0]
         path = url.path.rstrip("/") or "/"
-        if path in ("/", "/index.html", "/live"):
+        mc_route = mission_routes.json_route(path, query, access.user, access.via)
+        if mc_route is not None:
+            self._json(mc_route)
+        elif path == "/mc":
+            self._send(200, mission_routes.page(), "text/html; charset=utf-8")
+        elif path.startswith("/cockpit/"):
+            self._cockpit(path)
+        elif path in ("/", "/index.html", "/live"):
             self._send(200, (HERE / "livestream.html").read_bytes(), "text/html; charset=utf-8")
         elif path.startswith("/static/") and path[8:] in STATIC:
             self._send(200, (HERE / path[8:]).read_bytes(), STATIC[path[8:]])
@@ -77,6 +96,12 @@ class Handler(BaseHTTPRequestHandler):
             self._run_stream(run_id)
         else:
             self._send(404, b'{"error":"not found"}', "application/json")
+
+    def _cockpit(self, path: str) -> None:
+        try:
+            self._send(200, mission_routes.cockpit_html(path), "text/html; charset=utf-8")
+        except mission_routes.NotFound as exc:
+            self._send(404, json.dumps({"error": str(exc)}).encode(), "application/json")
 
     def _open_sse(self) -> None:
         self.send_response(200)

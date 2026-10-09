@@ -25,13 +25,16 @@ LOCAL_MODELS: Dict[str, Dict[str, Any]] = {
     "qwen3.8:9b-64k": {"provider": "ollama", "port": 11434, "context": 65536, "desc": "Qwen 3.8 9B 64k Context"},
     "qwen3.8:9b": {"provider": "ollama", "port": 11434, "context": 32768, "desc": "Qwen 3.8 9B Base"},
     "qwen3.8:latest": {"provider": "ollama", "port": 11434, "context": 32768, "desc": "Qwen 3.8 Latest"},
+    "llama3.1:8b": {"provider": "ollama", "port": 11434, "context": 32768, "desc": "Llama 3.1 8B"},
     "norn-v18:9b": {"provider": "ollama", "port": 11434, "context": 65536, "desc": "Project Norn V18 9B"},
     "norn-v18:latest": {"provider": "ollama", "port": 11434, "context": 65536, "desc": "Project Norn V18 Latest"},
+    "norn-v18:64k": {"provider": "ollama", "port": 11434, "context": 65536, "desc": "Project Norn V18 64k Context"},
     "qwen2.5-coder:7b": {"provider": "ollama", "port": 11434, "context": 32768, "desc": "Qwen 2.5 Coder 7B"},
     "hf.co/empero-ai/Qwen3.8-9B-Distill-GGUF:Q4_K_M": {"provider": "ollama", "port": 11434, "context": 65536, "desc": "Qwen 3.8 Distill Full Tag"},
     # vmlx / MLX models on port 8195
     "JANGQ-AI/LFM2.5-8B-A1B-JANG_2L": {"provider": "vmlx", "port": 8195, "context": 32768, "desc": "Liquid LFM 2.5 8B Metal Native (vmlx)"},
     "lfm2.5-8b": {"provider": "vmlx", "port": 8195, "context": 32768, "desc": "Liquid LFM 2.5 8B Metal Alias (vmlx)"},
+    "lfm2.5:8b-a1b": {"provider": "ollama", "port": 11434, "context": 32768, "desc": "Liquid LFM 2.5 8B (Ollama)"},
 }
 
 @dataclass
