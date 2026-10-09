@@ -216,6 +216,12 @@ def pre_llm_call(ctx: Dict[str, Any]) -> Dict[str, Any]:
         l2_ms = compile_ms
         confidence = meta.get("confidence", 1.0)
         complexity = meta.get("complexity", "direct_fix")
+        try:
+            from context.small_model import apply_small_model_profile
+            capsule, small_meta = apply_small_model_profile(capsule, effective_user_message, ctx.get("model"), session_cwd=session_cwd)
+            meta.update(small_meta)
+        except Exception as e:
+            print(f"[ona-context:error] small_model_profile: {e}")
         
         # Check if project lacks canonical context and alert
         if active_scope and active_scope not in ["hermes", "default", "general"]:

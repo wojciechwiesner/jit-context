@@ -436,6 +436,9 @@ def main():
     init_parser.add_argument("path", nargs="?", default=".", help="Target project path")
     init_parser.add_argument("--tier", choices=["simple", "standard", "deep", "xhigh"], default="standard", help="Initialization depth")
     init_parser.add_argument("--goal", type=str, default=None, help="Explicit project goal")
+    init_parser.add_argument("--profile", choices=["default", "small"], default="default",
+                             help="small: also write .planning/CONTEXT_SMALL.md + jit.json for local 2-9B models")
+    init_parser.add_argument("--model", default=None, help="Target small model (with --profile small)")
 
     # jit mode
     mode_parser = subparsers.add_parser("mode", help="Get or set JIT operating mode (active, shadow, passive, off)")
@@ -752,6 +755,10 @@ def main():
 
     target_dir = Path(target_path).resolve()
     res = run_init(target_dir, tier=tier, goal=goal)
+    small_res = None
+    if getattr(args, "profile", "default") == "small":
+        from small_context import DEFAULT_SMALL_MODEL, write_small_profile
+        small_res = write_small_profile(target_dir, res["stack"], goal, model=args.model or DEFAULT_SMALL_MODEL)
 
     print("=" * 60)
     print(f"⚡ JIT CONTEXT OS — INITIALIZED: {res['project']}")
@@ -764,6 +771,9 @@ def main():
     print(f"• Zewnętrzne Zasoby (Context7/Docs): {len(res['external_resources'])} wykrytych")
     for r in res['external_resources']:
         print(f"   └─ [{r['type']}] {r['target']}: {r['description']}")
+    if small_res:
+        print(f"• Small-model brief: {small_res['brief']} ({small_res['brief_chars']} B)")
+        print(f"• Small profile: {small_res['profile']}  ->  hermes -p small chat")
     print("=" * 60)
 
 if __name__ == "__main__":
