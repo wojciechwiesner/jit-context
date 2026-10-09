@@ -202,7 +202,8 @@ def get_session_cwd(conn: sqlite3.Connection, session_id: str) -> Optional[str]:
 
 def get_hermes_session_cwd(session_id: str) -> Optional[str]:
     """cwd stored by Hermes for this session (read-only, fail-open to None)."""
-    db_path = os.environ.get("HERMES_STATE_DB") or os.path.expanduser("~/.hermes/state.db")
+    hermes_home = os.environ.get("HERMES_HOME") or os.path.expanduser("~/.hermes")
+    db_path = os.environ.get("HERMES_STATE_DB") or os.path.join(hermes_home, "state.db")
     if not session_id or not os.path.exists(db_path):
         return None
     try:

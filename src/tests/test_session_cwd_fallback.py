@@ -41,3 +41,12 @@ def test_unknown_session_or_missing_db_is_none(tmp_path, monkeypatch):
     _hermes_db(db, [("s1", "/repo/a")])
     monkeypatch.setenv("HERMES_STATE_DB", str(db))
     assert overlay.get_session_cwd(_overlay_db(), "someone-else") is None
+
+
+def test_profile_hermes_home_state_db(tmp_path, monkeypatch):
+    profile_home = tmp_path / "profiles" / "small"
+    profile_home.mkdir(parents=True)
+    _hermes_db(profile_home / "state.db", [("p1", "/repo/from-profile")])
+    monkeypatch.delenv("HERMES_STATE_DB", raising=False)
+    monkeypatch.setenv("HERMES_HOME", str(profile_home))
+    assert overlay.get_session_cwd(_overlay_db(), "p1") == "/repo/from-profile"
