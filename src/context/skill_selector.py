@@ -7,6 +7,7 @@ from STACK_SKILL_HINTS. Ties break on name, so two runs give identical output.
 
 import json
 import math
+import re
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Sequence, Tuple
@@ -46,6 +47,8 @@ HINT_NAME_BOOST = 3.0
 HINT_TAG_BOOST = 1.5
 TEXT_HINT_FACTOR = 0.5
 SCORE_PRECISION = 3
+# Single-word project names shorter than this ("tmp") are too generic to mark a skill as foreign.
+FOREIGN_NAME_MIN_LEN = 4
 
 
 @dataclass(frozen=True)
@@ -105,8 +108,8 @@ def _signal_weights(signals: ProjectSignals) -> Dict[str, float]:
             if token not in GENERIC_STACK_TOKENS:
                 weights[token] = STACK_SIGNAL_WEIGHT
     for token in _stems(signals.name.replace("-", " ").replace("_", " ")):
-        if token not in TEXT_STOPWORDS:
-            weights[token] = STACK_SIGNAL_WEIGHT
+        # The project's own name is always a strong signal, even if it is a README stopword ("jit", "context").
+        weights[token] = STACK_SIGNAL_WEIGHT
     for token in signals.text_tokens:
         weights.setdefault(_stem(token), TEXT_SIGNAL_WEIGHT)
     return weights
@@ -228,6 +231,34 @@ def _knowhow_docs(root: Path) -> List[_Doc]:
     return docs
 
 
+def _foreign_project_tokens(signals: ProjectSignals) -> frozenset:
+    """Names of OTHER known projects; a skill named after one of them belongs to that project.
+
+    A project that this project's docs mention often (e.g. "hermes" in jit-context) is not foreign.
+    """
+    from l1.scope import get_known_projects
+    own = _stems(signals.name.replace("-", " ").replace("_", " "))
+    own |= {_stem(tok) for tok in signals.frequent_text_tokens}
+    foreign = set()
+    for name in get_known_projects():
+        is_single_word = re.fullmatch(r"[a-z]+", name) is not None
+        if is_single_word and len(name) >= FOREIGN_NAME_MIN_LEN and _stem(name) not in own:
+            foreign.add(_stem(name))
+    return frozenset(foreign)
+
+
+def _drop_foreign(ranked: List[Pick], docs: Sequence[_Doc], foreign: frozenset, own: frozenset) -> List[Pick]:
+    """Drop skills named after another project, unless the name also carries this project's name."""
+    name_tokens = {doc.key: doc.name_tokens for doc in docs}
+    kept = []
+    for pick in ranked:
+        tokens = name_tokens.get(pick.name, frozenset())
+        is_foreign = bool(tokens & foreign) and not (tokens & own)
+        if pick.name in ALWAYS_MUST or not is_foreign:
+            kept.append(pick)
+    return kept
+
+
 def select_skills(
     project: Path,
     stack: Dict[str, Any],
@@ -239,7 +270,9 @@ def select_skills(
     skills = scan_skills(skills_root) if skills_root else scan_skills()
     by_name = {skill.name: skill for skill in skills}
     signals = collect_signals(project, stack, dossier_file)
-    ranked = _rank([_skill_doc(skill) for skill in skills], signals)
+    docs = [_skill_doc(skill) for skill in skills]
+    own_name = _stems(signals.name.replace("-", " ").replace("_", " "))
+    ranked = _drop_foreign(_rank(docs, signals), docs, _foreign_project_tokens(signals), own_name)
     present_always = [name for name in ALWAYS_MUST if name in by_name]
     must, optional = _split_tiers(ranked, present_always)
     notes = _rank(_knowhow_docs(knowhow_root or DEFAULT_KNOWHOW_ROOT), signals)

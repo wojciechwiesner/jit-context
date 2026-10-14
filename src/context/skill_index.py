@@ -5,6 +5,7 @@ minimal parser, so no PyYAML dependency is needed. Parsed entries are cached
 in-process by (path, mtime).
 """
 
+import os
 import re
 from dataclasses import dataclass
 from pathlib import Path
@@ -123,12 +124,21 @@ def _load_entry(path: Path) -> Optional[SkillEntry]:
     return _CACHE[key]
 
 
+def _iter_skill_files(root: Path) -> List[Path]:
+    """All SKILL.md files under root, following symlinked skill dirs (Path.rglob does not)."""
+    found = []
+    for dirpath, _dirnames, filenames in os.walk(root, followlinks=True):
+        if SKILL_FILENAME in filenames:
+            found.append(Path(dirpath) / SKILL_FILENAME)
+    return sorted(found)
+
+
 def scan_skills(root: Path = DEFAULT_SKILLS_ROOT) -> List[SkillEntry]:
     """Return all skills under root, sorted by name (first path wins on duplicates)."""
     if not root.is_dir():
         return []
     by_name: Dict[str, SkillEntry] = {}
-    for path in sorted(root.rglob(SKILL_FILENAME)):
+    for path in _iter_skill_files(root):
         if _is_excluded(path, root):
             continue
         entry = _load_entry(path)

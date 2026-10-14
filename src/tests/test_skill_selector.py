@@ -122,3 +122,27 @@ def test_write_merges_jit_json_and_renders_capsule_pointers(project, skills_root
 
 def test_pointers_absent_without_profile(project):
     assert skill_pointers(str(project)) == []
+
+
+def test_skills_of_other_projects_dropped_own_kept(tmp_path, monkeypatch):
+    # Known projects come from ~/Projects/active; point HOME at a fake tree so the test is host-independent.
+    monkeypatch.setenv("HOME", str(tmp_path))
+    for name in ("faktury", "boocco"):
+        (tmp_path / "Projects" / "active" / name).mkdir(parents=True)
+    root = tmp_path / "skills"
+    make_skill(root, "boocco-app-development", "Boocco Next.js app with Python helpers", "python, pytest")
+    make_skill(root, "faktury-invoiceflow-project", "InvoiceFlow faktury Python service", "python, pytest")
+    project = tmp_path / "Projects" / "active" / "faktury"
+    selection = select_skills(project, PY_STACK, skills_root=root, knowhow_root=tmp_path / "none")
+    picked = names(selection.must) + names(selection.optional)
+    assert "faktury-invoiceflow-project" in picked
+    assert "boocco-app-development" not in picked
+
+
+def test_index_follows_symlinked_skill_dirs(tmp_path):
+    real = tmp_path / "elsewhere"
+    make_skill(real, "linked-skill", "A skill installed as a symlink")
+    root = tmp_path / "skills"
+    root.mkdir()
+    (root / "linked").symlink_to(real / "cat" / "linked-skill", target_is_directory=True)
+    assert "linked-skill" in [s.name for s in skill_index.scan_skills(root)]
