@@ -20,12 +20,40 @@ LATEST_CONTEXT_SYMLINK = STATE_DIR / "latest_context.xml"
 
 import re
 
+# (sessions root, safe session id) -> pinned session dir; avoids a glob per hook call
+_SESSION_DIR_CACHE: Dict[Tuple[str, str], Path] = {}
+
+
+def _find_existing_session_dir(safe_id: str) -> Optional[Path]:
+    """Return the oldest existing SESSIONS_DIR/<scope>/<safe_id> dir, if any (first-created wins)."""
+    key = (str(SESSIONS_DIR), safe_id)
+    cached = _SESSION_DIR_CACHE.get(key)
+    if cached is not None and cached.is_dir():
+        return cached
+    candidates = [p for p in SESSIONS_DIR.glob(f"*/{safe_id}") if p.is_dir()]
+    if not candidates:
+        _SESSION_DIR_CACHE.pop(key, None)
+        return None
+    # Tie-break on path so the choice is deterministic when mtimes are equal.
+    pinned = min(candidates, key=lambda p: (p.stat().st_mtime, str(p)))
+    _SESSION_DIR_CACHE[key] = pinned
+    return pinned
+
+
 def get_session_dir(session_id: str, project: Optional[str] = None) -> Path:
-    """Return dedicated directory for session state isolation, partitioned by project/session_id."""
-    safe_project = re.sub(r'[^a-zA-Z0-9_\-]', '_', str(project or "general")).strip() or "general"
+    """Return the session state dir, pinned to the scope the session was first created under.
+
+    `project` only decides the scope of a brand-new session; once a dir exists for this
+    session_id under any scope it is reused, so a mid-session scope change cannot fork state.
+    """
     safe_id = re.sub(r'[^a-zA-Z0-9_\-]', '_', str(session_id or "default"))
+    existing = _find_existing_session_dir(safe_id)
+    if existing is not None:
+        return existing
+    safe_project = re.sub(r'[^a-zA-Z0-9_\-]', '_', str(project or "general")).strip() or "general"
     s_dir = SESSIONS_DIR / safe_project / safe_id
     s_dir.mkdir(parents=True, exist_ok=True)
+    _SESSION_DIR_CACHE[(str(SESSIONS_DIR), safe_id)] = s_dir
     return s_dir
 
 def get_session_db_path(session_id: str, project: Optional[str] = None) -> Path:

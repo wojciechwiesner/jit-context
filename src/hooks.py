@@ -387,6 +387,8 @@ def pre_llm_call(ctx: Dict[str, Any]) -> Dict[str, Any]:
             # Project & global latest symlinks
             try:
                 scope_symlink = SESSIONS_DIR / active_scope / "latest_context.xml"
+                # The session dir may be pinned to another scope, so the scope dir can be missing.
+                scope_symlink.parent.mkdir(parents=True, exist_ok=True)
                 if scope_symlink.is_symlink() or scope_symlink.exists():
                     scope_symlink.unlink()
                 scope_symlink.symlink_to(capsule_path)
