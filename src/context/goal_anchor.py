@@ -26,6 +26,10 @@ from dataclasses import dataclass
 from typing import List, Tuple
 
 DEFAULT_LIMIT = 300
+# Static prefix of the extract marker rendered by GoalAnchor.render() below; exported so
+# downstream consumers (e.g. the turn autochecker) can detect an anchored, non-truncated
+# goal without duplicating this literal.
+ANCHOR_MARKER = "[ANCHOR: verbatim extract"
 
 _FENCE_RE = re.compile(r"```.*?```", re.DOTALL)
 _SENT_SPLIT_RE = re.compile(r"(?<=[.!?…])\s+|\n+")
@@ -59,7 +63,7 @@ class GoalAnchor:
         if self.is_verbatim_full:
             return self.text
         return (
-            f"{self.text} [ANCHOR: verbatim extract, not a summary; full message "
+            f"{self.text} {ANCHOR_MARKER}, not a summary; full message "
             f"({self.source_chars} chars, #{self.source_hash}) is the user turn itself]"
         )
 

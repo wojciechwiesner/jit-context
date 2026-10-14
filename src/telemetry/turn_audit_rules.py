@@ -9,6 +9,8 @@ import json
 import re
 from typing import Any, Dict, List, Optional
 
+from context.goal_anchor import ANCHOR_MARKER
+
 # key: (title, component, severity, proposal)
 CATALOG: Dict[str, tuple] = {
     "capsule_missing": ("No JIT capsule for this turn", "JIT L0 / pre_llm hook", "high",
@@ -66,6 +68,26 @@ STOP = set("a i w z na do to że się nie jak co czy po tak ten ta the and of to
 PL_WORDS = re.compile(r"\b(jest|nie|się|oraz|żeby|czy|jak|dla|teraz|zrób|zrob|sprawdz|sprawdź|działa|dzialal|gotowe|tak|też|tez)\b", re.I)
 PL_CHARS = re.compile(r"[ąćęłńóśźż]", re.I)
 
+CLAIM_WORDS = r"(działa|gotowe|zrobione|wdrożone|naprawione|works|fixed|deployed|all tests pass)"
+CLAIM_RE = re.compile(rf"\b{CLAIM_WORDS}\b", re.I)
+# A claim preceded (within a short span, same clause) by a negation or conditional cue is not an
+# assertion of success, e.g. "nie działa", "not fixed yet", "if it works".
+NEGATION_CUE_RE = re.compile(
+    r"\b(nie|not|don't|do not|doesn't|didn't|isn't|wasn't|never|if|jeśli|jesli|gdy|czy|kiedy)\b[^.!?\n]{0,40}$", re.I,
+)
+# Runtime proof embedded directly in the output text (exit code, pytest summary, HTTP status).
+RUNTIME_PROOF_RE = re.compile(
+    r"\bexit(?:[_ ]?code)?\s*[=:]?\s*0\b|\b\d+\s+passed\b|\bHTTP/?\d(?:\.\d)?\s+200\b|\b200\s+OK\b", re.I,
+)
+
+
+def first_asserted_claim(text: str) -> Optional["re.Match[str]"]:
+    """First success claim not preceded (same clause, short span) by a negation/conditional cue."""
+    for m in CLAIM_RE.finditer(text):
+        if not NEGATION_CUE_RE.search(text[max(0, m.start() - 60):m.start()]):
+            return m
+    return None
+
 
 def finding(key: str, evidence: str) -> Dict[str, Any]:
     title, component, severity, proposal = CATALOG[key]
@@ -100,7 +122,8 @@ def check_alignment(prompt: str, capsule: Optional[str], cap: Dict[str, Any], go
         else:
             if cap["goal"] and overlap(prompt, cap["goal"]) < 0.3 and overlap(cap["goal"], prompt) < 0.5:
                 out.append(finding("capsule_goal_stale", f"prompt='{prompt[:90]}' vs capsule goal='{cap['goal'][:90]}'"))
-            elif cap["goal"] and len(prompt) > 140 and len(cap["goal"]) < 0.6 * len(prompt):
+            elif (cap["goal"] and ANCHOR_MARKER not in cap["goal"] and len(prompt) > 140
+                  and len(cap["goal"]) < 0.6 * len(prompt)):
                 out.append(finding("capsule_goal_truncated", f"prompt {len(prompt)} chars, capsule goal {len(cap['goal'])} chars"))
             if edited and not (cap["spec"] or cap["criteria"]):
                 out.append(finding("spec_missing", f"{len(edited)} edits, capsule has no spec/criteria"))
@@ -119,8 +142,8 @@ def check_alignment(prompt: str, capsule: Optional[str], cap: Dict[str, Any], go
 def check_output(prompt: str, output: str, tools: List[Dict[str, Any]], verify: set, code_ext) -> List[Dict[str, Any]]:
     out: List[Dict[str, Any]] = []
     names = [t["name"] for t in tools]
-    claim = re.search(r"\b(działa|gotowe|zrobione|wdrożone|naprawione|works|fixed|deployed|all tests pass)\b", output or "", re.I)
-    if claim and not any(n in verify for n in names):
+    claim = first_asserted_claim(output or "")
+    if claim and not any(n in verify for n in names) and not RUNTIME_PROOF_RE.search(output or ""):
         out.append(finding("claim_without_proof", f"output claims '{claim.group(0)}' with tools={sorted(set(names))[:5]}"))
     last_verify = max((i for i, n in enumerate(names) if n in verify), default=-1)
     late_edits = [str(t["args"].get("path", "")) for i, t in enumerate(tools)

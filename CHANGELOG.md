@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Pi coding agent host (`src/installer/pi.py`, `integrations/pi/jit-context.ts`): installs the capsule-injection/observation-recording extension into `~/.pi/agent/extensions/` and adds `~/.hermes/skills` to Pi's `settings.json` skills path. Registered in `installer/cli.py` HOSTS.
 
 ### Fixed
+- Turn autochecker false positives: synthetic prompts (`[ASYNC DELEGATION`, `[IMPORTANT:` family) are never aligned against the capsule goal (`capsule_goal_stale`); goals carrying `goal_anchor.ANCHOR_MARKER` are not `capsule_goal_truncated`; `claim_without_proof` ignores negated/conditional claims and output containing exit=0 / `N passed` / HTTP 200 proof.
 - JIT scope for delegated subagents and first turns: `get_session_cwd` now falls back to the cwd Hermes stores for that exact session id (`~/.hermes/state.db`, read-only) until a terminal tool reports one. Children that only use file tools previously got scope `general` and an empty capsule (no project state, no JEV facts), e.g. on the local LFM fallback route.
 - `jit init`: external resources are deduplicated by (type, target); a project with both SQLAlchemy and SQLModel listed `context7 sqlmodel` twice. Test: `src/tests/test_init_dossier.py::test_external_resources_dedupe_shared_target`.
 
