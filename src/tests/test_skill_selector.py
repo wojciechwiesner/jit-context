@@ -118,6 +118,9 @@ def test_write_merges_jit_json_and_renders_capsule_pointers(project, skills_root
     pointers = skill_pointers(str(project))
     assert "@skill:vitest-frontend-testing" in pointers
     assert all(not p.startswith("@skill:") or " " not in p for p in pointers)
+    allowlist = (project / ".hermes" / "skill-allowlist").read_text(encoding="utf-8").splitlines()
+    assert allowlist[0].startswith("#")
+    assert allowlist[1:] == names(selection.must) + names(selection.optional)
 
 
 def test_pointers_absent_without_profile(project):

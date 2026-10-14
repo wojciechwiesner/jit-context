@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- `jit skills --write` also writes `<project>/.hermes/skill-allowlist` (must-have + optional) for Hermes' per-project skills index (NousResearch/hermes-agent#138354); ignored by Hermes versions without that support.
+
 ## [0.5.0] - 2026-10-14
 
 ### Added

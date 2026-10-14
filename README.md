@@ -242,6 +242,10 @@ jit skills sync ../myapp-worktree             # symlink must-have skills into <w
 
 The capsule then carries `@skill:<name>` pointers for must-have skills and one `@skills:optional:` line (names only, never skill content). Adjust by hand with `.planning/skills.override.json`: `{"must_add": [], "must_remove": [], "optional_add": []}`.
 
+`--write` also writes `<project>/.hermes/skill-allowlist` (must-have, then optional). Hermes uses it to list only those skills in the system-prompt skills index for that repo once the project is trusted (`hermes skills trust`); `skill_view` can still load any skill on demand. This needs Hermes with per-project allowlist support ([NousResearch/hermes-agent#138354](https://github.com/NousResearch/hermes-agent/pull/138354)); older Hermes simply ignores the file.
+
+Why an allowlist and not one Hermes profile per project: a profile is a full isolated home (own memory, sessions, cron, gateway state, credentials), so per-project profiles would split memory and history across ~100 repos, and Hermes has no cwd-based automatic profile selection. Narrowing the skills index per trusted repo gives the token and focus win without fragmenting state.
+
 ## Development workflow
 
 This repository is the single source of truth. Installed copies are read-only snapshots that the next install overwrites, so never edit them (`~/.hermes/plugins/ona-context`, `~/.claude/hooks`, `~/.claude/jit-context-runtime`, the Agent Zero container, the `jit-context-os` mirror).
