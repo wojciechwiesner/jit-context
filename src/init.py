@@ -22,6 +22,11 @@ from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Any, Optional
 
+from context.stack_signals import (
+    DEFAULT_PACKAGE_MANAGER, SKIP_DIRS, classify_python, detect_package_manager,
+    knowledge_for_stack, node_test_command, parse_node_package,
+)
+
 OBSIDIAN_VAULT = Path(os.path.expanduser("~/Documents/Wojciech"))
 OBSIDIAN_PROJECTS_DIR = OBSIDIAN_VAULT / "projects"
 OBSIDIAN_KNOWHOW_DIR = OBSIDIAN_VAULT / "knowhow"
@@ -64,69 +69,55 @@ class ProjectScanner:
     def detect_stack(self) -> Dict[str, Any]:
         stack = {
             "languages": [],
+            "helper_languages": [],
             "frameworks": [],
             "databases": [],
             "package_managers": [],
+            "package_manager": None,
+            "test_command": None,
+            "libraries": [],
             "test_runners": [],
             "entrypoints": []
         }
 
         # Check Node / JS / TS (root + first-level subdirs, e.g. site/, web/)
-        skip_dirs = {"node_modules", ".git", ".next", "venv", ".venv", "__pycache__", "dist", "build", ".turbo"}
         pkg_jsons = [self.target_dir / "package.json"] + sorted(
             d / "package.json" for d in self.target_dir.iterdir()
-            if d.is_dir() and d.name not in skip_dirs and not d.name.startswith(".")
+            if d.is_dir() and d.name not in SKIP_DIRS and not d.name.startswith(".")
         )
         for pkg_json in (p for p in pkg_jsons if p.exists()):
-            stack["package_managers"].append("npm/yarn/pnpm")
-            try:
-                data = json.loads(pkg_json.read_text(encoding="utf-8"))
-                deps = {**data.get("dependencies", {}), **data.get("devDependencies", {})}
-                if "next" in deps: stack["frameworks"].append("Next.js")
-                if "react" in deps: stack["frameworks"].append("React")
-                if "astro" in deps: stack["frameworks"].append("Astro")
-                if "vue" in deps: stack["frameworks"].append("Vue")
-                if "express" in deps: stack["frameworks"].append("Express")
-                if "fastify" in deps: stack["frameworks"].append("Fastify")
-                if "prisma" in deps: stack["databases"].append("Prisma")
-                if "drizzle-orm" in deps: stack["databases"].append("Drizzle")
-                if "typescript" in deps: stack["languages"].append("TypeScript")
-                else: stack["languages"].append("JavaScript")
-                if "vitest" in deps: stack["test_runners"].append("Vitest")
-                if "jest" in deps: stack["test_runners"].append("Jest")
-            except Exception:
-                stack["languages"].append("JavaScript")
+            manager = detect_package_manager(pkg_json.parent)
+            stack["package_manager"] = stack["package_manager"] or manager
+            stack["test_command"] = stack["test_command"] or node_test_command(pkg_json.parent)
+            node = parse_node_package(pkg_json)
+            stack["languages"].append(node["language"])
+            for key in ("frameworks", "databases", "test_runners", "libraries"):
+                stack[key].extend(node[key])
+        if stack["package_manager"] or any(p.exists() for p in pkg_jsons):
+            stack["package_managers"].append(stack["package_manager"] or DEFAULT_PACKAGE_MANAGER)
 
-        # Check Python
-        pyproject = self.target_dir / "pyproject.toml"
-        reqs = self.target_dir / "requirements.txt"
-        setup_py = self.target_dir / "setup.py"
-        py_files = []
-        for root, dirs, files in os.walk(self.target_dir):
-            dirs[:] = [d for d in dirs if d not in skip_dirs and not d.startswith(".")]
-            for f in files:
-                if f.endswith(".py"):
-                    py_files.append(Path(root) / f)
-                    if len(py_files) >= 20:
-                        break
-            if len(py_files) >= 20:
-                break
-
-        if pyproject.exists() or reqs.exists() or setup_py.exists() or py_files:
+        # Check Python: manifest or a meaningful share of product code, not helper scripts
+        python = classify_python(self.target_dir)
+        if python["helper_only"]:
+            stack["helper_languages"].append("Python")
+        if python["primary"]:
             stack["languages"].append("Python")
             content = ""
-            if reqs.exists(): content += reqs.read_text(encoding="utf-8", errors="ignore")
-            if pyproject.exists(): content += pyproject.read_text(encoding="utf-8", errors="ignore")
-            for pyf in py_files:
+            for manifest in ["pyproject.toml", "setup.py", "Pipfile", *sorted(p.name for p in self.target_dir.glob("requirements*.txt"))]:
+                mf = self.target_dir / manifest
+                if mf.exists(): content += mf.read_text(encoding="utf-8", errors="ignore")
+            for pyf in python["files"]:
                 content += pyf.read_text(encoding="utf-8", errors="ignore")[:500] + "\n"
-            if "fastapi" in content.lower(): stack["frameworks"].append("FastAPI")
-            if "flask" in content.lower(): stack["frameworks"].append("Flask")
-            if "django" in content.lower(): stack["frameworks"].append("Django")
-            if "sqlite" in content.lower() or "sqlite3" in content.lower(): stack["databases"].append("SQLite WAL")
-            if "sqlmodel" in content.lower(): stack["databases"].append("SQLModel")
-            if "sqlalchemy" in content.lower(): stack["databases"].append("SQLAlchemy")
-            if "asyncpg" in content.lower(): stack["databases"].append("asyncpg (PostgreSQL)")
-            if "pytest" in content.lower(): stack["test_runners"].append("pytest")
+            content = content.lower()
+            if "fastapi" in content: stack["frameworks"].append("FastAPI")
+            if "flask" in content: stack["frameworks"].append("Flask")
+            if "django" in content: stack["frameworks"].append("Django")
+            if "sqlite" in content: stack["databases"].append("SQLite WAL")
+            if "sqlmodel" in content: stack["databases"].append("SQLModel")
+            if "sqlalchemy" in content: stack["databases"].append("SQLAlchemy")
+            if "asyncpg" in content: stack["databases"].append("asyncpg (PostgreSQL)")
+            if "pydantic" in content: stack["libraries"].append("Pydantic")
+            if "pytest" in content: stack["test_runners"].append("pytest")
 
         # Check Rust
         cargo = self.target_dir / "Cargo.toml"
@@ -139,8 +130,9 @@ class ProjectScanner:
             stack["frameworks"].append("Docker")
 
         # Deduplicate
-        for k in stack:
-            stack[k] = sorted(list(set(stack[k])))
+        for k, v in stack.items():
+            if isinstance(v, list):
+                stack[k] = sorted(set(v))
         return stack
 
     def inspect_structure(self) -> Dict[str, Any]:
@@ -167,30 +159,7 @@ class ProjectScanner:
         }
 
     def infer_required_external_knowledge(self, stack: Dict[str, Any]) -> List[Dict[str, str]]:
-        resources = []
-        for framework in stack.get("frameworks", []):
-            if framework == "FastAPI":
-                resources.append({"type": "context7", "target": "fastapi", "description": "Latest FastAPI routing & async dependency injection"})
-            elif framework == "Next.js":
-                resources.append({"type": "context7", "target": "next", "description": "Next.js App Router & Server Actions API"})
-            elif framework == "Docker":
-                resources.append({"type": "knowhow", "target": "devops/deployment-pitfalls", "description": "Borg tools Docker deployment canon"})
-
-        for db in stack.get("databases", []):
-            if "SQLModel" in db or "SQLAlchemy" in db:
-                resources.append({"type": "context7", "target": "sqlmodel", "description": "SQLModel AsyncEngine & Pydantic v2 validation"})
-            elif "Prisma" in db:
-                resources.append({"type": "context7", "target": "prisma", "description": "Prisma client schema migration rules"})
-
-        # Several stack signals map to one resource (SQLAlchemy + SQLModel -> sqlmodel).
-        unique: List[Dict[str, str]] = []
-        seen = set()
-        for res in resources:
-            key = (res["type"], res["target"])
-            if key not in seen:
-                seen.add(key)
-                unique.append(res)
-        return unique
+        return knowledge_for_stack(stack)
 
 def fetch_and_synthesize_deep_knowledge(target_dir: Path, stack: Dict[str, Any], tier: str = "deep") -> Dict[str, str]:
     """Generates authoritative, up-to-date cheat sheets and links relevant knowhow."""

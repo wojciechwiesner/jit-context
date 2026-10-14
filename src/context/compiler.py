@@ -13,6 +13,7 @@ from l2.triggers import should_trigger_deep_retrieval
 from l2.client import query_deep_context
 from config import L2_ENABLED
 from context.cascade_distiller import distill_context_cascade
+from context.stack_signals import infer_verify_command
 
 class CapsuleResult(str):
     """String subclass allowing tuple unpacking for backward compatibility."""
@@ -222,13 +223,9 @@ def compile_context(
         dev_runtime["cwd"] = str(session_cwd)
     if not dev_runtime.get("verify_cmd") and session_cwd:
         try:
-            cwd_p = Path(session_cwd)
-            if (cwd_p / "pytest.ini").exists() or (cwd_p / "tests").exists() or (cwd_p / "pyproject.toml").exists():
-                dev_runtime["verify_cmd"] = "pytest"
-            elif (cwd_p / "package.json").exists():
-                dev_runtime["verify_cmd"] = "npm test"
-            elif (cwd_p / "Cargo.toml").exists():
-                dev_runtime["verify_cmd"] = "cargo test"
+            verify_cmd = infer_verify_command(Path(session_cwd))
+            if verify_cmd:
+                dev_runtime["verify_cmd"] = verify_cmd
         except Exception:
             pass
     if not dev_runtime.get("allowed_tools") and kwargs.get("allowed_tools"):

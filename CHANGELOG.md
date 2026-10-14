@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Pi coding agent host (`src/installer/pi.py`, `integrations/pi/jit-context.ts`): installs the capsule-injection/observation-recording extension into `~/.pi/agent/extensions/` and adds `~/.hermes/skills` to Pi's `settings.json` skills path. Registered in `installer/cli.py` HOSTS.
 
 ### Fixed
+- `jit init` stack detection and capsule verify command: Python no longer detected from helper scripts (`scripts/`, `tools/`, `bin/`, `docs/`) without a manifest (reported as `helper_languages`); Node detection adds Vite, Vitest, Lit, Svelte, Vue, Hono, Tailwind, Playwright, `package_manager` from lockfile priority and `test_command` from `scripts.test`; external knowledge is a data table; verify command is `<pm> run test` for Node repos instead of `pytest` from a bare `tests/` dir. Shared logic in `src/context/stack_signals.py`.
 - JIT scope for delegated subagents and first turns: `get_session_cwd` now falls back to the cwd Hermes stores for that exact session id (`~/.hermes/state.db`, read-only) until a terminal tool reports one. Children that only use file tools previously got scope `general` and an empty capsule (no project state, no JEV facts), e.g. on the local LFM fallback route.
 - `jit init`: external resources are deduplicated by (type, target); a project with both SQLAlchemy and SQLModel listed `context7 sqlmodel` twice. Test: `src/tests/test_init_dossier.py::test_external_resources_dedupe_shared_target`.
 
