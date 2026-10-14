@@ -48,7 +48,8 @@ def test_git_worktree_resolves_main_repo(home, tmp_path):
     assert scope_from_cwd(str(wt)) == "jit-context"
 
 
-def test_prompt_mention_does_not_hijack_cwd_scope():
+def test_prompt_mention_does_not_hijack_cwd_scope(home):
+    # `home` fixture creates Projects/active/autocheck, so the test does not depend on the host's real dirs (CI).
     active, retrieval, _, _ = resolve_scope("sprawdz autocheck", "general", cwd_scope="jit-context")
     assert active == "jit-context"
     assert "autocheck" in retrieval
