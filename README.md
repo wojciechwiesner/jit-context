@@ -230,6 +230,18 @@ One repository, one installer, four agent hosts. Versions are independent:
 
 `jit-context-os` is the root-level mirror of `integrations/agent-zero/` that the Agent Zero Plugin Hub needs; issues, PRs and stars belong here. The [verified Agent Zero production rollout](docs/plans/2026-09-24-agent-zero-integration.md) is recorded separately.
 
+## Per-project skills
+
+`jit init` profiles the project and selects the skills it needs from the local skill base (`~/.hermes/skills`), plus related Obsidian knowhow notes. Scoring is deterministic (token overlap of stack, name, README and dossier signals against skill name/tags/description, plus `STACK_SKILL_HINTS` boosts); no LLM is involved.
+
+```bash
+jit skills ~/Projects/active/myapp            # dry-run: print must / optional / knowhow
+jit skills ~/Projects/active/myapp --write    # write .planning/SKILLS.md + "skills" in .planning/jit.json
+jit skills sync ../myapp-worktree             # symlink must-have skills into <worktree>/.claude/skills/
+```
+
+The capsule then carries `@skill:<name>` pointers for must-have skills and one `@skills:optional:` line (names only, never skill content). Adjust by hand with `.planning/skills.override.json`: `{"must_add": [], "must_remove": [], "optional_add": []}`.
+
 ## Development workflow
 
 This repository is the single source of truth. Installed copies are read-only snapshots that the next install overwrites, so never edit them (`~/.hermes/plugins/ona-context`, `~/.claude/hooks`, `~/.claude/jit-context-runtime`, the Agent Zero container, the `jit-context-os` mirror).

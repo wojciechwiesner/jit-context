@@ -328,6 +328,10 @@ def compile_context(
         except Exception:
             pass
 
+    if session_cwd:
+        from context.skill_output import skill_pointers
+        available_pointers.extend(p for p in skill_pointers(session_cwd) if p not in available_pointers)
+
     # Domain & Tool Source Routing (Resolves WhatsApp, Sessions/Observatory, Media/VLM, Decision Trees)
     try:
         from context.domain_router import resolve_domain_routing

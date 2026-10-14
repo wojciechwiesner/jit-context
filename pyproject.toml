@@ -44,7 +44,7 @@ jit-livestream = "health.livestream:main"
 
 [tool.setuptools]
 package-dir = {"" = "src"}
-py-modules = ["broker_client", "config", "hooks", "init", "mcp_server", "session_overlay"]
+py-modules = ["broker_client", "config", "hooks", "init", "mcp_server", "session_overlay", "skills_cli"]
 
 [tool.setuptools.packages.find]
 where = ["src"]

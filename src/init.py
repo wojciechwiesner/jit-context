@@ -22,6 +22,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Any, Optional
 
+from skills_cli import write_project_skills
 from context.stack_signals import (
     DEFAULT_PACKAGE_MANAGER, SKIP_DIRS, classify_python, detect_package_manager,
     knowledge_for_stack, node_test_command, parse_node_package,
@@ -379,8 +380,11 @@ def run_init(target_path: Path, tier: str = "standard", goal: Optional[str] = No
         except Exception:
             pass
 
+    skills_written = write_project_skills(target_path, stack, obsidian_file)
+
     return {
         "status": "success",
+        "skills": skills_written,
         "project": scanner.name,
         "path": str(scanner.target_dir),
         "tier": tier,
@@ -393,7 +397,7 @@ def run_init(target_path: Path, tier: str = "standard", goal: Optional[str] = No
     }
 
 def main():
-    known_cmds = {"init", "mode", "config", "configure", "off", "on", "status", "doctor", "stream", "jev", "worker", "solve", "install", "uninstall", "-h", "--help"}
+    known_cmds = {"init", "mode", "config", "configure", "off", "on", "status", "doctor", "stream", "jev", "worker", "solve", "skills", "install", "uninstall", "-h", "--help"}
     if len(sys.argv) > 1 and sys.argv[1] not in known_cmds:
         sys.argv.insert(1, "init")
 
@@ -446,6 +450,9 @@ def main():
     for action in ("install", "uninstall"):
         installer_cli.add_arguments(subparsers.add_parser(action, help=f"{action.capitalize()} JIT Context for detected agent hosts"))
 
+    import skills_cli
+    skills_cli.add_arguments(subparsers.add_parser("skills", help="Show/write per-project skill selection; 'sync <worktree>' links must-have skills"))
+
     # Allow running directly as 'jit <path>' without subcommand
     parser.add_argument("direct_path", nargs="?", default=None, help=argparse.SUPPRESS)
     parser.add_argument("--tier", choices=["simple", "standard", "deep", "xhigh"], default="standard", help=argparse.SUPPRESS)
@@ -460,6 +467,9 @@ def main():
 
     if cmd in ("install", "uninstall"):
         sys.exit(installer_cli.main(cmd, args))
+
+    if cmd == "skills":
+        sys.exit(skills_cli.main(args))
 
     # Subcommand: jit mode
     if cmd == "mode":
