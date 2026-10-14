@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-10-14
+
 ### Added
 - Per-project skill selection: `jit init` now picks must-have / optional skills from `~/.hermes/skills` and relevant knowhow notes from `~/Documents/Wojciech/knowhow` with deterministic scoring (`context/skill_index.py`, `skill_signals.py`, `skill_selector.py`, `STACK_SKILL_HINTS`, `ALWAYS_MUST`, optional `.planning/skills.override.json`). Writes `.planning/SKILLS.md` and merges a `skills` block into `.planning/jit.json`.
 - Capsule `[AVAILABLE POINTERS]` lists `@skill:<name>` per must-have skill and one `@skills:optional:` line (names only) read from `.planning/jit.json`.

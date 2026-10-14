@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "jit-context"
-version = "0.4.0"
+version = "0.5.0"
 description = "JIT-JEV Context OS: Epistemic Context Runtime & System 1 Gate for AI Agents"
 readme = "README.md"
 authors = [{ name = "Wojciech Wiesner", email = "wojciech@theones.io" }]

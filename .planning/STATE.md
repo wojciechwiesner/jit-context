@@ -24,8 +24,19 @@ Align published JIT Context guarantees with verified runtime behavior.
 Hermes JIT Context OS v0.2 with Dynamic LLM Distillation and Multimodal Ingestion
 
 ## Tech Stack
-- Languages: 
-- Frameworks: 
+- Languages: Python 3.11+ (core, hooks, CLI); TypeScript (OpenCode / Pi integrations)
+- Frameworks: none (stdlib + SQLite WAL); pytest
+
+## Wave 2026-10-14 — v0.5.0 (cmux orchestration, Sonnet 5.5 workers)
+Plan: `.planning/ORCH_2026-10-14.md` · Evidence: `/tmp/orch-jit/`
+- [x] W1 stack detector: manifests over helper scripts, Vite/Vitest/pnpm, data-driven doc resources, verify_cmd from package.json (`d8b6695`). Proof: synthapse -> TypeScript, Vite, Vitest, pnpm, `pnpm run test`, 4 resources.
+- [x] W2 scope_split: session dir pinned to first-created scope (`bfd8a6f`).
+- [x] W3 autochecker false positives: synthetic turns, ANCHOR goals, negated/proven claims (`1c41d4e`).
+- [x] W5 cwd anchors the active scope; prompt mentions only widen retrieval (`76bb9a6`, CI fix `89c1458`).
+- [x] W6 per-project skill selection: `jit skills`, `.planning/SKILLS.md`, `@skill:` capsule pointers, worktree sync (`b3bc84e`, `b154222`).
+- [x] Deploy: `jit install` all 5 hosts; CI Tests green.
+- [ ] Hermes-side skill allowlist (`skills.enabled_only` / per-project profile) — upstream PR to NousResearch/hermes-agent.
+- [ ] hook_latency (506x) profiling; GAIA runner mods; agent-behaviour mods (long_turn, duplicate_calls).
 
 ## Tasks & Phases
 - [x] Phase 0: Repository Profiling & JIT Context Initialization (`/jit init`)
