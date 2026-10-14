@@ -11,7 +11,7 @@ from pathlib import Path
 from typing import Dict, Any, List, Optional, Tuple
 from l0.db import get_db, init_db
 from l0.overlay import append_event, ensure_session, get_active_overlays
-from l1.scope import resolve_scope
+from l1.scope import resolve_scope, scope_from_cwd
 from context.compiler import compile_context
 from config import DB_PATH, VAULT_DIR, WORKSPACE_DIR
 from telemetry.collector import (
@@ -181,11 +181,12 @@ def pre_llm_call(ctx: Dict[str, Any]) -> Dict[str, Any]:
         l1_start = time.time()
         session_cwd = get_session_cwd(conn, session_id)
         if session_cwd and Path(session_cwd).exists():
-            cwd_name = Path(session_cwd).name
-            default_scope = cwd_name if cwd_name not in ["wojciechwiesner", "Projects", "active"] else "general"
+            cwd_scope = scope_from_cwd(session_cwd)
+            default_scope = cwd_scope or "general"
         else:
             # DO NOT fall back to process Path.cwd() to prevent cross-session context bleeding!
             session_cwd = None
+            cwd_scope = None
             default_scope = "general"
         
         # Invariant: Preserve active session scope across turns unless switched!
@@ -193,7 +194,7 @@ def pre_llm_call(ctx: Dict[str, Any]) -> Dict[str, Any]:
         current_scope = session_obj.get("active_scope") or default_scope
         base_scope = current_scope if current_scope not in ("general", "unknown", "") else default_scope
         
-        active_scope, retrieval_scopes, _, _ = resolve_scope(effective_user_message, base_scope)
+        active_scope, retrieval_scopes, _, _ = resolve_scope(effective_user_message, base_scope, cwd_scope=cwd_scope)
         l1_ms = (time.time() - l1_start) * 1000
         
         # Context compilation with L2 circuit breaker
@@ -205,7 +206,8 @@ def pre_llm_call(ctx: Dict[str, Any]) -> Dict[str, Any]:
             transcript_messages=ctx.get("messages", []),
             active_scope=active_scope,
             default_scope=default_scope,
-            session_cwd=session_cwd
+            session_cwd=session_cwd,
+            cwd_scope=cwd_scope
         )
         if isinstance(compile_res, tuple):
             capsule, meta = compile_res

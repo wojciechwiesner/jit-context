@@ -1,7 +1,11 @@
 """Scope Resolver with Hysteresis (Invariant I5)."""
 
 import re
+from pathlib import Path
 from typing import Tuple, List, Optional
+
+PROJECTS_SUBDIR = ("Projects", "active")
+GITDIR_PREFIX = "gitdir:"
 
 EXPLICIT_SCOPE_PATTERNS = [
     r"(?:przejd[zź]my do|pracujemy nad|otw[oó]rz projekt|projekt:?)\s+([a-zA-Z0-9_\-]+)",
@@ -47,11 +51,48 @@ def match_project_in_text(p: str, text: str) -> bool:
     pat = r'\b' + re.escape(p) + r'(?:a|u|ie|em|owi|ów|e|ach|y|i|owej|owym|owych|owy)?\b'
     return bool(re.search(pat, text))
 
+def _scope_from_git_marker(git_marker: Path) -> Optional[str]:
+    """Repo name for a `.git` dir, or for a worktree `.git` file (main repo from its gitdir line)."""
+    if git_marker.is_dir():
+        return git_marker.parent.name
+    try:
+        line = git_marker.read_text().strip().splitlines()[0]
+    except (OSError, IndexError):
+        return None
+    if not line.startswith(GITDIR_PREFIX):
+        return None
+    parts = Path(line[len(GITDIR_PREFIX):].strip()).parts
+    if ".git" in parts and parts.index(".git") > 0:
+        return parts[parts.index(".git") - 1]
+    return git_marker.parent.name
+
+
+def scope_from_cwd(cwd: Optional[str]) -> Optional[str]:
+    """Project scope anchored by a working directory, or None for roots/unknown dirs."""
+    if not cwd:
+        return None
+    path = Path(cwd).expanduser()
+    projects_root = Path.home().joinpath(*PROJECTS_SUBDIR)
+    try:
+        rel = path.relative_to(projects_root)
+        return rel.parts[0] if rel.parts and not rel.parts[0].startswith(".") else None
+    except ValueError:
+        pass
+    home = Path.home()
+    for directory in [path, *path.parents]:
+        if directory == home or directory == directory.parent:
+            return None
+        if (directory / ".git").exists():
+            return _scope_from_git_marker(directory / ".git")
+    return None
+
+
 def resolve_scope(
     message: str,
     current_active_scope: str,
     pending_candidate_scope: Optional[str] = None,
-    candidate_turns_count: int = 0
+    candidate_turns_count: int = 0,
+    cwd_scope: Optional[str] = None
 ) -> Tuple[str, List[str], Optional[str], int]:
     """Resolves active_scope and retrieval_scopes with hysteresis.
     
@@ -71,6 +112,15 @@ def resolve_scope(
             if cand in KNOWN_PROJECTS or len(cand) >= 3:
                 return cand, [cand], None, 0
                 
+    # 1b. cwd anchor: active scope is the cwd project; other mentions only widen retrieval
+    if cwd_scope:
+        mentioned = {p for p in get_known_projects() if p != cwd_scope and match_project_in_text(p, text_lower)}
+        for pat in CROSS_PROJECT_QUERY_PATTERNS:
+            m = re.search(pat, text_lower)
+            if m and m.group(1).strip() != cwd_scope and (m.group(1).strip() in KNOWN_PROJECTS or len(m.group(1).strip()) >= 3):
+                mentioned.add(m.group(1).strip())
+        return cwd_scope, [cwd_scope] + sorted(mentioned), None, 0
+
     # 2. Check cross-project query (adds to retrieval_scopes without switching active_scope - Invariant I5)
     cross_scopes = set()
     for pat in CROSS_PROJECT_QUERY_PATTERNS:

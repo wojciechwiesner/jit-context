@@ -7,7 +7,7 @@ from typing import List, Dict, Optional, Set, Any, Tuple
 from context.renderer import render_capsule
 from l0.overlay import ensure_session, get_active_facts, get_active_overlays
 from l0.recent_fence import compute_content_hash, get_missing_recent_turns
-from l1.scope import resolve_scope
+from l1.scope import resolve_scope, scope_from_cwd
 from l1.project_cache import get_project_context
 from l2.triggers import should_trigger_deep_retrieval
 from l2.client import query_deep_context
@@ -78,10 +78,13 @@ def compile_context(
     current_scope = session["active_scope"]
     epoch = session["scope_epoch"]
     
-    # 1. L1 Scope Resolution (with Hysteresis - Invariant I5)
+    # 1. L1 Scope Resolution (cwd anchor + Hysteresis - Invariant I5)
+    session_cwd = session.get("last_cwd") or kwargs.get("session_cwd")
+    cwd_scope = kwargs.get("cwd_scope") or scope_from_cwd(session_cwd)
     active_scope, retrieval_scopes, next_cand, next_turns = resolve_scope(
         user_message,
-        current_scope
+        current_scope,
+        cwd_scope=cwd_scope
     )
     if active_scope != current_scope:
         epoch += 1
@@ -117,7 +120,6 @@ def compile_context(
             current_statements.append(content)
             
     # 4. L1 Project Context (GSD STATE.md & Architecture integration)
-    session_cwd = session.get("last_cwd") or kwargs.get("session_cwd")
     project_doc = get_project_context(active_scope, session_cwd=session_cwd)
     project_summary = None
     if project_doc:
