@@ -26,11 +26,21 @@ from telemetry.turn_audit_rules import SEVERITY_WEIGHT, check_alignment, check_h
 STATE_DB = Path.home() / ".hermes" / "state.db"
 OOB = "[OUT-OF-BAND USER MESSAGE"
 # Messages with role=user that are not a new human turn: steering, host notifications, reminders.
-NOT_A_TURN_RE = re.compile(r"^\s*(\[OUT-OF-BAND USER MESSAGE|\[IMPORTANT:[^\]]{0,40}background process|\[SYSTEM:|<system-reminder>|\[ASYNC DELEGATION)", re.I)
+# `[IMPORTANT:` covers both known host variants (background-process notices, skill-invocation
+# notices) — see hooks.is_synthetic_harness_message and health/server.py, which treat the whole
+# `[IMPORTANT:` family as non-human.
+NOT_A_TURN_RE = re.compile(r"^\s*(\[OUT-OF-BAND USER MESSAGE|\[IMPORTANT:|\[SYSTEM:|<system-reminder>|\[ASYNC DELEGATION)", re.I)
 
 
 def is_human_turn(msg: Dict[str, Any]) -> bool:
     return msg.get("role") == "user" and not NOT_A_TURN_RE.match(str(msg.get("content") or ""))
+
+
+def is_synthetic_prompt(text: str) -> bool:
+    """True when `text` is empty or itself a non-human harness/host message (not a real turn)."""
+    return not text or bool(NOT_A_TURN_RE.match(text))
+
+
 VERIFY_TOOLS = {"terminal", "execute_code", "browser_exec", "vision_analyze"}
 WRITE_TOOLS = {"write_file", "patch"}
 CODE_EXT = re.compile(r"\.(py|js|ts|tsx|jsx|html|css|sql|sh|toml|yaml|yml|json)$")
@@ -166,7 +176,9 @@ def audit(session_id: str, turn_id: str, prompt: str, output: str, tools: List[D
     """Pure function: inputs of one turn -> scored report. `capsule=None` means 'not retained' (backfill)."""
     goal = project_goal(cwd)
     cap = parse_capsule(capsule or "")
-    findings = (check_alignment(prompt, capsule, cap, goal, tools, scope_dirs)
+    # A synthetic prompt has no goal to align with: skip the prompt-vs-capsule chain entirely.
+    synthetic = is_synthetic_prompt(prompt)
+    findings = (check_alignment("" if synthetic else prompt, None if synthetic else capsule, cap, goal, tools, scope_dirs)
                 + check_output(prompt, output, tools, VERIFY_TOOLS, CODE_EXT)
                 + check_harness(tools, tele, duration_s, is_error, TRUNC))
     score = max(0, 100 - sum(SEVERITY_WEIGHT[f["severity"]] for f in findings))
@@ -200,7 +212,12 @@ def audit_live_turn(ctx: Dict[str, Any]) -> Optional[Dict[str, Any]]:
     if not session_id or not history or session_id.startswith(("cron_", "subagent_", "test_", "bench_")):
         return None
     turn = turn_slice(history)
-    prompt = strip_oob(str(ctx.get("user_message") or (turn[0].get("content") if turn else "") or ""))
+    raw_prompt = str(ctx.get("user_message") or "")
+    if turn and is_synthetic_prompt(raw_prompt):
+        # The host's `user_message` for this turn is a synthetic notice (e.g. an async
+        # delegation completion); turn_slice already walked back to the genuine human turn.
+        raw_prompt = str(turn[0].get("content") or "")
+    prompt = strip_oob(raw_prompt)
     files = session_files(session_id)
     capsule = files["meta"].get("capsule", "")
     ts = [float(m["timestamp"]) for m in turn if isinstance(m.get("timestamp"), (int, float))]
