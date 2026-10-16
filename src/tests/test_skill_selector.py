@@ -127,6 +127,15 @@ def test_pointers_absent_without_profile(project):
     assert skill_pointers(str(project)) == []
 
 
+def test_write_selection_refuses_home_dir(tmp_path, monkeypatch, skills_root, knowhow_root):
+    monkeypatch.setenv("HOME", str(tmp_path))
+    selection = select_skills(tmp_path, TS_STACK, skills_root, knowhow_root)
+    written = write_selection(tmp_path, selection)
+    assert "skipped" in written
+    assert not (tmp_path / ".planning" / "SKILLS.md").exists()
+    assert not (tmp_path / ".hermes" / "skill-allowlist").exists()
+
+
 def test_skills_of_other_projects_dropped_own_kept(tmp_path, monkeypatch):
     # Known projects come from ~/Projects/active; point HOME at a fake tree so the test is host-independent.
     monkeypatch.setenv("HOME", str(tmp_path))

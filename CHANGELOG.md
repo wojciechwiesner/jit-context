@@ -10,6 +10,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - `jit skills --write` also writes `<project>/.hermes/skill-allowlist` (must-have + optional) for Hermes' per-project skills index (NousResearch/hermes-agent#138354); ignored by Hermes versions without that support.
 
+### Fixed
+- `jit init ~` / `jit skills --write ~` no longer write a skill selection for `$HOME`: the stack detected from loose home files is noise and the allowlist landed in `~/.hermes/skill-allowlist` (Hermes' global config dir). `write_selection` now returns `{"skipped": ...}` for `$HOME`; `jit skills --write` exits 1. Test: `test_write_selection_refuses_home_dir`.
+
 ## [0.5.0] - 2026-10-14
 
 ### Added

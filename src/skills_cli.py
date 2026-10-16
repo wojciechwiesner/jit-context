@@ -74,5 +74,8 @@ def main(args) -> int:
     print(format_selection(selection))
     if args.write:
         written = write_selection(project, selection)
-        print(f"wrote {written['skills_md']} and {written['profile']}")
+        if "skipped" in written:
+            print(written["skipped"])
+            return 1
+        print(f"wrote {written['skills_md']}, {written['profile']} and {written['allowlist']}")
     return 0

@@ -12,6 +12,7 @@ JIT_JSON_FILENAME = "jit.json"
 # Read by Hermes (trusted projects) to narrow the system-prompt skills index.
 HERMES_ALLOWLIST_PATH = Path(".hermes") / "skill-allowlist"
 MAX_OPTIONAL_POINTERS = 10
+HOME_SKIP_REASON = "skipped: $HOME is not a project (and $HOME/.hermes is Hermes' own config dir)"
 
 # (path, mtime) -> parsed "skills" block, so the capsule hook stays cheap.
 _POINTER_CACHE: Dict[Tuple[str, float], Dict[str, Any]] = {}
@@ -42,8 +43,19 @@ def render_skills_md(selection: Selection) -> str:
     return "\n".join(lines) + "\n"
 
 
+def is_home_dir(project: Path) -> bool:
+    """True when `project` is the user's home directory (never a real project root)."""
+    return project.resolve() == Path.home().resolve()
+
+
 def write_selection(project: Path, selection: Selection) -> Dict[str, str]:
-    """Write SKILLS.md and merge the "skills" key into jit.json without clobbering others."""
+    """Write SKILLS.md and merge the "skills" key into jit.json without clobbering others.
+
+    Refuses $HOME: a stack detected from loose home files is noise, and the Hermes
+    allowlist would land in ~/.hermes (Hermes' global config dir).
+    """
+    if is_home_dir(project):
+        return {"skipped": HOME_SKIP_REASON}
     planning = project / ".planning"
     planning.mkdir(parents=True, exist_ok=True)
     skills_file = planning / SKILLS_FILENAME
