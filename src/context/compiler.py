@@ -4,7 +4,7 @@ import sqlite3
 import time
 import re
 from typing import List, Dict, Optional, Set, Any, Tuple
-from context.renderer import render_capsule
+
 from l0.overlay import ensure_session, get_active_facts, get_active_overlays
 from l0.recent_fence import compute_content_hash, get_missing_recent_turns
 from l1.scope import resolve_scope, scope_from_cwd
@@ -155,7 +155,11 @@ def compile_context(
     from pathlib import Path
     
     # Working Set from kwargs and L0 tool observations/mutations
+    from context.capsule_policy import path_in_active_workspace
     working_set = list(kwargs.get("working_set") or [])
+    working_set = [w for w in working_set if path_in_active_workspace(
+        Path(w.get("path", "")), session_cwd, user_message,
+    )]
     existing_paths = {w.get("path") for w in working_set if isinstance(w, dict)}
     cwd_obj = Path(session_cwd) if session_cwd and Path(session_cwd).exists() else Path.cwd()
 
@@ -163,6 +167,8 @@ def compile_context(
         k = o.get("key", "")
         if k.startswith("read:") or k.startswith("file:") or k.startswith("write:"):
             p = k.split(":", 1)[1]
+            if not path_in_active_workspace(Path(p), session_cwd, user_message):
+                continue
             if p and p not in existing_paths:
                 existing_paths.add(p)
                 v = o.get("value", "")

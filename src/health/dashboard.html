@@ -397,26 +397,26 @@
     <div class="banner-left">
       <div class="banner-item">
         <div class="banner-label">JIT Compiler Mode</div>
-        <div class="banner-val" style="color: var(--emerald);" id="banner-mode">ACTIVE (RYOW)</div>
+        <div class="banner-val" style="color: var(--emerald);" id="banner-mode">No session data</div>
       </div>
       <div style="width: 1px; height: 28px; background: var(--border);"></div>
       <div class="banner-item">
         <div class="banner-label">Context Certainty</div>
-        <div class="banner-val" style="color: var(--emerald);" id="banner-conf">0.98 (Verified)</div>
+        <div class="banner-val" style="color: var(--emerald);" id="banner-conf">Not measured</div>
       </div>
       <div style="width: 1px; height: 28px; background: var(--border);"></div>
       <div class="banner-item">
         <div class="banner-label">Task Complexity</div>
-        <div class="banner-val" style="color: var(--cyan);" id="banner-complex">refactoring</div>
+        <div class="banner-val" style="color: var(--cyan);" id="banner-complex">Unknown</div>
       </div>
       <div style="width: 1px; height: 28px; background: var(--border);"></div>
       <div class="banner-item">
         <div class="banner-label">Elastic Capsule Budget</div>
-        <div class="banner-val" style="color: var(--amber);" id="banner-budget">14,000 zn (~3.5k tok)</div>
+        <div class="banner-val" style="color: var(--amber);" id="banner-budget">No capsule</div>
       </div>
     </div>
     <div>
-      <span class="status-ok" style="font-size: 11px; padding: 4px 10px;">10 / 10 INVARIANTS PASS</span>
+      <span id="health-summary" style="font-size: 11px; padding: 4px 10px;">Health not checked</span>
     </div>
   </div>
 
@@ -432,7 +432,7 @@
         </div>
         <span class="card-badge" style="background: var(--emerald-glow); color: var(--emerald);">SLA &lt; 3ms</span>
       </div>
-      <div class="card-num" style="color: var(--emerald);" id="val-l0-lat">0.18 ms</div>
+      <div class="card-num" style="color: var(--emerald);" id="val-l0-lat">Not measured</div>
       <div class="card-desc">Hot-path read-your-own-writes SQLite WAL</div>
     </div>
 
@@ -444,12 +444,12 @@
             <polyline points="2 17 12 22 22 17"></polyline>
             <polyline points="2 12 12 17 22 12"></polyline>
           </svg>
-          Haystack Pruned
+          Measured Token Savings
         </div>
-        <span class="card-badge" style="background: var(--cyan-glow); color: var(--cyan);">-95.2% Szumu</span>
+        <span class="card-badge" style="background: var(--cyan-glow); color: var(--cyan);">No paired baseline</span>
       </div>
       <div class="card-num" style="color: var(--cyan);" id="val-jit-avoided">0 tok</div>
-      <div class="card-desc">Bloat prevented from entering active LLM context</div>
+      <div class="card-desc">Not measured. Capsule sizes are estimates, not avoided provider usage.</div>
     </div>
 
     <div class="bento-card">
@@ -462,7 +462,7 @@
           </svg>
           Prompt Cache Reads
         </div>
-        <span class="card-badge" style="background: var(--indigo-glow); color: var(--indigo);">Zero Cost</span>
+        <span class="card-badge" style="background: var(--indigo-glow); color: var(--indigo);">Reported Usage</span>
       </div>
       <div class="card-num" style="color: var(--indigo);" id="val-cache-read">0</div>
       <div class="card-desc" id="sub-cache-read">Tokens served directly from provider KV cache</div>
@@ -478,8 +478,8 @@
         </div>
         <span class="card-badge" style="background: var(--emerald-glow); color: var(--emerald);">Epistemics</span>
       </div>
-      <div class="card-num" style="color: var(--emerald);" id="val-invariants">10 / 10</div>
-      <div class="card-desc">Direct User Wins • Anti-Self-Poisoning (I4)</div>
+      <div class="card-num" style="color: var(--emerald);" id="val-invariants">Not checked</div>
+      <div class="card-desc">Isolated self-tests, not end-to-end certification</div>
     </div>
   </div>
 
@@ -515,10 +515,10 @@
           </svg>
           Apple Silicon Metal (Ollama Local)
         </div>
-        <span class="card-badge" style="background: var(--emerald-glow); color: var(--emerald);">Offline Ready</span>
+        <span class="card-badge" style="background: var(--emerald-glow); color: var(--emerald);">Not probed</span>
       </div>
-      <div class="q-val">Qwen 7B (4.7 GB) & 9B (6.8 GB)</div>
-      <div style="font-size: 11px; color: var(--text-faint);">27.4 tok/s • Zero external API dependency</div>
+      <div class="q-val">Local model availability unknown</div>
+      <div style="font-size: 11px; color: var(--text-faint);">No live throughput measurement</div>
       <div class="progress-bar-bg"><div class="progress-bar-fill" style="width: 100%; background: var(--emerald);"></div></div>
     </div>
 
@@ -564,7 +564,7 @@
             <th>Scope</th>
             <th>L0 / L1</th>
             <th>Capsule</th>
-            <th>Avoided</th>
+            <th>Legacy estimate</th>
           </tr>
         </thead>
         <tbody id="timeline-body">
@@ -643,15 +643,23 @@
         const res = await fetch('/api/metrics?mode=' + currentMode);
         if (!res.ok) return;
         const data = await res.json();
+        const healthResponse = await fetch('/health');
+        if (healthResponse.ok) {
+          const health = await healthResponse.json();
+          const checks = Object.values(health.invariants || {});
+          document.getElementById('val-invariants').innerText = checks.filter(v => v === 'PASS').length + ' / ' + checks.length + ' self-tests';
+          document.getElementById('health-summary').innerText = 'Local ' + health.status + ' | L2 ' + health.l2.status + ' | E2E not verified';
+        }
         
         // Update Live Status Banner
         if (data.live_jit) {
           const lj = data.live_jit;
-          if (lj.scope) {
+          if (lj && lj.scope) {
+              if (lj.mode) document.getElementById('banner-mode').innerText = lj.mode;
             document.getElementById('active-scope-name').innerText = lj.scope;
           }
           if (lj.confidence) {
-            document.getElementById('banner-conf').innerText = Number(lj.confidence).toFixed(2) + ' (Verified)';
+            document.getElementById('banner-conf').innerText = Number(lj.confidence).toFixed(2) + ' (classifier score)';
           }
           if (lj.complexity) {
             document.getElementById('banner-complex').innerText = lj.complexity;
@@ -675,8 +683,8 @@
           document.getElementById('sub-cache-read').innerText = 'All-Time total: ' + totalCached.toLocaleString() + ' tok';
         }
         
-        document.getElementById('val-jit-avoided').innerText = Number(data.total_jit_avoided_tokens || 0).toLocaleString() + ' tok';
-        if (data.l0_latency_ms) document.getElementById('val-l0-lat').innerText = data.l0_latency_ms + ' ms';
+        document.getElementById('val-jit-avoided').innerText = data.total_jit_avoided_tokens == null ? 'Not measured' : Number(data.total_jit_avoided_tokens).toLocaleString() + ' tok';
+        document.getElementById('val-l0-lat').innerText = data.l0_latency_ms == null ? 'Not measured' : data.l0_latency_ms + ' ms';
         
         if (data.quotas && data.quotas.gemini) {
           const g = data.quotas.gemini;
@@ -726,7 +734,7 @@
             const tdAvoided = document.createElement('td');
             tdAvoided.className = 'mono';
             tdAvoided.style.color = 'var(--cyan)';
-            tdAvoided.textContent = '~' + ((t.jit_tokens_avoided_est || 31800) / 1000).toFixed(1) + 'k tok';
+            tdAvoided.textContent = t.haystack_tokens_est > 0 ? '~' + ((t.jit_tokens_avoided_est || 0) / 1000).toFixed(1) + 'k tok (legacy)' : 'Not measured';
             
             tr.appendChild(tdTime);
             tr.appendChild(tdQuery);

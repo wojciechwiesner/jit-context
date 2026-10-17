@@ -26,7 +26,7 @@ def hermes_dir() -> Path:
     return home() / ".hermes"
 
 
-def plugin_links() -> list[Path]:
+def plugin_links(*, include_profiles: bool = True) -> list[Path]:
     """Plugin link in the default home plus every profile that already enabled ona-context.
 
     A Hermes profile reads plugins from ~/.hermes/profiles/<name>/plugins, not the default
@@ -34,6 +34,8 @@ def plugin_links() -> list[Path]:
     Profiles that did not opt in are left alone.
     """
     links = [hermes_dir() / "plugins" / PLUGIN_NAME]
+    if not include_profiles:
+        return links
     profiles = hermes_dir() / "profiles"
     if profiles.is_dir():
         for profile in sorted(p for p in profiles.iterdir() if p.is_dir()):
@@ -65,12 +67,12 @@ def _hermes(*args: str) -> bool:
     return proc.returncode == 0
 
 
-def install(dry_run: bool = False, restart: bool = True) -> Result:
+def install(dry_run: bool = False, restart: bool = True, *, include_profiles: bool = True) -> Result:
     if not detect():
         return Result(HOST, SKIP, "~/.hermes not found")
     if not (SRC_DIR / "plugin.yaml").exists():
         return Result(HOST, FAIL, f"plugin.yaml missing in {SRC_DIR}")
-    links = plugin_links()
+    links = plugin_links(include_profiles=include_profiles)
     if dry_run:
         return Result(HOST, DRY, f"would link {len(links)} plugin path(s) -> a new plugin-releases/{PLUGIN_NAME}-{git_head()}-* snapshot")
     (hermes_dir() / "state" / PLUGIN_NAME).mkdir(parents=True, exist_ok=True)
@@ -79,7 +81,8 @@ def install(dry_run: bool = False, restart: bool = True) -> Result:
     for link in links:
         link.parent.mkdir(parents=True, exist_ok=True)
         relink(link, target)
-    prune_snapshots(releases, PLUGIN_NAME, keep=target)
+    if include_profiles:
+        prune_snapshots(releases, PLUGIN_NAME, keep=target)
     profiles_note = f" (+{len(links) - 1} profile(s))" if len(links) > 1 else ""
     if not shutil.which("hermes"):
         return Result(HOST, OK, f"plugin -> {target.name}{profiles_note}; hermes CLI not on PATH, guards skipped, restart Hermes")

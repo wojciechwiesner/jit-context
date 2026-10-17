@@ -84,7 +84,7 @@ def build_workspace_capsule(workspace_dir: Path, goal: str, use_jev: bool = Fals
     
     ignore_dirs = {".git", ".venv", "venv", "node_modules", "__pycache__", ".planning", ".hermes", "dist", "build"}
     for p in workspace_dir.rglob("*"):
-        if p.is_file() and not any(part in ignore_dirs for part in p.parts):
+        if p.is_file() and not any(part in ignore_dirs for part in p.relative_to(workspace_dir).parts):
             if p.suffix in {".py", ".ts", ".js", ".tsx", ".jsx", ".rs", ".go"}:
                 try:
                     rel_p = str(p.relative_to(workspace_dir))

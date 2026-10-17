@@ -260,14 +260,8 @@ def _legacy_dashboard_metrics(view_mode: str = "session") -> Dict[str, Any]:
 def get_live_metrics_combined(view_mode: str = "session") -> Dict[str, Any]:
     """Return only measurements emitted by registered Context OS hooks."""
     now = time.time()
-    live_jit = {}
-    try:
-        live_p = "/tmp/hermes-jit-live.json"
-        if os.path.exists(live_p):
-            with open(live_p, "r", encoding="utf-8") as lf:
-                live_jit = json.load(lf)
-    except Exception:
-        pass
+    from health.live_status import latest_session_payload
+    live_jit = latest_session_payload(SESSIONS_DIR)
     # "session" = the Hermes session that produced the latest turn, not the server uptime.
     live_session = str(live_jit.get("session_id") or "") if view_mode == "session" else ""
     if live_session:
@@ -360,11 +354,16 @@ def get_live_metrics_combined(view_mode: str = "session") -> Dict[str, Any]:
 
     return {
         "view_mode": view_mode,
-        "telemetry_type": "empirical_live",
-        "telemetry_source": "ona-context/session_overlay.db (measured live)",
+        "telemetry_type": "mixed_live_and_estimated",
+        "telemetry_source": "ona-context session databases (provider usage and estimated capsule sizes)",
+        "savings_measurement": {"status": "not_measured", "baseline_tokens": None},
+        "cost_measurement": "reported_values_only; zero is not proof of free inference",
+        "quota_measurement": "local_records_against_configured_limits; not_live_account_quota",
         "total_cache_read_tokens": totals["cache"], "session_cache_read_tokens": totals["cache"],
-        "total_jit_avoided_tokens": totals["avoided"], "total_cost_usd": round(totals["cost"], 4),
-        "l0_latency_ms": round(totals["l0"], 2),
+        "total_jit_avoided_tokens": None,
+        "legacy_jit_avoided_tokens_est": totals["avoided"],
+        "total_cost_usd": round(totals["cost"], 4),
+        "l0_latency_ms": round(totals["l0"], 2) if l0_count else None,
         "live_jit": live_jit,
         "quotas": {
             "gemini": {"active_model": "gemini", "tpm_consumed_1m": usage["gemini_tokens"], "tpm_limit": QUOTAS["gemini-3.7-flash"]["tpm_limit"], "headroom_pct": gemini_headroom, "rpm_consumed": usage["gemini_requests"], "rpm_limit": QUOTAS["gemini-3.7-flash"]["rpm_limit"]},

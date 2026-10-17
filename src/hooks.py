@@ -13,6 +13,10 @@ from l0.db import get_db, init_db
 from l0.overlay import append_event, ensure_session, get_active_overlays
 from l1.scope import resolve_scope, scope_from_cwd
 from context.compiler import compile_context
+from context.capsule_policy import (
+    finalize_capsule, is_host_notification, strip_reload_notices,
+    unpack_compilation, working_set_paths,
+)
 from config import DB_PATH, VAULT_DIR, WORKSPACE_DIR
 from telemetry.collector import (
     record_turn_telemetry,
@@ -66,6 +70,9 @@ def hot_reload_jit_modules() -> None:
 
 def extract_genuine_user_instruction(text: str) -> str:
     """Extract real human instruction if message is wrapped in a skill invocation or harness prefix."""
+    text = strip_reload_notices(text or "")
+    if is_host_notification(text):
+        return ""
     if not text:
         return ""
     # Strip nested/quoted <ONA_CONTEXT ...> blocks to avoid self-poisoning
@@ -85,6 +92,8 @@ def is_synthetic_harness_message(text: str) -> bool:
     """Detect internal Hermes harness prompts (curator, delegation, /btw, canon)."""
     if not text:
         return False
+    if is_host_notification(text):
+        return True
     t = text.strip()
     prefixes = (
         "[ASYNC DELEGATION",
@@ -145,7 +154,7 @@ def pre_llm_call(ctx: Dict[str, Any]) -> Dict[str, Any]:
                 append_event(
                     conn=conn,
                     session_id=session_id,
-                    role="user",
+                    role="system",
                     content=user_message,
                     origin="harness_event",
                     turn_id=turn_id
@@ -162,7 +171,7 @@ def pre_llm_call(ctx: Dict[str, Any]) -> Dict[str, Any]:
                 append_event(
                     conn=conn,
                     session_id=session_id,
-                    role="user",
+                    role="system" if is_synthetic else "user",
                     content=user_message,
                     origin="harness_event" if is_synthetic else "direct_user",
                     turn_id=turn_id
@@ -209,10 +218,7 @@ def pre_llm_call(ctx: Dict[str, Any]) -> Dict[str, Any]:
             session_cwd=session_cwd,
             cwd_scope=cwd_scope
         )
-        if isinstance(compile_res, tuple):
-            capsule, meta = compile_res
-        else:
-            capsule, meta = compile_res, {}
+        capsule, meta = unpack_compilation(compile_res)
 
         compile_ms = (time.time() - compile_start) * 1000
         l2_ms = compile_ms
@@ -240,6 +246,7 @@ def pre_llm_call(ctx: Dict[str, Any]) -> Dict[str, Any]:
                 if stale_alert:
                     capsule += f"\n<OBSIDIAN_SYNC_ALERT: {stale_alert}>\n"
 
+        capsule, meta = finalize_capsule(capsule, meta)
         hook_total_ms = (time.time() - start_time) * 1000
         
         # Record Turn Telemetry
@@ -314,7 +321,7 @@ def pre_llm_call(ctx: Dict[str, Any]) -> Dict[str, Any]:
 
         goal_match = re.search(r"• Goal:\s*(.+)", capsule)
         intent_match = re.search(r"• Intent:\s*(.+)", capsule)
-        ws_matches = re.findall(r"• ([^\n\(]+) \((?:active module|written|read_ok)", capsule)
+        ws_matches = working_set_paths(capsule)
 
         goal_text = goal_match.group(1).strip()[:85] if goal_match else ""
         intent_raw = intent_match.group(1).strip() if intent_match else ""
@@ -342,7 +349,8 @@ def pre_llm_call(ctx: Dict[str, Any]) -> Dict[str, Any]:
                 "used_pct": used_pct,
                 "capsule_tokens_est": tokens_est,
                 "budget_tokens_est": budget_tokens_est,
-                "compression_ratio": 91.0,
+                "compression_ratio": None,
+                "savings_status": "not_measured",
                 "session_id": session_id,
                 "turn_id": turn_id,
                 "goal_text": goal_text,
@@ -459,12 +467,9 @@ def pre_llm_call(ctx: Dict[str, Any]) -> Dict[str, Any]:
             print(f"⚡ {c_bold}[JIT Context: CZUWANIE (shadow)]{c_reset} Sesja: {session_id} • Projekt: {active_scope} • {compile_ms:.1f}ms ({capsule_chars} zn)", file=sys.stderr, flush=True)
             return {}
 
-        tokens_reduced_pct = max(0.0, min(99.9, (1.0 - (capsule_chars / 38000.0)) * 100))
-        tokens_saved_approx = max(0, int((38000 - capsule_chars) / 4))
-
         status_lines = [
             f"⚡ {c_bold}{c_green}[JIT Context: AKTYWNY]{c_reset} Sesja: {c_yellow}{session_id}{c_reset} • Projekt: {c_cyan}{active_scope}{c_reset} • Czas: {c_bold}{compile_ms:.1f}ms{c_reset}",
-            f"   • {c_bold}Metryki:{c_reset} Redukcja tokenów: {c_green}-{tokens_reduced_pct:.1f}% (-{tokens_saved_approx:,} tok){c_reset} • Kapsuła: {c_bold}{capsule_chars:,} zn (~{tokens_est} tok){c_reset}",
+            f"   • {c_bold}Metryki:{c_reset} Kapsuła: {c_bold}{capsule_chars:,} zn (~{tokens_est} tok, szacunek){c_reset} • Oszczędności: niezmierzone (brak pomiaru bazowego)",
         ]
         if goal_text:
             intent_suffix = f" [{intent_label}]" if intent_label else ""

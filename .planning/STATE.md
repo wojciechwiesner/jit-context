@@ -1,5 +1,26 @@
 # Project State: hermes-jit-context-os-v0.1
 
+## Release v0.5.1 — 2026-10-17
+- User approved commit, production replacement, push and release.
+- Verification: **231 tests PASS**, supported Python 3.14; wheel/sdist build and Ruff F/E9 PASS.
+- Deployment command: `jit install --only hermes --active-profile-only`; other Hermes profiles and their snapshots must remain unchanged.
+- Production rollback backup includes code, configs, immutable releases and consistent copies of 2455 SQLite databases.
+- Publication and production read-back proofs are recorded by the operator in the external deployment registry and Obsidian after rollout; this section records the pre-publication verification gate, not an assumed successful deploy.
+
+## Historical verified block — 2026-10-16 audit remediation
+- Status: implemented and verified locally; UNCOMMITTED, NOT DEPLOYED. Base HEAD: `a6c0dfa`; existing unrelated working-tree files preserved.
+- [x] Ground targets in the current request; keep inferred guidance advisory and exclude foreign working-set paths.
+- [x] Preserve `CapsuleResult` metadata; enforce the independent 14,000-character host cap after enrichment.
+- [x] Treat background/MCP notifications as zero-authority system events while preserving real requests following notices.
+- [x] Isolate synthetic diagnostics; expose actual scope, disabled L2, self-test versus E2E, and non-mutating HTTP health checks.
+- [x] Remove fabricated savings/compression baselines and static dashboard success claims; isolate status to configured session storage.
+- [x] Repair hidden-parent file discovery and nested-venv packaging tests; count line-based file reads in metadata.
+- [x] Full supported-Python suite: **230 passed in 16.25s**, exit 0; `git diff --check` exit 0; Ruff F/E9 checks on new modules PASS.
+- [x] Real pre-LLM hook subprocess, packaged wheel CLI/HTTP/assets, live dashboard DOM, and three read-only health HTTP requests verified.
+- Evidence: `docs/diary/2026-10-16_audit-runtime-remediation.md`; detailed operator proofs are stored outside the public repository.
+- Deferred by design: production deployment, explicit repo trust, real Borg L2 delivery, destructive cleanup of historic synthetic entries, paired savings benchmark.
+- Older sections below are historical claims, not a new certification of deployment, benchmarks, or the entire architecture.
+
 ## Active Goal
 Align published JIT Context guarantees with verified runtime behavior.
 

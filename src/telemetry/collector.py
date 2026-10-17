@@ -53,8 +53,8 @@ def record_turn_telemetry(
     capsule_tokens = capsule_chars // 4
     capsule_hash = compute_hash(capsule)
     
-    # Counterfactual baseline: full active project + knowhow + canon ~ 32k tokens
-    haystack_tokens = 32000
+    # No paired baseline was observed. Zero means unavailable, never measured savings.
+    haystack_tokens = 0
     haystack_chars = haystack_tokens * 4
     avoided_tokens = max(0, haystack_tokens - capsule_tokens)
     compression = round((1.0 - (capsule_tokens / haystack_tokens)) * 100, 1) if haystack_tokens else 0.0

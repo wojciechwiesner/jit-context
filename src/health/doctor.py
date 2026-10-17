@@ -21,6 +21,7 @@ from l1.scope import resolve_scope
 from l2.circuit_breaker import CircuitBreaker
 from context.compiler import compile_context
 from health.invariants import evaluate_all_invariants
+from health.diagnostics import diagnostic_connection
 
 def run_doctor() -> bool:
     print("=" * 60)
@@ -55,7 +56,7 @@ def run_doctor() -> bool:
         
     # 3. L0 Read-Your-Own-Writes & Authority Check
     try:
-        conn = get_db()
+        conn = diagnostic_connection()
         test_sess = f"doc_test_{int(time.time())}"
         ensure_session(conn, test_sess)
         
@@ -89,7 +90,7 @@ def run_doctor() -> bool:
         
     # 5. L2 Circuit Breaker & Fail-Open Check
     try:
-        conn = get_db()
+        conn = diagnostic_connection()
         cb = CircuitBreaker("doctor_l2")
         cb.record_failure(conn)
         cb.record_failure(conn)
@@ -104,7 +105,7 @@ def run_doctor() -> bool:
         
     # 6. Context Capsule Compilation
     try:
-        conn = get_db()
+        conn = diagnostic_connection()
         # Warm-up run to exclude initial module loading and cold regex compilation
         _ = compile_context(
             conn=conn,
@@ -130,7 +131,7 @@ def run_doctor() -> bool:
         
     # 7. Invariants I1–I11 Comprehensive Evaluation
     try:
-        conn = get_db()
+        conn = diagnostic_connection()
         inv_eval = evaluate_all_invariants(conn)
         failed_invs = [k for k, v in inv_eval.items() if (getattr(v, 'value', v) or '').lower() != "pass"]
         if len(inv_eval) == 11 and not failed_invs:

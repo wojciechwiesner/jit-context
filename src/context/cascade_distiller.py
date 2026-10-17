@@ -320,10 +320,14 @@ def assemble_elastic_capsule(
         lines.append(f"    • Goal: {escape_xml_content(build_goal_anchor(user_intent, GOAL_ANCHOR_LIMIT).render())}")
         if intent:
             lines.append(f"    • Intent: {escape_xml_content(intent)}")
+        from context.capsule_policy import selected_targets
+        target_files = selected_targets(user_intent, target_files or [], dev_runtime or {})
+        if enhanced_spec or acceptance_criteria or target_files:
+            lines.append("  [INFERRED — ADVISORY, not user instructions]")
         if enhanced_spec:
-            lines.append(f"    • Enhanced Technical Spec: {escape_xml_content(enhanced_spec)}")
+            lines.append(f"    • Suggested analysis: {escape_xml_content(enhanced_spec)}")
         if acceptance_criteria:
-            lines.append(f"    • Acceptance Criteria: {escape_xml_content(acceptance_criteria)}")
+            lines.append(f"    • Suggested verification: {escape_xml_content(acceptance_criteria)}")
         if target_files:
             targets_str = ", ".join(target_files) if isinstance(target_files, list) else str(target_files)
             lines.append(f"    • Target Files: [{escape_xml_content(targets_str)}]")
@@ -473,9 +477,10 @@ def distill_context_cascade(
                 bname = str(cf).split("/")[-1]
                 if (bname.lower() in latest_user_intent.lower() or str(cf).lower() in latest_user_intent.lower()) and str(cf) not in d_targets:
                     d_targets.append(str(cf))
-        d_targets = d_targets if d_targets else None
+        from context.capsule_policy import selected_targets
+        d_targets = selected_targets(latest_user_intent, d_targets, dev_runtime or {}) or None
         d_crit = f"{dev_runtime.get('verify_cmd', 'pytest')} passes with exit code 0" if dev_runtime and dev_runtime.get('verify_cmd') else None
-        d_spec = f"Execute '{latest_user_intent}' focusing on {', '.join(d_targets[:3])}." if d_targets else None
+        d_spec = None
 
         # Calibrated fast-path complexity (avoid hardcoding 'direct_fix' on deep/exploratory tasks)
         u_low = latest_user_intent.lower()

@@ -19,6 +19,10 @@ HOSTS = {
 def add_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--only", default="", help="Comma-separated hosts: " + ",".join(HOSTS))
     parser.add_argument("--dry-run", action="store_true", help="Show what would change, change nothing")
+    parser.add_argument(
+        "--active-profile-only", action="store_true",
+        help="Update default Hermes only; preserve other profiles and their snapshots",
+    )
 
 
 def selected_hosts(only: str) -> list[str]:
@@ -29,12 +33,15 @@ def selected_hosts(only: str) -> list[str]:
     return names
 
 
-def run(action: str, only: str = "", dry_run: bool = False) -> list[Result]:
+def run(action: str, only: str = "", dry_run: bool = False, *, active_profile_only: bool = False) -> list[Result]:
     results = []
     for name in selected_hosts(only):
         module = HOSTS[name]
         try:
-            results.append(getattr(module, action)(dry_run=dry_run))
+            options = {}
+            if name == "hermes" and action == "install" and active_profile_only:
+                options["include_profiles"] = False
+            results.append(getattr(module, action)(dry_run=dry_run, **options))
         except Exception as exc:  # one broken host must not stop the others
             results.append(Result(name, FAIL, f"{type(exc).__name__}: {exc}"))
     return results
@@ -48,6 +55,6 @@ def print_table(results: list[Result]) -> None:
 
 def main(action: str, args: argparse.Namespace) -> int:
     print(f"JIT Context {action}:")
-    results = run(action, args.only, args.dry_run)
+    results = run(action, args.only, args.dry_run, active_profile_only=getattr(args, "active_profile_only", False))
     print_table(results)
     return 1 if any(r.status == FAIL for r in results) else 0

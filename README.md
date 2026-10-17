@@ -223,8 +223,8 @@ One repository, one installer, four agent hosts. Versions are independent:
 
 | Host | Integration | Version | Install |
 |---|---|---|---|
-| Claude Code | [hooks](integrations/claude-code/hooks) + MCP server | core 0.3.0 (MIT) | `jit install --only claude-code` |
-| Hermes Agent | `src/` as the `ona-context` plugin | core 0.3.0 (MIT) | `jit install --only hermes` |
+| Claude Code | [hooks](integrations/claude-code/hooks) + MCP server | core 0.5.1 (MIT) | `jit install --only claude-code` |
+| Hermes Agent | `src/` as the `ona-context` plugin | core 0.5.1 (MIT) | `jit install --only hermes` |
 | OpenCode | [native plugin](integrations/opencode/README.md) | 0.1.0 (MIT) | `jit install --only opencode` |
 | Agent Zero | [plugin `jit_context`](integrations/agent-zero/README.md) | 0.4.1 (Apache-2.0) | `jit install --only agent-zero`, or in the Agent Zero UI: install from git `https://github.com/wojciechwiesner/jit-context-os` or from the `jit_context-<version>.zip` release asset |
 
@@ -276,6 +276,8 @@ The installer clones the repo to `~/.jit-context`, links the `jit` CLI into `~/.
 Re-run the same line to update. Options: `bash -s -- --only claude-code,hermes` and `bash -s -- --dry-run`. The same logic works offline as `jit install` / `jit uninstall`. It needs Python 3.11+; on stock macOS (python3 3.9) it picks a newer versioned Python or installs one with `uv`.
 
 For a pip-only setup of the CLIs (`jit`, `jit-doctor`, `jit-observatory`) without host wiring: `python3 -m pip install -e .` in a clone.
+
+To replace only the default Hermes plugin without modifying other profiles or pruning their snapshots, run `jit install --only hermes --active-profile-only`.
 
 ### 2. Configure Your Obsidian Vault (Optional / Auto-detected)
 By default, JIT auto-detects `~/Documents/Vault` or `~/Documents/Wojciech`. You can point to any local Obsidian vault:

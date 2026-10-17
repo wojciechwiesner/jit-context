@@ -7,10 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.1] - 2026-10-17
+
 ### Added
 - `jit skills --write` also writes `<project>/.hermes/skill-allowlist` (must-have + optional) for Hermes' per-project skills index (NousResearch/hermes-agent#138354); ignored by Hermes versions without that support.
 
 ### Fixed
+- Keep compiler metadata for `CapsuleResult` and bound fully enriched capsules to the host output limit.
+- `jit install --only hermes --active-profile-only` preserves all other Hermes profiles and the snapshots they reference.
+- Keep background/MCP host notifications out of direct-user goals; preserve genuine requests following reload notices.
+- Ground suggested targets in the current request, separate inferred guidance from user authority, and include line-count reads in working-set telemetry.
+- Isolate synthetic invariant/doctor users from production memory/outbox; expose actual scope, disabled L2, and self-test versus end-to-end status.
+- Remove the invented fixed token-savings baseline; label historical estimates and unavailable savings in the API/dashboard.
+- Read worker files beneath hidden ancestors; supply build dependencies and parent-venv runtime packages to wheel smoke tests.
 - `jit init ~` / `jit skills --write ~` no longer write a skill selection for `$HOME`: the stack detected from loose home files is noise and the allowlist landed in `~/.hermes/skill-allowlist` (Hermes' global config dir). `write_selection` now returns `{"skipped": ...}` for `$HOME`; `jit skills --write` exits 1. Test: `test_write_selection_refuses_home_dir`.
 
 ## [0.5.0] - 2026-10-14

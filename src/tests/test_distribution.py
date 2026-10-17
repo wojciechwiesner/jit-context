@@ -3,6 +3,7 @@
 import os
 import re
 import select
+import site
 import shutil
 import subprocess
 import sys
@@ -60,6 +61,14 @@ def test_wheel_entrypoints_and_assets(tmp_path):
     environment = tmp_path / "venv"
     venv.create(environment, with_pip=True, system_site_packages=True)
     bin_dir = environment / ("Scripts" if os.name == "nt" else "bin")
+    # A nested venv cannot otherwise see dependencies installed in its parent venv.
+    child_site = Path(subprocess.check_output(
+        [str(bin_dir / "python"), "-c", "import site; print(site.getsitepackages()[0])"],
+        text=True,
+    ).strip())
+    (child_site / "test-runtime-dependencies.pth").write_text(
+        "\n".join(site.getsitepackages()) + "\n", encoding="utf-8",
+    )
     subprocess.run(
         [str(bin_dir / "python"), "-m", "pip", "install", "--no-deps", "--no-index", str(wheel)],
         check=True,

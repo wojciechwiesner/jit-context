@@ -285,17 +285,6 @@ def check_i11_no_epistemically_equivalent_retry() -> InvariantStatus:
 
 
 def evaluate_all_invariants(conn: sqlite3.Connection) -> Dict[str, InvariantStatus]:
-    """Evaluate all invariants I1..I11 and return dictionary of InvariantStatus values."""
-    return {
-        "I1": check_i1_direct_user_wins(conn),
-        "I2": check_i2_ryow(conn),
-        "I3": check_i3_assistant_authority_zero(),
-        "I4": check_i4_no_authority_laundering(),
-        "I5": check_i5_scope_hysteresis(),
-        "I6": check_i6_fail_open(conn),
-        "I7": check_i7_ordering_idempotence(conn),
-        "I8": check_i8_independent_provenance(),
-        "I9": check_i9_memory_cannot_authorize(),
-        "I10": check_i10_no_canon_promotion(),
-        "I11": check_i11_no_epistemically_equivalent_retry(),
-    }
+    """Run synthetic invariants in disposable storage, never against the caller DB."""
+    from health.diagnostics import run_invariant_self_tests
+    return run_invariant_self_tests()

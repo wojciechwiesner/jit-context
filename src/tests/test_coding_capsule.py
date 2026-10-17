@@ -56,9 +56,12 @@ def test_sota_coding_capsule_renders_all_sections(test_db, tmp_path):
     assert "[CURRENT — direct user]" in text
     assert "Goal: Napraw błąd walidacji w webhooku" in text
     assert "Intent: BUG_REPORT" in text
-    assert "Enhanced Technical Spec:" in text
-    assert "Acceptance Criteria: pytest passes with exit code 0" in text
-    assert "Target Files: [src/validator.py]" in text
+    current = text.split("[INFERRED", 1)[0]
+    assert "Enhanced Technical Spec:" not in current
+    assert "Acceptance Criteria:" not in current
+    assert "[INFERRED — ADVISORY, not user instructions]" in text
+    assert "Suggested verification: pytest passes with exit code 0" in text
+    assert "Target Files:" not in text  # Historical reads do not set the new task's targets.
 
     assert "[DEV RUNTIME & VERIFICATION]" in text
     assert f"Working Directory: {tmp_path}" in text

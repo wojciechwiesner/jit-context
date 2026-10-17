@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "jit-context"
-version = "0.5.0"
+version = "0.5.1"
 description = "JIT-JEV Context OS: Epistemic Context Runtime & System 1 Gate for AI Agents"
 readme = "README.md"
 authors = [{ name = "Wojciech Wiesner", email = "wojciech@theones.io" }]
@@ -19,6 +19,9 @@ dependencies = [
 [project.optional-dependencies]
 dev = [
     "pytest>=7.0.0",
+    "pip>=23.0",
+    "setuptools>=68.0",
+    "wheel>=0.41",
 ]
 # Only imported by benchmarks/ (not part of the installed hook/CLI runtime,
 # excluded from [tool.setuptools.packages.find]). Not required for `jit install`.

@@ -15,7 +15,9 @@ def get_authority_for_role(origin: str, role: str) -> float:
         return 0.0
     if origin == "direct_user":
         return 1.0
-    if origin in ("harness_event", "synthetic_demo"):
+    if origin == "harness_event":
+        return 0.0
+    if origin == "synthetic_demo":
         return 0.2
     if role == "user" and origin != "external":
         return 0.9 if origin != "direct_user" else 1.0
