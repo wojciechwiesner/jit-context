@@ -235,6 +235,35 @@ def fetch_and_synthesize_deep_knowledge(target_dir: Path, stack: Dict[str, Any],
 
     return resources
 
+def project_tier(start: Path) -> Optional[str]:
+    """Tier recorded by the last `jit init` for the project containing `start` (walks up to the repo root)."""
+    for base in [start.resolve(), *start.resolve().parents]:
+        profile = base / ".planning" / "jit.json"
+        if profile.exists():
+            try:
+                tier = json.loads(profile.read_text(encoding="utf-8")).get("tier")
+            except (ValueError, OSError):
+                return None
+            return tier if isinstance(tier, str) else None
+        if (base / ".git").exists():
+            return None
+    return None
+
+
+def record_project_tier(project: Path, tier: str) -> None:
+    """Merge the init tier into .planning/jit.json without touching other keys (skills, small profile)."""
+    profile = project / ".planning" / "jit.json"
+    profile.parent.mkdir(parents=True, exist_ok=True)
+    try:
+        data = json.loads(profile.read_text(encoding="utf-8")) if profile.exists() else {}
+        if not isinstance(data, dict):
+            data = {}
+    except (ValueError, OSError):
+        data = {}
+    data["tier"] = tier
+    profile.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
+
+
 def run_init(target_path: Path, tier: str = "standard", goal: Optional[str] = None) -> Dict[str, Any]:
     scanner = ProjectScanner(target_path)
     stack = scanner.detect_stack()
@@ -381,6 +410,7 @@ def run_init(target_path: Path, tier: str = "standard", goal: Optional[str] = No
             pass
 
     skills_written = write_project_skills(target_path, stack, obsidian_file)
+    record_project_tier(target_path, tier)
 
     return {
         "status": "success",
@@ -399,6 +429,13 @@ def run_init(target_path: Path, tier: str = "standard", goal: Optional[str] = No
 def main():
     known_cmds = {"init", "mode", "config", "configure", "off", "on", "status", "doctor", "stream", "jev", "worker", "solve", "skills", "install", "uninstall", "-h", "--help"}
     if len(sys.argv) > 1 and sys.argv[1] not in known_cmds:
+        first = sys.argv[1]
+        # Shorthand `jit <path>` only for real directories; anything else is a mistyped command, not a path.
+        if not first.startswith("-") and not Path(first).is_dir():
+            print(f"jit: nieznane polecenie lub brak katalogu: '{first}'", file=sys.stderr)
+            print(f"Dostępne: {', '.join(sorted(c for c in known_cmds if not c.startswith('-')))}", file=sys.stderr)
+            print("Inicjalizacja projektu: jit init [ścieżka] [--tier standard|deep]", file=sys.stderr)
+            sys.exit(2)
         sys.argv.insert(1, "init")
 
     parser = argparse.ArgumentParser(description="Hermes JIT Context OS — CLI")
@@ -616,7 +653,9 @@ def main():
         cfg = load_config()
         current_mode = cfg.get("mode", "active")
         worker = cfg.get("worker", "routed")
-        tier = cfg.get("tier", "standard")
+        global_tier = cfg.get("tier", "standard")
+        recorded = project_tier(Path.cwd())
+        tier = f"{recorded} (projekt: .planning/jit.json)" if recorded else f"{global_tier} (domyślny, projekt bez jit init)"
         thresh = cfg.get("compaction_threshold", 0.4)
         c_window = cfg.get("context_window", 1000000)
         print("=" * 60)
@@ -733,6 +772,9 @@ def main():
         goal = args.goal
 
     target_dir = Path(target_path).resolve()
+    if not target_dir.is_dir():
+        print(f"jit init: katalog nie istnieje: {target_dir}", file=sys.stderr)
+        sys.exit(2)
     res = run_init(target_dir, tier=tier, goal=goal)
     small_res = None
     if getattr(args, "profile", "default") == "small":

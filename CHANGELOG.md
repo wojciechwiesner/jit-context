@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- `jit <word>` no longer treats an unknown word as a project path: `jit sync` used to crash with a
+  `FileNotFoundError` traceback. Now it exits 2 with the list of commands. `jit init <missing-dir>` exits 2 too.
+- `jit status` reported the global default tier (`standard`) even after `jit init --tier deep`. `jit init` now
+  records the tier in `.planning/jit.json` (merged, other keys kept) and `jit status` shows the project's tier.
+
 ## [0.5.1] - 2026-10-17
 
 ### Added
