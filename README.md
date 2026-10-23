@@ -225,7 +225,7 @@ One repository, one installer, four agent hosts. Versions are independent:
 |---|---|---|---|
 | Claude Code | [hooks](integrations/claude-code/hooks) + MCP server | core 0.5.1 (MIT) | `jit install --only claude-code` |
 | Hermes Agent | `src/` as the `ona-context` plugin | core 0.5.1 (MIT) | `jit install --only hermes` |
-| OpenCode | [native plugin](integrations/opencode/README.md) | 0.1.0 (MIT) | `jit install --only opencode` |
+| OpenCode | [native plugin](integrations/opencode/README.md) | 0.2.0 (MIT) | OpenCode 2.x: `jit-context-opencode-v2.js` from the [opencode-v0.2.0 release](https://github.com/wojciechwiesner/jit-context/releases/tag/opencode-v0.2.0) into `~/.config/opencode/plugins/`. OpenCode 1.x: `jit install --only opencode` |
 | Agent Zero | [plugin `jit_context`](integrations/agent-zero/README.md) | 0.4.1 (Apache-2.0) | `jit install --only agent-zero`, or in the Agent Zero UI: install from git `https://github.com/wojciechwiesner/jit-context-os` or from the `jit_context-<version>.zip` release asset |
 
 `jit-context-os` is the root-level mirror of `integrations/agent-zero/` that the Agent Zero Plugin Hub needs; issues, PRs and stars belong here. The [verified Agent Zero production rollout](docs/plans/2026-09-24-agent-zero-integration.md) is recorded separately.
