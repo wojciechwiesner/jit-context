@@ -1,6 +1,6 @@
 {
   "name": "opencode-plugin-jit-context",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "JIT Context OS for OpenCode: lean per-project context capsule, L0 SQLite WAL observations, fail-open by design.",
   "type": "module",
   "main": "./dist/index.js",
@@ -9,6 +9,10 @@
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
+    },
+    "./v2": {
+      "types": "./dist/v2.d.ts",
+      "import": "./dist/v2.js"
     }
   },
   "files": [
@@ -18,7 +22,7 @@
     "LICENSE"
   ],
   "scripts": {
-    "build": "rm -rf dist && bun build src/index.ts --outdir dist --target bun --external @opencode-ai/plugin && tsc -p tsconfig.build.json",
+    "build": "rm -rf dist && bun build src/index.ts src/v2.ts --outdir dist --target bun --external @opencode-ai/plugin && tsc -p tsconfig.build.json",
     "typecheck": "tsc --noEmit",
     "test": "bun test",
     "check": "bun run typecheck && bun test && bun run build",
@@ -50,5 +54,10 @@
   },
   "engines": {
     "bun": ">=1.1.0"
+  },
+  "peerDependenciesMeta": {
+    "@opencode-ai/plugin": {
+      "optional": true
+    }
   }
 }

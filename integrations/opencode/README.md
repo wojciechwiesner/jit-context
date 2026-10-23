@@ -65,6 +65,12 @@ Local, before publishing:
 }
 ```
 
+OpenCode 2.x needs the V2 entry `dist/v2.js` (export `./v2`). The V1 `dist/index.js` fails to load there and blocks plugin activation:
+
+```bash
+bun run build && cp dist/v2.js ~/.config/opencode/plugins/jit-context.js
+```
+
 ## Configuration
 
 Plugin options in `opencode.json` take precedence over env vars, which take precedence over defaults.
