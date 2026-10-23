@@ -158,3 +158,31 @@ def test_index_follows_symlinked_skill_dirs(tmp_path):
     root.mkdir()
     (root / "linked").symlink_to(real / "cat" / "linked-skill", target_is_directory=True)
     assert "linked-skill" in [s.name for s in skill_index.scan_skills(root)]
+
+
+def test_must_cut_line_never_splits_a_near_tie():
+    from context.skill_selector import MAX_MUST, Pick, _split_tiers
+
+    always = ["a1", "a2", "a3", "a4"]
+    ranked = [Pick(n, 4.0, "", n) for n in always]
+    ranked += [Pick("clear1", 16.0, "", "c1"), Pick("clear2", 15.0, "", "c2"), Pick("clear3", 14.0, "", "c3")]
+    ranked += [Pick("tie-hi", 12.05, "", "t1"), Pick("tie-lo", 12.0, "", "t2")]
+    assert len(always) + 3 + 1 == MAX_MUST  # exactly one slot left for two near-equal picks
+
+    must, optional = _split_tiers(sorted(ranked, key=lambda p: (-p.score, p.name)), always)
+
+    names = [p.name for p in must]
+    assert names == always + ["clear1", "clear2", "clear3"]
+    assert [p.name for p in optional][:2] == ["tie-hi", "tie-lo"]
+
+
+def test_must_cut_line_keeps_clear_winner():
+    from context.skill_selector import Pick, _split_tiers
+
+    always = ["a1", "a2", "a3", "a4"]
+    ranked = [Pick(n, 4.0, "", n) for n in always]
+    ranked += [Pick(f"s{i}", 20.0 - i, "", f"s{i}") for i in range(4)] + [Pick("weak", 11.0, "", "w")]
+
+    must, _ = _split_tiers(sorted(ranked, key=lambda p: (-p.score, p.name)), always)
+
+    assert [p.name for p in must][4:] == ["s0", "s1", "s2", "s3"]

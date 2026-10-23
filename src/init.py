@@ -24,9 +24,10 @@ from typing import Dict, List, Any, Optional
 
 from skills_cli import write_project_skills
 from context.stack_signals import (
-    DEFAULT_PACKAGE_MANAGER, SKIP_DIRS, classify_python, detect_package_manager,
-    knowledge_for_stack, node_test_command, parse_node_package,
+    DEFAULT_PACKAGE_MANAGER, SKIP_DIRS, classify_python, detect_node_builtin_databases,
+    detect_package_manager, knowledge_for_stack, node_test_command, parse_node_package,
 )
+from l1.obsidian_sync import refresh_dossier_header
 
 OBSIDIAN_VAULT = Path(os.path.expanduser("~/Documents/Wojciech"))
 OBSIDIAN_PROJECTS_DIR = OBSIDIAN_VAULT / "projects"
@@ -96,6 +97,7 @@ class ProjectScanner:
                 stack[key].extend(node[key])
         if stack["package_manager"] or any(p.exists() for p in pkg_jsons):
             stack["package_managers"].append(stack["package_manager"] or DEFAULT_PACKAGE_MANAGER)
+            stack["databases"].extend(detect_node_builtin_databases(self.target_dir))
 
         # Check Python: manifest or a meaningful share of product code, not helper scripts
         python = classify_python(self.target_dir)
@@ -355,7 +357,12 @@ def run_init(target_path: Path, tier: str = "standard", goal: Optional[str] = No
 
     obsidian_content = "\n".join(doc_lines)
     if dossier_existed:
+        # Keep the hand-written body; refresh only the commit/sync header so the
+        # runtime staleness check (commit vs HEAD) stops firing after init.
         dossier_action = "preserved"
+        if commit_sha:
+            refresh_dossier_header(obsidian_file, commit_sha, commit_msg)
+            dossier_action = "preserved_header_synced"
     else:
         obsidian_file.write_text(obsidian_content, encoding="utf-8")
         dossier_action = "created"
@@ -787,7 +794,7 @@ def main():
     print(f"• Ścieżka: {res['path']}")
     print(f"• Wykryty Stack: {', '.join(res['stack']['languages'])} | Frameworki: {', '.join(res['stack']['frameworks'])}")
     print(f"• Bazy Danych: {', '.join(res['stack']['databases']) or 'Brak'}")
-    print(f"• Obsidian SSOT: {res['obsidian_dossier']} ({'zachowany' if res.get('dossier_action') == 'preserved' else 'utworzony'})")
+    print(f"• Obsidian SSOT: {res['obsidian_dossier']} ({'utworzony' if res.get('dossier_action') == 'created' else 'zachowany, nagłówek commita odświeżony' if res.get('dossier_action') == 'preserved_header_synced' else 'zachowany'})")
     print(f"• Local State: {res['state_file']}")
     print(f"• Zewnętrzne Zasoby (Context7/Docs): {len(res['external_resources'])} wykrytych")
     for r in res['external_resources']:

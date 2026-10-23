@@ -12,6 +12,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `FileNotFoundError` traceback. Now it exits 2 with the list of commands. `jit init <missing-dir>` exits 2 too.
 - `jit status` reported the global default tier (`standard`) even after `jit init --tier deep`. `jit init` now
   records the tier in `.planning/jit.json` (merged, other keys kept) and `jit status` shows the project's tier.
+- `jit init` on a project with an existing Obsidian dossier kept the old `Ostatni Commit` header, so the
+  runtime kept firing `OBSIDIAN_SYNC_ALERT` right after init. It now refreshes only the commit/sync header
+  (the hand-written body is untouched) and reports `zachowany, nagłówek commita odświeżony`.
+- Stack detection reported `Bazy Danych: Brak` for Node projects using the built-in `node:sqlite` module
+  (no package.json entry). Product sources are now scanned for it (bounded, skips `node_modules`/helpers);
+  common Node DB drivers (`pg`, `better-sqlite3`, `mysql2`, `mongoose`, Supabase, Kysely, TypeORM) were added.
+- Must-have skills flipped between runs when two picks were within ~1% of each other at the last free
+  slot (e.g. `llm-proxy-gateways` 12.01 vs `macos-system-maintenance` 12.05). A near-tie (<5%) at the cut
+  line now demotes both to optional instead of letting noise decide.
+- Dossier header rewrite now uses a callable replacement, so commit messages with backslashes cannot
+  break the regex substitution.
 
 ## [0.5.1] - 2026-10-17
 

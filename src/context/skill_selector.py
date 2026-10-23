@@ -34,6 +34,8 @@ MAX_MUST = 8
 MAX_OPTIONAL = 10
 MAX_KNOWHOW = 5
 MUST_MIN_SCORE = 10.0
+# Relative score gap below which the must/optional cut line counts as a tie.
+MUST_TIE_MARGIN = 0.05
 OPTIONAL_MIN_SCORE = 5.0
 KNOWHOW_MIN_SCORE = 4.5
 
@@ -205,14 +207,27 @@ def apply_override(selection: Selection, override: Dict[str, List[str]],
 def _split_tiers(ranked: List[Pick], present_always: List[str]) -> Tuple[List[Pick], List[Pick]]:
     by_name = {pick.name: pick for pick in ranked}
     must = [Pick(n, by_name[n].score, "always-on workflow skill", by_name[n].path) for n in present_always]
-    for pick in ranked:
-        if len(must) >= MAX_MUST:
-            break
-        if pick.score >= MUST_MIN_SCORE and pick.name not in present_always:
-            must.append(pick)
+    candidates = [p for p in ranked if p.score >= MUST_MIN_SCORE and p.name not in present_always]
+    must.extend(_stable_cut(candidates, MAX_MUST - len(must)))
     chosen = {pick.name for pick in must}
     rest = [p for p in ranked if p.name not in chosen and p.score >= OPTIONAL_MIN_SCORE]
     return must, rest[:MAX_OPTIONAL]
+
+
+def _stable_cut(candidates: List[Pick], slots: int) -> List[Pick]:
+    """Take the top `slots` candidates, but never split a near-tie at the cut line.
+
+    When the last admitted pick and the first rejected one are within
+    MUST_TIE_MARGIN, which one wins depends on noise (doc wording, library size),
+    so must-tiers flip between runs. Ambiguous picks are demoted to optional instead.
+    """
+    if slots <= 0:
+        return []
+    if len(candidates) <= slots:
+        return list(candidates)
+    first_rejected = candidates[slots].score
+    tie_floor = first_rejected * (1.0 + MUST_TIE_MARGIN)
+    return [p for p in candidates[:slots] if p.score > tie_floor]
 
 
 def _knowhow_docs(root: Path) -> List[_Doc]:

@@ -104,3 +104,38 @@ def test_external_resources_dedupe_shared_target(tmp_path):
         ("context7", "fastapi"),
         ("context7", "sqlmodel"),
     ]
+
+
+def test_run_init_refreshes_commit_header_of_preserved_dossier(tmp_path, monkeypatch):
+    import subprocess
+    from l1.obsidian_sync import check_obsidian_staleness
+
+    projects = tmp_path / "projects"
+    projects.mkdir()
+    monkeypatch.setattr(init_mod, "OBSIDIAN_PROJECTS_DIR", projects)
+    note = projects / "sample-app.md"
+    body = "## Overview\n- hand-written body stays\n"
+    note.write_text(
+        "# Project Dossier: sample-app\n\n- **Ostatni Commit:** `abc1234` old\n"
+        "- **Ostatnia synchronizacja:** 2026-01-01 00:00:00\n\n" + body,
+        encoding="utf-8",
+    )
+    target = tmp_path / "sample-app"
+    target.mkdir()
+    (target / "app.py").write_text("print('ok')\n", encoding="utf-8")
+    git = ["git", "-c", "user.name=t", "-c", "user.email=t@t", "-C", str(target)]
+    subprocess.run(git[:5] + ["init", "-q", str(target)], check=True)
+    subprocess.run(git + ["add", "."], check=True)
+    subprocess.run(git + ["commit", "-qm", "feat: first"], check=True)
+    head = subprocess.run(git + ["rev-parse", "--short", "HEAD"], capture_output=True, text=True).stdout.strip()
+
+    result = init_mod.run_init(target, tier="standard")
+
+    text = note.read_text(encoding="utf-8")
+    assert result["dossier_action"] == "preserved_header_synced"
+    assert f"`{head}` feat: first" in text
+    assert "abc1234" not in text
+    assert text.count("Ostatnia synchronizacja") == 1
+    assert text.endswith(body)
+    monkeypatch.setattr("l1.obsidian_sync.find_obsidian_project_dossier", lambda scope: note)
+    assert check_obsidian_staleness("sample-app", str(target)) is None

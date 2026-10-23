@@ -81,37 +81,42 @@ def sync_obsidian_on_commit(scope: str, cwd: str, commit_sha: str = "", commit_m
         return False, "Could not determine git commit SHA"
 
     try:
-        content = dossier.read_text(encoding="utf-8")
-        now_str = datetime.now().strftime("%Y-%m-%d %H:%M")
-        
-        # 1. Update or insert 'Ostatni Commit' and 'Ostatnia synchronizacja'
-        sync_line = f"- **Ostatnia synchronizacja:** `{now_str}`"
-        commit_entry = f"- **Ostatni Commit:** `{commit_sha}` {commit_msg}\n{sync_line}"
-        # Drop the old sync line first; commit_entry carries the new one (else it duplicates).
-        content = re.sub(r"-\s+\*\*Ostatnia synchronizacja:\*\*[^\n]*\n?", "", content)
-        if re.search(r"-\s+\*\*Ostatni Commit:\*\*.*", content):
-            content = re.sub(r"-\s+\*\*Ostatni Commit:\*\*.*", commit_entry, content)
-        else:
-            header_match = re.search(r"(#\s+(?:Projekt|Project Dossier):[^\n]*\n)", content)
-            if header_match:
-                idx = header_match.end()
-                content = content[:idx] + f"{commit_entry}\n" + content[idx:]
-            else:
-                content = f"{commit_entry}\n\n" + content
-
-        # 2. Append to change log section if present
-        if "## Historia Wdrożeń i Zmian" in content or "## Changelog" in content:
-            log_line = f"- `{now_str}`: Commit `{commit_sha}` — {commit_msg}"
-            if "## Historia Wdrożeń i Zmian" in content:
-                content = content.replace(
-                    "## Historia Wdrożeń i Zmian\n",
-                    f"## Historia Wdrożeń i Zmian\n{log_line}\n"
-                )
-        
-        dossier.write_text(content, encoding="utf-8")
+        refresh_dossier_header(dossier, commit_sha, commit_msg)
         return True, f"Updated Obsidian SSOT at {dossier.name} (SHA: {commit_sha})"
     except Exception as e:
         return False, f"Error updating Obsidian dossier: {e}"
+
+
+def refresh_dossier_header(dossier: Path, commit_sha: str, commit_msg: str) -> None:
+    """Rewrite the 'Ostatni Commit' / 'Ostatnia synchronizacja' header of one dossier file."""
+    content = dossier.read_text(encoding="utf-8")
+    now_str = datetime.now().strftime("%Y-%m-%d %H:%M")
+
+    # 1. Update or insert 'Ostatni Commit' and 'Ostatnia synchronizacja'
+    sync_line = f"- **Ostatnia synchronizacja:** `{now_str}`"
+    commit_entry = f"- **Ostatni Commit:** `{commit_sha}` {commit_msg}\n{sync_line}"
+    # Drop the old sync line first; commit_entry carries the new one (else it duplicates).
+    content = re.sub(r"-\s+\*\*Ostatnia synchronizacja:\*\*[^\n]*\n?", "", content)
+    if re.search(r"-\s+\*\*Ostatni Commit:\*\*.*", content):
+        # Callable replacement: commit messages may contain backslashes or group refs.
+        content = re.sub(r"-\s+\*\*Ostatni Commit:\*\*.*", lambda _m: commit_entry, content, count=1)
+    else:
+        header_match = re.search(r"(#\s+(?:Projekt|Project Dossier):[^\n]*\n)", content)
+        if header_match:
+            idx = header_match.end()
+            content = content[:idx] + f"{commit_entry}\n" + content[idx:]
+        else:
+            content = f"{commit_entry}\n\n" + content
+
+    # 2. Append to change log section if present
+    if "## Historia Wdrożeń i Zmian\n" in content:
+        log_line = f"- `{now_str}`: Commit `{commit_sha}` — {commit_msg}"
+        content = content.replace(
+            "## Historia Wdrożeń i Zmian\n",
+            f"## Historia Wdrożeń i Zmian\n{log_line}\n",
+        )
+
+    dossier.write_text(content, encoding="utf-8")
 
 def check_obsidian_staleness(scope: str, cwd: str) -> Optional[str]:
     """Checks if the Obsidian dossier is desynchronized with local git HEAD."""

@@ -114,3 +114,17 @@ def test_capsule_verify_command_for_node_repo(tmp_path):
         conn.close()
     assert "Verify Command: pnpm run test" in text
     assert "Verify Command: pytest" not in text
+
+
+def test_node_builtin_sqlite_is_detected(tmp_path):
+    _write(tmp_path / "package.json", json.dumps({"scripts": {"test": "node --test"}}))
+    _write(tmp_path / "src" / "db.js", "import { DatabaseSync } from 'node:sqlite';\n")
+    stack, _ = _scan(tmp_path)
+    assert "SQLite (node:sqlite)" in stack["databases"]
+
+
+def test_node_builtin_sqlite_ignored_in_node_modules(tmp_path):
+    _write(tmp_path / "package.json", json.dumps({"scripts": {"test": "node --test"}}))
+    _write(tmp_path / "node_modules" / "x" / "db.js", "require('node:sqlite')\n")
+    stack, _ = _scan(tmp_path)
+    assert stack["databases"] == []

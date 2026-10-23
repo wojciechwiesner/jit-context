@@ -46,7 +46,17 @@ NODE_FRAMEWORKS = {
     "tailwindcss": "Tailwind", "vite": "Vite", "nuxt": "Nuxt",
     "@angular/core": "Angular",
 }
-NODE_DATABASES = {"prisma": "Prisma", "@prisma/client": "Prisma", "drizzle-orm": "Drizzle"}
+NODE_DATABASES = {
+    "prisma": "Prisma", "@prisma/client": "Prisma", "drizzle-orm": "Drizzle",
+    "better-sqlite3": "SQLite", "sqlite3": "SQLite", "pg": "PostgreSQL", "postgres": "PostgreSQL",
+    "mysql2": "MySQL", "mongoose": "MongoDB", "mongodb": "MongoDB",
+    "@supabase/supabase-js": "Supabase", "kysely": "Kysely", "typeorm": "TypeORM",
+}
+# Node built-in modules that are a database but never appear in package.json.
+NODE_BUILTIN_DATABASES = {"node:sqlite": "SQLite (node:sqlite)"}
+NODE_SOURCE_EXTENSIONS = {".js", ".mjs", ".cjs", ".ts", ".mts", ".cts"}
+MAX_BUILTIN_SCAN_FILES = 400
+MAX_BUILTIN_SCAN_BYTES = 200_000
 NODE_TEST_RUNNERS = {
     "vitest": "Vitest", "jest": "Jest", "mocha": "Mocha",
     "@playwright/test": "Playwright", "playwright": "Playwright",
@@ -150,6 +160,30 @@ def scan_source_files(target_dir: Path) -> Dict[str, Any]:
         if scanned >= MAX_SCANNED_FILES:
             break
     return {"product": product, "helper": helper, "python_files": python_files}
+
+
+def detect_node_builtin_databases(target_dir: Path) -> List[str]:
+    """Databases imported from Node built-ins (e.g. `node:sqlite`) in product source files."""
+    found: List[str] = []
+    scanned = 0
+    for root, dirs, files in os.walk(target_dir):
+        dirs[:] = [d for d in dirs if d not in SKIP_DIRS and d not in HELPER_DIRS and not d.startswith(".")]
+        for name in files:
+            if os.path.splitext(name)[1] not in NODE_SOURCE_EXTENSIONS:
+                continue
+            scanned += 1
+            try:
+                with open(Path(root) / name, encoding="utf-8", errors="ignore") as handle:
+                    text = handle.read(MAX_BUILTIN_SCAN_BYTES)
+            except OSError:
+                continue
+            for module, label in NODE_BUILTIN_DATABASES.items():
+                imported = f"'{module}'" in text or f'"{module}"' in text
+                if imported and label not in found:
+                    found.append(label)
+            if len(found) == len(NODE_BUILTIN_DATABASES) or scanned >= MAX_BUILTIN_SCAN_FILES:
+                return found
+    return found
 
 
 def classify_python(target_dir: Path) -> Dict[str, Any]:
