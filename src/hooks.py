@@ -245,6 +245,11 @@ def pre_llm_call(ctx: Dict[str, Any]) -> Dict[str, Any]:
                 stale_alert = check_obsidian_staleness(active_scope, str(active_path))
                 if stale_alert:
                     capsule += f"\n<OBSIDIAN_SYNC_ALERT: {stale_alert}>\n"
+            if local_state.exists():
+                from l1.cockpit_sync import architecture_drift
+                drift_alert = architecture_drift(active_path)
+                if drift_alert:
+                    capsule += f"\n<ARCHITECTURE_DRIFT_ALERT: {drift_alert}>\n"
 
         capsule, meta = finalize_capsule(capsule, meta)
         hook_total_ms = (time.time() - start_time) * 1000

@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Cockpit freshness on every commit (`src/l1/cockpit_sync.py`, entry point `src/l1/post_commit.py`): the git
+  post-commit hook now syncs the Obsidian dossier, rebuilds `.planning/state.html` with the sota-starter builder
+  (skipped when `state.html` is tracked, so the tree never goes dirty) and prints a warning when
+  `.planning/ARCHITECTURE.mmd` is 15+ code commits behind (docs, `.planning` and `*.md` do not count).
+- `<ARCHITECTURE_DRIFT_ALERT>` in the capsule next to `<OBSIDIAN_SYNC_ALERT>`, so the agent sees a stale diagram
+  at session start instead of trusting it. Runs on Python 3.9 (macOS system python used by git hooks).
+
 ### Fixed
 - `jit <word>` no longer treats an unknown word as a project path: `jit sync` used to crash with a
   `FileNotFoundError` traceback. Now it exits 2 with the list of commands. `jit init <missing-dir>` exits 2 too.
