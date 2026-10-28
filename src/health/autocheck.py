@@ -3,7 +3,7 @@
 import time
 import sqlite3
 from typing import Dict, Any
-from health.invariants import evaluate_all_invariants
+from health.diagnostics import evaluate_all_invariants
 
 from config import L2_ENABLED
 

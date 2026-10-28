@@ -11,6 +11,7 @@ from l1.scope import resolve_scope, scope_from_cwd
 from l1.project_cache import get_project_context
 from l2.triggers import should_trigger_deep_retrieval
 from l2.client import query_deep_context
+from context.capsule_policy import extract_genuine_user_instruction, is_synthetic_harness_message
 from config import L2_ENABLED
 from context.cascade_distiller import distill_context_cascade
 from context.stack_signals import infer_verify_command
@@ -38,15 +39,6 @@ def _prior_user_statements(overlays: List[Dict], user_message: str) -> List[str]
     instruction (or vice versa), so exact equality missed the current turn in 34/40 live
     capsules. Containment on normalized text catches both directions.
     """
-    try:
-        from hooks import extract_genuine_user_instruction, is_synthetic_harness_message
-    except ImportError:  # compiler used standalone (benchmarks) without the plugin hooks module
-        def extract_genuine_user_instruction(text: str) -> str:
-            return text
-
-        def is_synthetic_harness_message(text: str) -> bool:
-            return False
-
     current = _norm_statement(user_message)
     out: List[str] = []
     for o in overlays:

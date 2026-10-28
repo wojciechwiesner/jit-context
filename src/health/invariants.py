@@ -282,9 +282,3 @@ def check_i11_no_epistemically_equivalent_retry() -> InvariantStatus:
         return InvariantStatus.PASS
     except Exception:
         return InvariantStatus.FAIL
-
-
-def evaluate_all_invariants(conn: sqlite3.Connection) -> Dict[str, InvariantStatus]:
-    """Run synthetic invariants in disposable storage, never against the caller DB."""
-    from health.diagnostics import run_invariant_self_tests
-    return run_invariant_self_tests()

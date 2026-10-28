@@ -1,32 +1,106 @@
+%% jit-context architecture as built (master). Rebuilt from src/ imports on 2026-10-29; module import cycles: 0.
+%% Package edges come from an AST scan of src/ (tests excluded). Keep in sync when a package is added or split.
 graph TD
-    subgraph L0 ["L0: Hot-Path (<3ms)"]
-        Overlay["Session Overlay (SQLite WAL)"]
-        ToolEv["Tool Evidence & Recent Fence"]
-        Epistemic["Epistemic Weights (User=1.0, Asst=0.0)"]
-        Overlay --> ToolEv
-        Overlay --> Epistemic
+    subgraph Hosts ["Agent hosts (integrations/ + installer/)"]
+        HERMES["Hermes plugin ona-context"]
+        CC["Claude Code hooks"]
+        OC["OpenCode plugin (TS)"]
+        PI["Pi extension (TS)"]
+        A0["Agent Zero plugin"]
     end
 
-    subgraph L1 ["L1: Scope & AST Working Set"]
-        ScopeHyst["Scope Hysteresis & Working Set AST"]
-        ObsidianBridge["Obsidian SSOT Live Sync"]
-        ProjectCache["Project Cache & Symbols"]
+    subgraph Entry ["Entry points"]
+        HOOKS["hooks.py<br/>capsule per turn, tool evidence"]
+        CLI["init.py = jit CLI<br/>init, install, skills, doctor"]
+        MCP["mcp_server.py<br/>get_jit_context, project state"]
+        GIT["git post-commit<br/>l1/post_commit.py"]
     end
 
-    subgraph L2 ["L2: Deep-Path Cascade"]
-        Distiller["Cascade Distiller (Classifier + Verbatim + Assembler)"]
-        Broker["Borg Broker / Mem-Agent Client"]
-        Circuit["Circuit Breaker (600ms fail-open)"]
-        Distiller --> Broker
-        Broker --> Circuit
+    subgraph Compile ["context/ capsule compiler"]
+        COMP["compiler.py<br/>compile_context"]
+        POLICY["capsule_policy.py<br/>harness filter, host budget, finalize"]
+        CASC["cascade_distiller.py<br/>classify, verbatim, assemble"]
+        SCAN["project_scan.py + stack_signals.py<br/>stack, dossier name"]
+        SKILLS["skill_selector, skill_index, skill_output"]
+        GOAL["goal_anchor, domain_router,<br/>compactor, renderer"]
     end
 
-    subgraph Telemetry ["Observatory (:8765)"]
-        Doctor["Invariants Checker (I1-I10)"]
-        ExpSuites["Empirical Experiment Suites (EXP-001..010)"]
+    subgraph L0 ["l0/ hot path (SQLite WAL on the Mac)"]
+        OVERLAY["overlay.py + db.py<br/>session overlay, read-your-own-writes"]
+        EPI["epistemics.py<br/>authority: user 1.0, assistant 0.0"]
+        EVID["tool_evidence + claim_support<br/>verified runtime proofs"]
+        FENCE["recent_fence, tool_buffer"]
     end
 
-    L0 <--> L1
-    L1 <--> L2
-    L0 --> Telemetry
-    L2 --> Telemetry
+    subgraph L1 ["l1/ project scope"]
+        SCOPE["scope.py<br/>active scope + hysteresis"]
+        PCACHE["project_cache.py<br/>dossier + STATE.md"]
+        OSYNC["obsidian_sync.py<br/>SSOT header, staleness"]
+        CSYNC["cockpit_sync.py<br/>state.html rebuild, diagram drift"]
+    end
+
+    subgraph L2 ["l2/ deep path (off by default)"]
+        TRIG["triggers.py"]
+        L2C["client.py + circuit_breaker.py<br/>600 ms fail-open"]
+    end
+
+    subgraph COG ["cognitive/"]
+        JEV["jev_engine.py<br/>fact scoring"]
+        JUDGE["judge, loop_guard,<br/>contracts, bus"]
+    end
+
+    subgraph OPS ["health/ + telemetry/"]
+        HEALTH["health/server.py :8765<br/>observatory, mission, livestream"]
+        DOCTOR["doctor, autocheck, diagnostics<br/>invariants I1-I10 on a disposable DB"]
+        TELE["telemetry/<br/>collector, stream, turn_audit"]
+    end
+
+    SMALL["small_context.py + worker/<br/>local 2-9B models"]
+    VAULT[("Obsidian vault<br/>projects/name.md")]
+    REPO[("project repo .planning/<br/>STATE.md, state.html, ARCHITECTURE.mmd")]
+    BROKER["Borg broker / mem-agent"]
+    JEVAPI["JEV decisions API"]
+
+    HERMES --> HOOKS
+    CC --> HOOKS
+    OC --> HOOKS
+    PI --> HOOKS
+    A0 --> HOOKS
+    HOOKS --> COMP
+    HOOKS --> POLICY
+    HOOKS --> EVID
+    HOOKS --> CSYNC
+    HOOKS --> TELE
+    COMP --> POLICY
+    COMP --> CASC
+    COMP --> GOAL
+    COMP --> OVERLAY
+    COMP --> FENCE
+    COMP --> SCOPE
+    COMP --> PCACHE
+    COMP --> JEV
+    COMP --> TRIG
+    TRIG --> L2C
+    L2C --> BROKER
+    JEV --> JEVAPI
+    OVERLAY --> EPI
+    EVID --> EPI
+    CLI --> SCAN
+    CLI --> SKILLS
+    CLI --> OSYNC
+    CLI --> DOCTOR
+    CLI --> SMALL
+    SMALL --> JEV
+    GIT --> OSYNC
+    GIT --> CSYNC
+    MCP --> HEALTH
+    MCP -.->|fallback: read-only SQLite| OVERLAY
+    PCACHE --> VAULT
+    OSYNC --> VAULT
+    CSYNC --> REPO
+    PCACHE --> REPO
+    HEALTH --> DOCTOR
+    HEALTH --> TELE
+    DOCTOR --> OVERLAY
+    DOCTOR --> JEV
+    EPI --> JUDGE

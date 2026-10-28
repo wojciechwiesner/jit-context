@@ -1,5 +1,17 @@
 # Project State: hermes-jit-context-os-v0.1
 
+## 2026-10-29 — cockpit freshness + architecture map
+- [x] `713d77e` cockpit_sync + post_commit: git post-commit rebuilds `.planning/state.html` (skips tracked cockpits),
+  syncs Obsidian, warns when `ARCHITECTURE.mmd` is 15+ code commits behind; `<ARCHITECTURE_DRIFT_ALERT>` in the capsule.
+  Pushed to origin/master, `jit install` exit 0 on all 5 hosts.
+- [x] Import cycles 3 -> 0 (AST scan of src/): harness-message filters moved to `context/capsule_policy.py`
+  (hooks re-exports), `evaluate_all_invariants` moved to `health/diagnostics.py`, `ProjectScanner` and dossier naming
+  moved to `context/project_scan.py` (init re-exports; `init.resolve_dossier` keeps honouring `OBSIDIAN_PROJECTS_DIR`).
+- [x] `.planning/ARCHITECTURE.mmd` redrawn from the package import graph (was 79 code commits behind, from 2026-09-25).
+- Verification: `python3.11 -m pytest src/tests -q` 247 passed; no new Ruff F/E9 findings in touched files;
+  imports OK on system python3 (3.9) and 3.11; `jit init`, `jit skills`, `jit doctor` (READY FOR ACTIVE) exit 0.
+- Open: `.planning/state.html` is tracked here, so the hook does not rebuild it; regenerate by hand when it matters.
+
 ## Release v0.5.1 — 2026-10-17
 - User approved commit, production replacement, push and release.
 - Verification: **231 tests PASS**, supported Python 3.14; wheel/sdist build and Ruff F/E9 PASS.

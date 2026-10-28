@@ -14,7 +14,8 @@ from l0.overlay import append_event, ensure_session, get_active_overlays
 from l1.scope import resolve_scope, scope_from_cwd
 from context.compiler import compile_context
 from context.capsule_policy import (
-    finalize_capsule, is_host_notification, strip_reload_notices,
+    extract_genuine_user_instruction, is_synthetic_harness_message,
+    finalize_capsule,
     unpack_compilation, working_set_paths,
 )
 from config import DB_PATH, VAULT_DIR, WORKSPACE_DIR
@@ -67,50 +68,6 @@ def hot_reload_jit_modules() -> None:
                             pass
     except Exception:
         pass
-
-def extract_genuine_user_instruction(text: str) -> str:
-    """Extract real human instruction if message is wrapped in a skill invocation or harness prefix."""
-    text = strip_reload_notices(text or "")
-    if is_host_notification(text):
-        return ""
-    if not text:
-        return ""
-    # Strip nested/quoted <ONA_CONTEXT ...> blocks to avoid self-poisoning
-    clean = re.sub(r'<ONA_CONTEXT.*?</ONA_CONTEXT>', '', text, flags=re.DOTALL).strip()
-    if clean:
-        text = clean
-    # Strip injected ENGINEERING CANON
-    clean = re.sub(r'\n*ENGINEERING CANON \(~.*', '', text, flags=re.DOTALL).strip()
-    if clean:
-        text = clean
-    m = re.search(r"The user has provided the following instruction alongside the skill invocation:\s*(.*)", text, re.DOTALL)
-    if m:
-        return m.group(1).strip()
-    return text
-
-def is_synthetic_harness_message(text: str) -> bool:
-    """Detect internal Hermes harness prompts (curator, delegation, /btw, canon)."""
-    if not text:
-        return False
-    if is_host_notification(text):
-        return True
-    t = text.strip()
-    prefixes = (
-        "[ASYNC DELEGATION",
-        "Review the conversation above and update the skill library",
-        "The user asked a quick SIDE question with /btw",
-        "[OUT-OF-BAND USER MESSAGE",
-        "ENGINEERING CANON (~",
-        "<ONA_CONTEXT",
-        "[ONA_CONTEXT",
-        "[IMPORTANT: The user has invoked the ",
-        # Host notifications (background process completion, system reminders) are not
-        # user instructions and must never enter [PRIOR USER INSTRUCTIONS].
-        "[IMPORTANT: Background process",
-        "[SYSTEM:",
-        "<system-reminder>",
-    )
-    return any(t.startswith(p) for p in prefixes)
 
 def on_session_start(ctx: Dict[str, Any]) -> None:
     """Initialize database and verify schema on session startup."""

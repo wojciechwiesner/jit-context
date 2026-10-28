@@ -2,7 +2,10 @@
 
 import sqlite3
 from contextlib import closing
+from typing import Dict
 
+from health import invariants as checks
+from health.invariants import InvariantStatus
 from l0.db import _init_db_conn
 
 
@@ -13,9 +16,7 @@ def diagnostic_connection() -> sqlite3.Connection:
     return connection
 
 
-def run_invariant_self_tests():
-    from health import invariants as checks
-
+def run_invariant_self_tests() -> Dict[str, InvariantStatus]:
     with closing(diagnostic_connection()) as connection:
         return {
             "I1": checks.check_i1_direct_user_wins(connection),
@@ -30,3 +31,9 @@ def run_invariant_self_tests():
             "I10": checks.check_i10_no_canon_promotion(),
             "I11": checks.check_i11_no_epistemically_equivalent_retry(),
         }
+
+
+def evaluate_all_invariants(conn: sqlite3.Connection) -> Dict[str, InvariantStatus]:
+    """Run synthetic invariants in disposable storage, never against the caller DB.
+    `conn` is accepted for API compatibility and deliberately ignored."""
+    return run_invariant_self_tests()

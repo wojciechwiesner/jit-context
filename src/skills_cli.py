@@ -4,6 +4,7 @@ import os
 from pathlib import Path
 from typing import Callable, Dict, List, Optional
 
+from context.project_scan import ProjectScanner, resolve_dossier
 from context.skill_output import write_selection
 from context.skill_selector import Selection, select_skills
 
@@ -15,10 +16,8 @@ def select_for_path(project: Path, stack: Optional[Dict] = None, **roots) -> Sel
     """Select skills for a project, detecting the stack and Obsidian dossier when not given."""
     project = project.resolve()
     if stack is None:
-        from init import ProjectScanner
         stack = ProjectScanner(project).detect_stack()
     if "dossier_file" not in roots:
-        from init import resolve_dossier
         roots["dossier_file"] = resolve_dossier(project.name)[0]
     return select_skills(project, stack, **roots)
 

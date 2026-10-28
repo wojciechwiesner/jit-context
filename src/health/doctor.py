@@ -20,7 +20,7 @@ from l0.overlay import append_event, ensure_session, get_active_overlays
 from l1.scope import resolve_scope
 from l2.circuit_breaker import CircuitBreaker
 from context.compiler import compile_context
-from health.invariants import evaluate_all_invariants
+from health.diagnostics import evaluate_all_invariants
 from health.diagnostics import diagnostic_connection
 
 def run_doctor() -> bool:

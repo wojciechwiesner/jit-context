@@ -85,7 +85,7 @@ def test_working_set_paths_include_actual_line_count_format():
 
 
 def test_invariant_diagnostics_do_not_append_to_caller_db(test_db):
-    from health.invariants import evaluate_all_invariants
+    from health.diagnostics import evaluate_all_invariants
     ensure_session(test_db, "real-session", default_scope="jit-context")
     append_event(test_db, "real-session", "user", "Do not invent user statements", "direct_user")
     before = test_db.total_changes

@@ -15,6 +15,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `<ARCHITECTURE_DRIFT_ALERT>` in the capsule next to `<OBSIDIAN_SYNC_ALERT>`, so the agent sees a stale diagram
   at session start instead of trusting it. Runs on Python 3.9 (macOS system python used by git hooks).
 
+### Changed
+- Import cycles removed (3 -> 0): `extract_genuine_user_instruction` and `is_synthetic_harness_message` live in
+  `context/capsule_policy.py` (re-exported by `hooks.py`), so `context/compiler.py` no longer imports `hooks`;
+  `evaluate_all_invariants` lives in `health/diagnostics.py`; `ProjectScanner`, `dossier_stem` and
+  `resolve_dossier` live in `context/project_scan.py` (re-exported by `init.py`), so `skills_cli` no longer imports `init`.
+- `.planning/ARCHITECTURE.mmd` redrawn from the real package import graph (hosts, entry points, context compiler,
+  L0/L1/L2, cognitive, health/telemetry, vault and repo stores).
+
 ### Fixed
 - `jit <word>` no longer treats an unknown word as a project path: `jit sync` used to crash with a
   `FileNotFoundError` traceback. Now it exits 2 with the list of commands. `jit init <missing-dir>` exits 2 too.
