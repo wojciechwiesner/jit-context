@@ -24,6 +24,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   L0/L1/L2, cognitive, health/telemetry, vault and repo stores).
 
 ### Fixed
+- Tests no longer write to the real Obsidian vault or project workspaces. `test_session_isolation.py` ran
+  `pre_llm_call` against the live `VAULT_DIR`, so `~/Documents/Wojciech/projects/boocco.md` got a pytest session
+  (`test_run_persist_999`) and `boocco/.planning/latest_context.xml` pointed at a pytest capsule. An autouse fixture
+  in `src/tests/conftest.py` now redirects every module-level copy of the vault/workspace paths to a temp dir, and a
+  session guard fails the run if a real dossier ends up containing a pytest temp path.
 - `jit <word>` no longer treats an unknown word as a project path: `jit sync` used to crash with a
   `FileNotFoundError` traceback. Now it exits 2 with the list of commands. `jit init <missing-dir>` exits 2 too.
 - `jit status` reported the global default tier (`standard`) even after `jit init --tier deep`. `jit init` now
