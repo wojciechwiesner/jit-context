@@ -48,6 +48,19 @@ def test_git_worktree_resolves_main_repo(home, tmp_path):
     assert scope_from_cwd(str(wt)) == "jit-context"
 
 
+def test_worktree_parked_under_projects_dir_resolves_main_repo(home):
+    # e.g. ~/Projects/active/dos-wt/CE is a worktree of ~/Projects/active/dos, not a project "dos-wt"
+    wt = home / "Projects" / "active" / "jit-context-wt" / "CE"
+    (wt / "src").mkdir(parents=True)
+    gitdir = home / "Projects" / "active" / "jit-context" / ".git" / "worktrees" / "CE"
+    (wt / ".git").write_text(f"gitdir: {gitdir}\n")
+    assert scope_from_cwd(str(wt)) == "jit-context"
+    assert scope_from_cwd(str(wt / "src")) == "jit-context"
+    # a plain folder without a worktree marker keeps the old first-level behaviour
+    (home / "Projects" / "active" / "plain" / "sub").mkdir(parents=True)
+    assert scope_from_cwd(str(home / "Projects" / "active" / "plain" / "sub")) == "plain"
+
+
 def test_prompt_mention_does_not_hijack_cwd_scope(home):
     # `home` fixture creates Projects/active/autocheck, so the test does not depend on the host's real dirs (CI).
     active, retrieval, _, _ = resolve_scope("sprawdz autocheck", "general", cwd_scope="jit-context")

@@ -67,6 +67,19 @@ def _scope_from_git_marker(git_marker: Path) -> Optional[str]:
     return git_marker.parent.name
 
 
+def _worktree_scope(path: Path, stop: Path) -> Optional[str]:
+    """Main-repo scope when `path` sits inside a git worktree (a `.git` FILE), searching up to `stop`."""
+    for directory in [path, *path.parents]:
+        if directory == stop or directory == directory.parent:
+            return None
+        marker = directory / ".git"
+        if marker.is_file():
+            return _scope_from_git_marker(marker)
+        if marker.is_dir():
+            return None
+    return None
+
+
 def scope_from_cwd(cwd: Optional[str]) -> Optional[str]:
     """Project scope anchored by a working directory, or None for roots/unknown dirs."""
     if not cwd:
@@ -75,7 +88,10 @@ def scope_from_cwd(cwd: Optional[str]) -> Optional[str]:
     projects_root = Path.home().joinpath(*PROJECTS_SUBDIR)
     try:
         rel = path.relative_to(projects_root)
-        return rel.parts[0] if rel.parts and not rel.parts[0].startswith(".") else None
+        if not rel.parts or rel.parts[0].startswith("."):
+            return None
+        # worktrees parked under Projects/active (e.g. dos-wt/CE) belong to their main repo, not the folder
+        return _worktree_scope(path, projects_root) or rel.parts[0]
     except ValueError:
         pass
     home = Path.home()
