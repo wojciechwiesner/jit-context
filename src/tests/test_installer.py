@@ -71,6 +71,20 @@ def test_hermes_links_snapshot_and_moves_real_dir_aside(fake_home, monkeypatch):
     assert not link.exists() and list((fake_home / ".hermes/plugin-releases").iterdir())
 
 
+def test_hermes_links_context_engine_from_the_same_snapshot(fake_home, monkeypatch):
+    monkeypatch.setattr(hermes, "_hermes", lambda *args: False)
+    (fake_home / ".hermes" / "plugins").mkdir(parents=True)
+    assert hermes.install().status == OK
+    plugins = fake_home / ".hermes/plugins"
+    engine = plugins / "jit"
+    assert engine.is_symlink() and (engine / "__init__.py").exists()
+    assert "register_context_engine" in (engine / "__init__.py").read_text()
+    assert engine.resolve().parent == (plugins / "ona-context").resolve()
+
+    hermes.uninstall()
+    assert not engine.exists() and not engine.is_symlink()
+
+
 def test_opencode_npm_entry_is_added_once_and_removed(fake_home, monkeypatch):
     monkeypatch.setattr(opencode, "npm_published", lambda: True)
     cfg_path = fake_home / ".config/opencode/opencode.json"

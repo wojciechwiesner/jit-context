@@ -22,6 +22,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   and which env keys enable outbound calls. Unmeasured claims (sub-3ms engine, <1,500 token cap, >99% savings)
   removed; badge now shows the plain DOI and the real `test.yml` workflow.
 
+### Added
+- Hermes context engine plugin (`src/hermes_engine/`, linked as `~/.hermes/plugins/jit` by `jit install`): it extends
+  Hermes' built-in `ContextCompressor` (same thresholds, same summaries) and adds `select_context`, which swaps tool
+  results older than the last 2 user turns and longer than 1,200 chars for one-line pointers in every request. The
+  session transcript is never changed. `JIT_ENGINE_DISABLED=1`, `JIT_ENGINE_KEEP_TURNS`, `JIT_ENGINE_MIN_CHARS` tune it.
+  Until now `context.engine: jit` silently fell back to the built-in compressor because the engine only lived in an
+  unmerged Hermes PR; every Hermes measurement so far ran without it.
+- `benchmarks/run_hermes_engine_checks.py`: runs the engine checks inside Hermes' own interpreter.
+
 ### Fixed
 - Turn-1 project scope in a local Hermes CLI run: when neither the overlay nor Hermes' `state.db` has a cwd for
   the session (`hermes chat -q` stores `cwd = NULL`), the hook now uses `TERMINAL_CWD`, then the process cwd. Gateway,

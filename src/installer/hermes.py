@@ -11,6 +11,10 @@ from installer.common import DRY, FAIL, OK, SKIP, SRC_DIR, Result, create_snapsh
 
 HOST = "hermes"
 PLUGIN_NAME = "ona-context"
+# Context engine plugin: ~/.hermes/plugins/jit -> <snapshot>/hermes_engine, picked up by
+# `context.engine: jit`. It lives in the same snapshot as the hook, so both always match.
+ENGINE_NAME = "jit"
+ENGINE_SUBDIR = "hermes_engine"
 # Runtime guards against tool-output bloat; same values the original install.sh applied.
 RUNTIME_GUARDS = (
     ("tool_output.max_bytes", "4000"),
@@ -81,6 +85,8 @@ def install(dry_run: bool = False, restart: bool = True, *, include_profiles: bo
     for link in links:
         link.parent.mkdir(parents=True, exist_ok=True)
         relink(link, target)
+        if (target / ENGINE_SUBDIR / "__init__.py").exists():
+            relink(link.with_name(ENGINE_NAME), target / ENGINE_SUBDIR)
     if include_profiles:
         prune_snapshots(releases, PLUGIN_NAME, keep=target)
     profiles_note = f" (+{len(links) - 1} profile(s))" if len(links) > 1 else ""
@@ -99,4 +105,7 @@ def uninstall(dry_run: bool = False) -> Result:
     if dry_run:
         return Result(HOST, DRY, f"would remove link {link} (snapshots kept)")
     link.unlink()
-    return Result(HOST, OK, "plugin link removed (snapshots kept in plugin-releases)")
+    engine_link = link.with_name(ENGINE_NAME)
+    if engine_link.is_symlink():
+        engine_link.unlink()
+    return Result(HOST, OK, "plugin links removed (snapshots kept in plugin-releases)")
