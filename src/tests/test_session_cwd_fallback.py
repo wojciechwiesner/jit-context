@@ -20,7 +20,7 @@ def _hermes_db(path, rows):
 
 def test_falls_back_to_hermes_session_cwd(tmp_path, monkeypatch):
     db = tmp_path / "state.db"
-    _hermes_db(db, [("child-1", "/repo/jit-context"), ("other", "/repo/faktury")])
+    _hermes_db(db, [("child-1", "/repo/jit-context"), ("other", "/repo/ledger")])
     monkeypatch.setenv("HERMES_STATE_DB", str(db))
     assert overlay.get_session_cwd(_overlay_db(), "child-1") == "/repo/jit-context"
 

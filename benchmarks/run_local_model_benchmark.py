@@ -69,8 +69,8 @@ SCENARIOS = [
         "name": "Invariant I5: Cross-Project Isolation",
         "haystack_context": (
             "KONTEKST PROJEKTÓW:\n"
-            "Projekt InvoiceFlow: silnik KSeF, baza PostgreSQL, port 8002.\n"
-            + ("InvoiceFlow wykorzystuje PostgreSQL jako główny magazyn.\n" * 10)
+            "Projekt LedgerApp: silnik rozliczeń, baza PostgreSQL, port 8002.\n"
+            + ("LedgerApp wykorzystuje PostgreSQL jako główny magazyn.\n" * 10)
             + "Projekt Boocco: Next.js, baza Supabase, port 3002.\n"
         ),
         "jit_context": (
@@ -79,7 +79,7 @@ SCENARIOS = [
             "  [CURRENT — direct user]\n"
             "    • Aktywny projekt: Boocco (baza: Supabase)\n"
             "  [REFERENCED — read only]\n"
-            "    • InvoiceFlow (baza: PostgreSQL)\n"
+            "    • LedgerApp (baza: PostgreSQL)\n"
             "</ONA_CONTEXT>"
         ),
         "user_query": "Z jakiej bazy danych korzysta nasz bieżący aktywny projekt? Wymień tylko nazwę bazy.",

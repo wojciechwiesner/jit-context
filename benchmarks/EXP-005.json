@@ -149,7 +149,7 @@
           "correct": false,
           "wall_time_s": 1.84,
           "prompt_chars": 805,
-          "response": "Odpowiedź: PostgreSQL\n\nDlaczego? \n- W kontekście projektów, mamy dwa projekty: InvoiceFlow i Boocco.\n- InvoiceFlow jest opisany jako \"silnik KSeF, baza PostgreSQL, port 800"
+          "response": "Odpowiedź: PostgreSQL\n\nDlaczego? \n- W kontekście projektów, mamy dwa projekty: LedgerApp i Boocco.\n- LedgerApp jest opisany jako \"silnik KSeF, baza PostgreSQL, port 800"
         },
         "jit_os": {
           "correct": true,

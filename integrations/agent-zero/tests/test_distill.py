@@ -27,7 +27,7 @@ def _seed(db_path):
         ("s1", 0, 0, "user wants nginx config for boocco deploy on borg.tools", 1.0),
         ("s1", 1, 1, "assistant long prose that must be ignored entirely", 1.1),
         ("s1", 2, 0, "user wants nginx config for boocco deploy on borg.tools", 1.2),  # dupe
-        ("s1", 3, 0, "deadline for invoiceflow KSeF sync is friday", 1.3),
+        ("s1", 3, 0, "deadline for ledgerapp ledger sync is friday", 1.3),
     ]
     conn.executemany(
         "INSERT INTO pruned_history (session_id, message_index, ai, content, created_at) "
@@ -54,4 +54,4 @@ def test_distill_respects_existing_facts(tmp_path):
     _seed(db)
     rt = FakeRuntime(existing=[{"key": "d0", "value": "nginx config boocco deploy borg.tools user wants"}])
     distill_new_rows(rt, db, session_id="s1", since_ts=0.5, cap=3)
-    assert all("invoiceflow" in v or "KSeF" in v for _, v, _ in rt.set_calls)
+    assert all("ledgerapp" in v or "KSeF" in v for _, v, _ in rt.set_calls)

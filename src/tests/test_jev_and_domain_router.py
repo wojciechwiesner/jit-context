@@ -167,7 +167,7 @@ def test_jev_does_not_truncate_candidate_value(monkeypatch):
 # --- Domain Router Tests ---
 
 def test_domain_router_whatsapp():
-    routing = resolve_domain_routing("zobacz dzisiejsza rozmowe z dominikiem udriver")
+    routing = resolve_domain_routing("zobacz dzisiejsza rozmowe z klientem na whatsapp")
     assert "whatsapp" in routing["detected_domains"]
     assert any("@source:whatsapp:" in s for s in routing["domain_sources"])
     assert any("Suprawhat" in h for h in routing["action_hints"])
@@ -251,7 +251,7 @@ def test_cascade_distiller_calibrated_complexity():
     # S1 prompt: deep exploration + building engine -> should be 'feature'
     res_s1 = distill_context_cascade(
         raw_statements=[
-            "zobacz dzisiejsza rozmowe z dominikiem udriver. Weź przeanalizuj wideo i zbuduj silnik drzew decyzyjnych."
+            "zobacz dzisiejsza rozmowe z klientem na whatsapp. Weź przeanalizuj wideo i zbuduj silnik drzew decyzyjnych."
         ],
         active_scope="general",
         epoch=1,

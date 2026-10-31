@@ -19,7 +19,9 @@ from context.skill_signals import (
 
 DEFAULT_KNOWHOW_ROOT = Path.home() / "Documents" / "Wojciech" / "knowhow"
 # Business/customer document trees, not engineering knowhow.
-KNOWHOW_EXCLUDED_DIRS = frozenset({"application-partner", "business"})
+KNOWHOW_EXCLUDED_DIRS = frozenset({"business", "clients"})
+# Any knowhow subdirectory containing this marker file is never indexed.
+KNOWHOW_IGNORE_MARKER = ".jit-ignore"
 OVERRIDE_FILENAME = "skills.override.json"
 
 # Workflow skills that apply to every coding project (used only if present in the index).
@@ -233,7 +235,8 @@ def _stable_cut(candidates: List[Pick], slots: int) -> List[Pick]:
 def _knowhow_docs(root: Path) -> List[_Doc]:
     docs = []
     for path in sorted(root.rglob("*.md")) if root.is_dir() else []:
-        if path.relative_to(root).parts[0] in KNOWHOW_EXCLUDED_DIRS:
+        top_dir = path.relative_to(root).parts[0]
+        if top_dir in KNOWHOW_EXCLUDED_DIRS or (root / top_dir / KNOWHOW_IGNORE_MARKER).exists():
             continue
         try:
             lines = path.read_text(encoding="utf-8", errors="replace").splitlines()[:30]

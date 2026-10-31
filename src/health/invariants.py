@@ -180,8 +180,8 @@ def check_i4_no_authority_laundering() -> InvariantStatus:
 def check_i5_scope_hysteresis() -> InvariantStatus:
     """I5: Single cross-project mention does not switch active scope."""
     try:
-        active, retrieval, _, _ = resolve_scope("Jak robiliśmy w InvoiceFlow?", "hermes")
-        passed = active == "hermes" and "invoiceflow" in retrieval
+        active, retrieval, _, _ = resolve_scope("Jak robiliśmy w LedgerApp?", "hermes")
+        passed = active == "hermes" and "ledgerapp" in retrieval
         return InvariantStatus.PASS if passed else InvariantStatus.FAIL
     except Exception:
         return InvariantStatus.FAIL

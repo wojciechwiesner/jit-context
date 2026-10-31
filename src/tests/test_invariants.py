@@ -82,9 +82,9 @@ def test_i4_provider_chain_cannot_launder_confidence():
 
 # --- Invariant I5: Scope Hysteresis & Cross-Project Isolation ---
 def test_i5_cross_project_lookup_does_not_switch_scope():
-    active, retrieval, _, _ = resolve_scope("Jak to działa w InvoiceFlow?", "hermes")
+    active, retrieval, _, _ = resolve_scope("Jak to działa w Thesaiver?", "hermes")
     assert active == "hermes"
-    assert "invoiceflow" in retrieval
+    assert "thesaiver" in retrieval
 
 def test_i5_scope_switch_requires_hysteresis():
     active1, _, cand, turns = resolve_scope("Rozmawiamy o boocco", "hermes")
@@ -187,7 +187,7 @@ def test_assistant_claims_without_tools_never_enter_verified_proofs(test_db):
 def test_cascade_auth_invariant_triggered_on_auth_keywords(test_db):
     session_id = "s_cascade_auth"
     ensure_session(test_db, session_id)
-    capsule = compile_context(test_db, session_id, "sprawdz dlaczego mikita karney jest wylogowywany z faktur")
+    capsule = compile_context(test_db, session_id, "sprawdz dlaczego uzytkownik jest wylogowywany z panelu")
     assert "CASCADE INVARIANT (Auth Graph)" in capsule
     assert "Token/cookie changes require verifying all issuers" in capsule
 

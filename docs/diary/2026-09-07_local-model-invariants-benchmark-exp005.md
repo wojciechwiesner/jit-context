@@ -25,7 +25,7 @@
     "Speedup": "2.08x (1.368s -> 0.657s)"
   },
   "scenario_3_scope_isolation (I5)": {
-    "Haystack": "FAIL (Pomylił stack InvoiceFlow z Boocco)",
+    "Haystack": "FAIL (Pomylił stack LedgerApp z Boocco)",
     "JIT Context OS": "PASS (Wskazał Supabase z aktywnego scope)",
     "Speedup": "1.6x (1.094s -> 0.684s)"
   }

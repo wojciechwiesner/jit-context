@@ -139,15 +139,15 @@ def test_write_selection_refuses_home_dir(tmp_path, monkeypatch, skills_root, kn
 def test_skills_of_other_projects_dropped_own_kept(tmp_path, monkeypatch):
     # Known projects come from ~/Projects/active; point HOME at a fake tree so the test is host-independent.
     monkeypatch.setenv("HOME", str(tmp_path))
-    for name in ("faktury", "boocco"):
+    for name in ("ledger", "boocco"):
         (tmp_path / "Projects" / "active" / name).mkdir(parents=True)
     root = tmp_path / "skills"
     make_skill(root, "boocco-app-development", "Boocco Next.js app with Python helpers", "python, pytest")
-    make_skill(root, "faktury-invoiceflow-project", "InvoiceFlow faktury Python service", "python, pytest")
-    project = tmp_path / "Projects" / "active" / "faktury"
+    make_skill(root, "ledger-ledgerapp-project", "LedgerApp ledger Python service", "python, pytest")
+    project = tmp_path / "Projects" / "active" / "ledger"
     selection = select_skills(project, PY_STACK, skills_root=root, knowhow_root=tmp_path / "none")
     picked = names(selection.must) + names(selection.optional)
-    assert "faktury-invoiceflow-project" in picked
+    assert "ledger-ledgerapp-project" in picked
     assert "boocco-app-development" not in picked
 
 
@@ -186,3 +186,15 @@ def test_must_cut_line_keeps_clear_winner():
     must, _ = _split_tiers(sorted(ranked, key=lambda p: (-p.score, p.name)), always)
 
     assert [p.name for p in must][4:] == ["s0", "s1", "s2", "s3"]
+
+
+def test_knowhow_dir_with_ignore_marker_is_skipped(tmp_path):
+    from context.skill_selector import _knowhow_docs
+    (tmp_path / "private").mkdir()
+    (tmp_path / "private" / ".jit-ignore").write_text("")
+    (tmp_path / "private" / "secret.md").write_text("# Private\npython pytest")
+    (tmp_path / "public").mkdir()
+    (tmp_path / "public" / "notes.md").write_text("# Notes\npython pytest")
+    paths = [str(d.path) for d in _knowhow_docs(tmp_path)]
+    assert any("notes.md" in p for p in paths)
+    assert not any("secret.md" in p for p in paths)

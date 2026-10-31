@@ -43,7 +43,7 @@ def resolve_domain_routing(query: str, session_cwd: Optional[str] = None) -> Dic
     domains: List[str] = []
 
     # 1. WhatsApp / Contacts / Communication
-    if re.search(r"\b(whatsapp|rozmow[ayie]|czat|dominik|udriver|kontakt)\b", q_low):
+    if re.search(r"\b(whatsapp|rozmow[ayie]|czat|kontakt)\b", q_low):
         domains.append("whatsapp")
         wa_vault_path = Path.home() / "Documents/Wojciech/whatsapp"
         sources.append(

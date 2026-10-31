@@ -1,30 +1,40 @@
 # JIT-JEV Context OS: Epistemic Runtime & System 1 Gate for AI Agents
 
 <p align="center">
-  <strong>The Epistemic Operating System for Autonomous Coding Agents. Eliminating the Haystack Tax: 61% fewer agent turns, 2.44x faster delivery, and >99% prompt token reduction on production codebases.</strong>
+  <strong>A deterministic context runtime for autonomous coding agents with tool access. It cuts agent turns and wall time on discovery-heavy coding tasks. It is not a universal token saver: on short, single-file tasks it adds a small capsule overhead.</strong>
 </p>
 
 <p align="center">
-  <a href="https://doi.org/10.5281/zenodo.22649542"><img src="https://zenodo.org/badge/DOI/10.5281/zenodo.22649542.svg" alt="CERN Zenodo DOI"></a>
+  <a href="https://doi.org/10.5281/zenodo.22649542"><img src="https://zenodo.org/badge/DOI/10.5281/zenodo.22649542.svg" alt="DOI 10.5281/zenodo.22649542"></a>
   <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License: MIT"></a>
-  <a href="https://theones.io/benchmark/"><img src="https://img.shields.io/badge/Benchmark%20Hub-Live%20Telemetry-blue?logo=googlechrome&logoColor=white" alt="Benchmark Hub"></a>
-  <a href="https://theones.io/blog/jit-jev-context-the-first-production-agent-runtime"><img src="https://img.shields.io/badge/Architecture-Deep%20Dive-purple" alt="Deep Dive"></a>
-  <a href="https://theones.io/benchmark/"><img src="https://img.shields.io/badge/JEV%20System%201%20Gate--31.3%25%20Turns-emerald" alt="JEV System 1 Gate"></a>
-  <a href="https://github.com/wojciechwiesner/jit-context"><img src="https://img.shields.io/badge/Synthapse-2.44x%20Faster-orange" alt="Synthapse speedup, not the fixture battle"></a>
-  <a href="https://github.com/wojciechwiesner/jit-context"><img src="https://img.shields.io/badge/Token%20Reduction--99%25-green" alt="Tokens"></a>
+  <a href="https://github.com/wojciechwiesner/jit-context/actions"><img src="https://github.com/wojciechwiesner/jit-context/actions/workflows/test.yml/badge.svg" alt="CI"></a>
+  <a href="https://theones.io/benchmarks/"><img src="https://img.shields.io/badge/Benchmarks-theones.io-blue" alt="Benchmarks"></a>
 </p>
 
 ---
 
-### Production Benchmark Snapshot (Commercial Web Audio Codebase — 45 Modules)
-| Metric | Without JIT-JEV (Haystack) | With JIT-JEV Context OS | Net Advantage |
-| :--- | :---: | :---: | :--- |
-| **Delivery Time** | 9m 27s | **3m 52s** | **2.44x Faster Delivery (-59%)** |
-| **Agent Turns (API Rounds)** | 171 turns | **66 turns** | **-61.4% Fewer Multi-Turn Rounds** |
-| **Active Prompt Footprint** | >50,000 tokens | **482 tokens** | **>99% Token Cost Elimination** |
-| **Blind Tool Discovery / File Reads** | 73 file reads | **24 reads** | **-67.1% Less Context Wandering** |
-| **Circular Error & Patch Loops** | 8 error loops | **0 error loops** | **Clean First-Shot Execution** |
-| **JEV System 1 Decision Engine** | 6.7 turns/task | **4.6 turns/task** | **-31.3% Fewer Multi-Turn Cycles** |
+### Where it helps, where it does not (measured)
+
+Every number below links to a committed artifact. Single runs are marked N=1; treat them as case studies, not population estimates.
+
+| Run | Setup | Turns | Wall time | Prompt tokens | Pass |
+| :--- | :--- | :---: | :---: | :---: | :---: |
+| [Synthapse feature, 45 modules](benchmarks/EXP-005-REAL-WORLD-SYNTHAPSE.json) | gemini-3.8-flash, N=1 | **171 → 66 (−61%)** | **568 s → 238 s (2.38x)** | not recorded | both |
+| [10-task SWE-style fixtures](benchmarks/results/swe_10_three_mode_1to1.json) | 10 tasks × 3 modes, N=1 each | **69 → 49 (−29%)**, fewer in 9/10 | **208 s → 132 s (−36%)**, faster in 7/10 | median −1.1%; total +11% (one outlier +189%) | 10/10 vs 10/10 |
+| A/B on claude-opus-5-5, Hermes CLI (2026-10-30), 8 tasks × 3 reps × 2 arms | **all 48 runs** | API calls: see rows | – | **+14% (ON 11.54M vs OFF 10.10M)** | 23/24 vs 24/24 |
+| same | feature task (median) | API calls 18 → 15 (−17%) | – | −18% | 3/3 vs 3/3 |
+| same | single-file bugfix (median) | API calls 12 → 12 | – | **+13%** | 6/6 vs 6/6 |
+| same | 3-turn conversation (median) | **API calls 19 → 26 (+37%)** | – | **+56%** | 3/3 vs 3/3 |
+| same | per-turn overhead | – | – | ~+90 tokens capsule | – |
+
+**Good areas:** multi-file work in larger repositories, where the agent would otherwise spend turns on discovery (fewer reads, fewer error loops, less scope drift).
+**Weak areas:** short single-file fixes and multi-turn chat, where the capsule is pure overhead or the model reacts to extra context with more calls.
+
+**Known issue (found by the 2026-10-30 A/B):** in a fresh `hermes chat -q` session the project scope is resolved only after the first terminal call, so turn 1 always runs with scope `general` and no project dossier (24/24 ON capsules). The Opus 5.5 result above measures that degraded path; a fix is in progress.
+
+**How it integrates:** in Claude Code and Hermes the capsule is **added** to the prompt (`additionalContext` / `pre_llm_call`), it does not replace history. In Agent Zero history is fenced and archived at user-turn boundaries ([`_25_recent_turn_fence.py`](integrations/agent-zero/extensions/python/message_loop_prompts_after/_25_recent_turn_fence.py)), so there it does replace older turns.
+
+**Network:** everything runs locally by default. If `BORG_TOOLS_LLM_TOKEN` or `JEV_OPENROUTER_KEY` is set, prompt fragments are sent to that endpoint for classification and JEV ranking. L2 (`JIT_L2_ENABLED`) is off by default.
 
 ---
 
@@ -32,7 +42,7 @@
 
 **JIT-JEV Context OS** is an epistemic context runtime and fast decision engine built specifically for **autonomous coding agents with active tool access**. It bridges two complementary layers:
 
-1. **JIT Context Compiler (System 2 Memory):** A deterministic, sub-3ms runtime memory engine operating between the agent harness and the LLM. Rather than stuffing 50,000+ tokens of raw logs and source files into context, JIT compiles an ultra-dense, prefix-aligned **Context Capsule (<1,500 tokens)** just-in-time for every execution turn.
+1. **JIT Context Compiler (System 2 Memory):** A deterministic local runtime memory engine operating between the agent harness and the LLM. Instead of relying on raw logs and full-file dumps, JIT compiles a prefix-aligned **Context Capsule** (target 800–1,800 tokens, elastic by task) just-in-time for every execution turn.
 2. **JEV Decision Gate (System 1 Fast Arbitration):** A sub-100ms epistemic gating layer that shadow-evaluates capsule facts, proposes dynamic evictions before context bloats, prefetches relevant memory before agent turns, and provides a 100% fail-open circuit breaker (Invariant I6).
 
 > **Target Environment & Runtime Notice:**  
@@ -58,7 +68,7 @@ Standard harnesses append the entire conversation history, verbose compiler logs
 
 **JIT-JEV Context OS** is not a vector database or an embedding wrapper that injects fuzzy Top-K chunks into the prompt.
 
-It is a **deterministic, sub-3ms runtime memory engine** operating between the agent harness and the LLM. It compiles an ultra-precise, high-density **Context Capsule (<1,500 tokens)** just in time for every turn.
+It is a **deterministic local runtime memory engine** operating between the agent harness and the LLM. It compiles a high-density **Context Capsule** (target 800–1,800 tokens) just in time for every turn. L0 SQLite WAL appends are a few milliseconds on Apple Silicon; capsule assembly is tens of milliseconds.
 
 ```
 +-----------------------------------------------------------------------------------+
@@ -94,16 +104,16 @@ Task: Autonomously diagnose and fix 4 distinct root-cause bugs across 3 intercon
 ---
 
 ### 2. Full Production Codebase Evaluation (Synthapse, 45 Modules)
-Paired evaluation on a commercial generative Web Audio instrument running full Vitest E2E suites:
+Paired evaluation (N=1 per arm, gemini-3.8-flash) on a commercial generative Web Audio instrument running full Vitest E2E suites. Source: [`EXP-005-REAL-WORLD-SYNTHAPSE.json`](benchmarks/EXP-005-REAL-WORLD-SYNTHAPSE.json):
 
 | Metric | Without JIT (Raw Context Dump) | With JIT-Context OS | Net Impact |
 | :--- | :---: | :---: | :--- |
-| **Delivery Time** | 9m 27s | **3m 52s** | **2.44x Faster Delivery (-59%)** |
+| **Delivery Time** | 567.6 s | **238.4 s** | **2.38x faster (−58%)** |
 | **Agent Turns (API Calls)** | 171 turns | **66 turns** | **-61.4% Fewer Turns (-105 rounds avoided)** |
 | **Tool Execution Churn** | 169 calls | **64 calls** | **-62.1% Less Thrashing** |
 | **Blind File Reads** | 73 reads | **24 reads** | **-67.1% Less Context Wandering** |
 | **Error / Patch Loops** | 8 error loops | **0 error loops** | **Clean First-Shot Execution** |
-| **Prompt Size per Turn** | >50,000 tokens | **482 tokens** | **>99% Token Cost Reduction** |
+| **Prompt size** | not recorded | capsule 457 chars | Prompt tokens were not measured in this run |
 | **Scope Drift** | 14 files polluted | **4 files touched** | **Surgical Single-Responsibility Edits** |
 
 ---
@@ -120,7 +130,7 @@ The older table below is a separate run. Its `jit_z_jev` column did not record l
 | **Solve Rate** | 10/10 (100%) | 10/10 (100%) | **9/10 (90%)** | Solve rate dropped. Miss: `pallets__flask-4045` JSON parse error |
 | **Average Turns / Task** | 6.7 turns | 5.6 turns | **4.6 turns** | **-31.3% turns (67 to 46), not -61%** |
 | **Blind Discovery Ops (ls/grep/cat)** | 38 ops | 28 ops | **18 ops** | **-52.6% discovery ops, not zero** |
-| **Total Wall-Clock Time** | 150.9s | 139.3s | **133.9s** | **11.3% shorter (1.13x). The 2.44x figure is a different Synthapse run** |
+| **Total Wall-Clock Time** | 150.9s | 139.3s | **133.9s** | **11.3% shorter (1.13x). The 2.38x figure is a different Synthapse run** |
 | **Decision Cost** | not recorded | not recorded | **not recorded in the agent log** | Do not cite a dollar figure for this run |
 | **Fault Tolerance (I6)** | N/A | Heuristic only | **not measured here** | Agent loop did not log live JEV vs fallback |
 
@@ -191,8 +201,8 @@ Instead of re-reading multi-hundred line source files, JIT extracts exact class 
 ```
 The agent receives precise interfaces and contracts without consuming turn budgets on exploratory `read_file` operations.
 
-### 2. Sub-3ms Local SQLite WAL (Read-Your-Own-Writes)
-Operational state, tool execution results, and file mutation hashes are recorded in an in-memory SQLite WAL in `<3ms`. When the agent mutates a file in Turn 1, Turn 2 accesses confirmed hashes and verified state without indexing delays.
+### 2. Local SQLite WAL (Read-Your-Own-Writes)
+Operational state, tool execution results, and file mutation hashes are recorded in a local SQLite WAL (a few ms per append on Apple Silicon). When the agent mutates a file in Turn 1, Turn 2 accesses confirmed hashes and verified state without indexing delays.
 
 ### 3. Epistemic Invariants: Authority Arbitration (1.0 vs 0.0)
 * **Direct User Instructions:** Authority = **1.0** (Never overwritten).
@@ -350,8 +360,8 @@ jit-observatory
                       +-------------------------------+
                       |    STABLE PREFIX LLM CACHE    |
                       |   (Gemini / Claude / Qwen)    |
-                      |    * 2.44x Faster Delivery    |
-                      |    * Zero 429 Rate Limits     |
+                      |    * Fewer discovery turns    |
+                      |    * Stable cache prefix      |
                       +-------------------------------+
 ```
 

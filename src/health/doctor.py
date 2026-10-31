@@ -80,8 +80,8 @@ def run_doctor() -> bool:
         
     # 4. L1 Scope Hysteresis & Project Isolation
     try:
-        active_scope, ret_scopes, _, _ = resolve_scope("How did we do auth in InvoiceFlow?", "hermes-jit-context-os")
-        if active_scope == "hermes-jit-context-os" and "invoiceflow" in ret_scopes:
+        active_scope, ret_scopes, _, _ = resolve_scope("How did we do auth in LedgerApp?", "hermes-jit-context-os")
+        if active_scope == "hermes-jit-context-os" and "ledgerapp" in ret_scopes:
             results["L1 Scope Hysteresis"] = ("PASS", "active scope preserved, cross-project lookup scoped to retrieval")
         else:
             results["L1 Scope Hysteresis"] = ("FAIL", f"scope shifted prematurely: {active_scope}")

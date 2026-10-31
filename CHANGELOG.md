@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Security
+- Removed customer and personal identifiers from code, tests, fixtures and docs: hardcoded project names
+  dropped from `l1/scope.py`, private keywords dropped from `context/domain_router.py`, test fixtures switched to
+  neutral names (`LedgerApp`, `Thesaiver`).
+- Knowhow indexing skips any top-level directory containing a `.jit-ignore` marker, so private document trees no
+  longer need a hardcoded name in `KNOWHOW_EXCLUDED_DIRS`.
+
+### Changed
+- README headline replaced by a measured "where it helps, where it does not" table that links every number to its
+  artifact: EXP-005 is 2.38x (not 2.44x), prompt tokens were not recorded there, SWE-10 has a median -1.1% / total
+  +11% prompt-token delta, and the 2026-10-30 Opus 5.5 A/B shows +14% tokens with a known turn-1 scope issue.
+- README states how each host integrates the capsule (added in Claude Code / Hermes, history fenced in Agent Zero)
+  and which env keys enable outbound calls. Unmeasured claims (sub-3ms engine, <1,500 token cap, >99% savings)
+  removed; badge now shows the plain DOI and the real `test.yml` workflow.
+
 ### Added
 - Cockpit freshness on every commit (`src/l1/cockpit_sync.py`, entry point `src/l1/post_commit.py`): the git
   post-commit hook now syncs the Obsidian dossier, rebuilds `.planning/state.html` with the sota-starter builder

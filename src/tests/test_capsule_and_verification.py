@@ -40,7 +40,7 @@ def test_long_message_respects_limit_and_is_verbatim():
 
 
 def test_pasted_transcript_does_not_hijack_the_goal():
-    paste = "[10:01] Klaudia: prosze wyslij fakture\n[10:02] Klaudia: i zadzwon jutro\n" * 12
+    paste = "[10:01] Anna: prosze wyslij fakture\n[10:02] Anna: i zadzwon jutro\n" * 12
     msg = paste + "Podsumuj tę rozmowę i przygotuj mi szkic odpowiedzi do Klaudii."
     a = build_goal_anchor(msg)
     assert a.text == "Podsumuj tę rozmowę i przygotuj mi szkic odpowiedzi do Klaudii."

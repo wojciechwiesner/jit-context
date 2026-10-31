@@ -79,9 +79,9 @@ def test_explicit_switch_still_wins_over_cwd():
 
 
 def test_without_cwd_old_behaviour_unchanged():
-    active, retrieval, _, _ = resolve_scope("How did we do auth in InvoiceFlow?", "hermes-jit-context-os")
+    active, retrieval, _, _ = resolve_scope("How did we do auth in Thesaiver?", "hermes-jit-context-os")
     assert active == "hermes-jit-context-os"
-    assert "invoiceflow" in retrieval
+    assert "thesaiver" in retrieval
 
 
 def test_compile_context_realigns_stored_scope(home, tmp_path):
