@@ -136,7 +136,7 @@ def pre_llm_call(ctx: Dict[str, Any]) -> Dict[str, Any]:
         l0_ms = (time.time() - l0_start) * 1000
         
         # Determine genuine user message for scope resolution and context compilation
-        from l0.overlay import get_latest_direct_user_message, get_session_cwd
+        from l0.overlay import get_latest_direct_user_message, get_session_cwd, get_local_launch_cwd
         effective_user_message = genuine_instruction if (is_synthetic and genuine_instruction and genuine_instruction != user_message) else user_message
         if is_synthetic and (not genuine_instruction or genuine_instruction == user_message):
             latest_real = get_latest_direct_user_message(conn, session_id)
@@ -145,7 +145,9 @@ def pre_llm_call(ctx: Dict[str, Any]) -> Dict[str, Any]:
 
         # L1 Scope resolution (<1ms, tracks session_cwd from terminal tool execution)
         l1_start = time.time()
-        session_cwd = get_session_cwd(conn, session_id)
+        # Turn 1 of a local CLI run has no terminal-observed cwd and Hermes may store none:
+        # use the launch cwd so the first capsule already carries the project dossier.
+        session_cwd = get_session_cwd(conn, session_id) or get_local_launch_cwd(ctx.get("platform"))
         if session_cwd and Path(session_cwd).exists():
             cwd_scope = scope_from_cwd(session_cwd)
             default_scope = cwd_scope or "general"

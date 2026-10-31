@@ -200,6 +200,25 @@ def get_session_cwd(conn: sqlite3.Connection, session_id: str) -> Optional[str]:
     return get_hermes_session_cwd(session_id)
 
 
+LOCAL_PLATFORMS = ("", "cli")
+
+
+def get_local_launch_cwd(platform: Optional[str]) -> Optional[str]:
+    """Launch cwd for a single-session local CLI process, else None.
+
+    Mirrors Hermes' own fallback (agent/relay_cwd.py): when the session row has no cwd,
+    a local CLI run uses TERMINAL_CWD and then the process cwd. Gateway/API processes
+    serve many sessions, so their process cwd is never used (no cross-session bleed).
+    """
+    if (platform or "").strip().lower() not in LOCAL_PLATFORMS:
+        return None
+    try:
+        raw = os.environ.get("TERMINAL_CWD") or os.getcwd()
+    except OSError:
+        return None
+    return raw if raw and os.path.isdir(raw) else None
+
+
 def get_hermes_session_cwd(session_id: str) -> Optional[str]:
     """cwd stored by Hermes for this session (read-only, fail-open to None)."""
     hermes_home = os.environ.get("HERMES_HOME") or os.path.expanduser("~/.hermes")

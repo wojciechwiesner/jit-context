@@ -50,3 +50,23 @@ def test_profile_hermes_home_state_db(tmp_path, monkeypatch):
     monkeypatch.delenv("HERMES_STATE_DB", raising=False)
     monkeypatch.setenv("HERMES_HOME", str(profile_home))
     assert overlay.get_session_cwd(_overlay_db(), "p1") == "/repo/from-profile"
+
+
+def test_local_cli_uses_launch_cwd(tmp_path, monkeypatch):
+    monkeypatch.delenv("TERMINAL_CWD", raising=False)
+    monkeypatch.chdir(tmp_path)
+    assert overlay.get_local_launch_cwd("cli") == str(tmp_path)
+    assert overlay.get_local_launch_cwd("") == str(tmp_path)
+
+
+def test_terminal_cwd_wins_over_process_cwd(tmp_path, monkeypatch):
+    target = tmp_path / "repo"
+    target.mkdir()
+    monkeypatch.setenv("TERMINAL_CWD", str(target))
+    assert overlay.get_local_launch_cwd("cli") == str(target)
+
+
+def test_multi_session_platforms_never_use_process_cwd(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    for platform in ("telegram", "api_server", "cron", "subagent"):
+        assert overlay.get_local_launch_cwd(platform) is None

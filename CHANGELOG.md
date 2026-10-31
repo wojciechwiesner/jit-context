@@ -22,6 +22,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   and which env keys enable outbound calls. Unmeasured claims (sub-3ms engine, <1,500 token cap, >99% savings)
   removed; badge now shows the plain DOI and the real `test.yml` workflow.
 
+### Fixed
+- Turn-1 project scope in a local Hermes CLI run: when neither the overlay nor Hermes' `state.db` has a cwd for
+  the session (`hermes chat -q` stores `cwd = NULL`), the hook now uses `TERMINAL_CWD`, then the process cwd. Gateway,
+  API, cron and subagent platforms never use the process cwd, so there is no cross-session bleed. The 2026-10-30
+  Opus 5.5 A/B ran 24/24 turn-1 capsules with scope `general` because of this.
+
 ### Added
 - Cockpit freshness on every commit (`src/l1/cockpit_sync.py`, entry point `src/l1/post_commit.py`): the git
   post-commit hook now syncs the Obsidian dossier, rebuilds `.planning/state.html` with the sota-starter builder
