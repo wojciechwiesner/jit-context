@@ -11,6 +11,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Cockpit generator vendored into `cockpit/` (builder, modules, mermaid, templates) with `package.json` and a
   `node --test cockpit/` entry; `config.cockpit_builder()` resolves it for `l1/cockpit_sync.py`, `init.py` and
   Mission Control (`JIT_COCKPIT_BUILDER` overrides, runtime snapshots find the repo via `DEPLOYED_FROM.txt`).
+- Project Hub registry `src/hub/` (`~/.hermes/state/jit-hub/projects.json`, `JIT_HUB_DIR` overrides): atomic,
+  locked writes, worktrees resolve to their main repo, a corrupt file is backed up and rebuilt. `jit init`
+  registers the project; new `jit hub scan [root]` and `jit hub list [--json]`.
 
 ### Fixed
 - Turn-1 capsule now carries the hand-curated project card (`<vault>/context/projects/<name>.md`: server, port, URL,

@@ -137,6 +137,18 @@ def cockpit_builder() -> Path:
         return Path(override).expanduser()
     return _source_dir().parent / COCKPIT_DIR_NAME / COCKPIT_BUILDER_NAME
 
+
+# Project Hub state (registry, cockpit copies, stats)
+HUB_DIR_ENV = "JIT_HUB_DIR"
+
+
+def hub_dir() -> Path:
+    """Project Hub state dir: $JIT_HUB_DIR if set, else <HERMES_HOME>/state/jit-hub. Read per call."""
+    override = os.environ.get(HUB_DIR_ENV)
+    if override:
+        return Path(override).expanduser()
+    return HERMES_HOME / "state" / "jit-hub"
+
 # Performance & Timeouts
 L0_MAX_LATENCY_MS = 3.0
 L1_MAX_LATENCY_MS = 10.0

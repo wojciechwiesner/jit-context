@@ -63,6 +63,14 @@ def isolated_vault_and_workspace(tmp_path_factory, monkeypatch):
     yield targets
 
 
+@pytest.fixture(autouse=True)
+def isolated_hub_dir(tmp_path_factory, monkeypatch):
+    """Keep the Project Hub registry out of the real ~/.hermes (env is inherited by CLI subprocesses)."""
+    hub_dir = tmp_path_factory.mktemp("jit_hub")
+    monkeypatch.setenv(config.HUB_DIR_ENV, str(hub_dir))
+    yield hub_dir
+
+
 def _real_projects_snapshot(directory: Path) -> dict:
     if not directory.is_dir():
         return {}

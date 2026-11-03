@@ -306,7 +306,7 @@ def run_init(target_path: Path, tier: str = "standard", goal: Optional[str] = No
     }
 
 def main():
-    known_cmds = {"init", "mode", "config", "configure", "off", "on", "status", "doctor", "stream", "jev", "worker", "solve", "skills", "install", "uninstall", "-h", "--help"}
+    known_cmds = {"init", "mode", "config", "configure", "off", "on", "status", "doctor", "stream", "jev", "worker", "solve", "skills", "hub", "install", "uninstall", "-h", "--help"}
     if len(sys.argv) > 1 and sys.argv[1] not in known_cmds:
         first = sys.argv[1]
         # Shorthand `jit <path>` only for real directories; anything else is a mistyped command, not a path.
@@ -369,6 +369,9 @@ def main():
     import skills_cli
     skills_cli.add_arguments(subparsers.add_parser("skills", help="Show/write per-project skill selection; 'sync <worktree>' links must-have skills"))
 
+    from hub import cli as hub_cli
+    hub_cli.add_arguments(subparsers.add_parser("hub", help="Project Hub registry: 'scan [root]' and 'list'"))
+
     # Allow running directly as 'jit <path>' without subcommand
     parser.add_argument("direct_path", nargs="?", default=None, help=argparse.SUPPRESS)
     parser.add_argument("--tier", choices=["simple", "standard", "deep", "xhigh"], default="standard", help=argparse.SUPPRESS)
@@ -386,6 +389,9 @@ def main():
 
     if cmd == "skills":
         sys.exit(skills_cli.main(args))
+
+    if cmd == "hub":
+        sys.exit(hub_cli.main(args))
 
     # Subcommand: jit mode
     if cmd == "mode":
@@ -655,6 +661,7 @@ def main():
         print(f"jit init: katalog nie istnieje: {target_dir}", file=sys.stderr)
         sys.exit(2)
     res = run_init(target_dir, tier=tier, goal=goal)
+    hub_line = hub_cli.register_after_init(target_dir)
     small_res = None
     if getattr(args, "profile", "default") == "small":
         from small_context import DEFAULT_SMALL_MODEL, write_small_profile
@@ -668,6 +675,7 @@ def main():
     print(f"• Bazy Danych: {', '.join(res['stack']['databases']) or 'Brak'}")
     print(f"• Obsidian SSOT: {res['obsidian_dossier']} ({'utworzony' if res.get('dossier_action') == 'created' else 'zachowany, nagłówek commita odświeżony' if res.get('dossier_action') == 'preserved_header_synced' else 'zachowany'})")
     print(f"• Local State: {res['state_file']}")
+    print(hub_line)
     print(f"• Zewnętrzne Zasoby (Context7/Docs): {len(res['external_resources'])} wykrytych")
     for r in res['external_resources']:
         print(f"   └─ [{r['type']}] {r['target']}: {r['description']}")
