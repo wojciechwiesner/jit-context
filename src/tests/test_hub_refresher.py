@@ -173,6 +173,7 @@ def test_tracked_cockpit_is_never_modified_in_the_repo(tmp_path, home, monkeypat
     assert git(repo, "status", "--porcelain", "--", ".planning/state.html") == ""
     hub_copy = refresher.hub_cockpit_path(entry["slug"])
     assert "<html" in hub_copy.read_text(encoding="utf-8").lower()
+    assert f"http://127.0.0.1:8767/hub/{entry['slug']}" in hub_copy.read_text(encoding="utf-8")
     assert refresher.load_state(entry["slug"])["output"] == str(hub_copy)
 
 

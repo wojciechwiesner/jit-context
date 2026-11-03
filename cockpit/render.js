@@ -11,6 +11,7 @@ const { renderStreamTab } = require('./render_stream');
 const { renderChatTab } = require('./render_chat');
 const { clean, cleanData, documentHtml, icon } = require('./presentation');
 const { esc } = require('./html');
+const { renderFreshnessStamp, renderNewerNotice, getFreshnessScript } = require('./freshness');
 
 const TABS = [['overview', 'Stan projektu'], ['tasks', 'Plan i zadania'], ['arch', 'Architektura'],
   ['context', 'Wiedza i kontekst'], ['stream', 'Livestream'], ['chat', 'Czat projektu'], ['thoughts', 'Notatki']];
@@ -28,7 +29,7 @@ function render(input) {
       <div class="sidebar-project"><span class="eyebrow">Aktywny projekt</span><strong>${esc(title)}</strong><span class="mono">${esc(data.git.branch)}</span></div>
       <nav class="nav-tabs" aria-label="Nawigacja projektu">${TABS.map(([id, label]) => `<button class="tab-btn ${id === 'overview' ? 'active' : ''}" data-tab="${id}" onclick="switchTab('${id}')">${icon(id)}<span>${label}</span>${id === 'tasks' ? `<span class="tab-badge">${data.state.totalCount}</span>` : ''}</button>`).join('')}</nav>
       <div class="sidebar-foot"><span class="local-dot"></span> Lokalny kokpit<small>Odczyt z plików projektu.<br>Stan dokumentów, nie certyfikat wdrożenia.</small></div></aside>
-    <div class="workspace"><header class="top-header"><div class="breadcrumb">Projekty <span>/</span> ${esc(title)} <span>/</span> <strong id="current-view-label">Stan projektu</strong></div><div class="header-actions"><span class="pill mono">${esc(data.git.log?.[0]?.hash || 'bez commita')}</span><button class="btn" onclick="location.reload()">Odśwież widok</button></div></header>
+    <div class="workspace"><header class="top-header"><div class="breadcrumb">Projekty <span>/</span> ${esc(title)} <span>/</span> <strong id="current-view-label">Stan projektu</strong></div><div class="header-actions">${renderFreshnessStamp(data)}<button class="btn" onclick="location.reload()">Odśwież widok</button></div></header>${renderNewerNotice(data)}
       <main class="main-content"><div class="page-heading"><div><span class="eyebrow">Project workspace</span><h1>${esc(title)}</h1><p class="project-path">${esc(data.root)}</p></div><div class="snapshot-meta">Snapshot danych<br><strong>${new Date(data.generatedAt).toLocaleString('pl-PL')}</strong></div></div>
         ${TABS.map(([id]) => `<div class="tab-pane ${id === 'overview' ? 'active' : ''}" id="pane-${id}">${clean(panels[id])}</div>`).join('')}
         <footer class="page-footer">Źródła: STATE.md · ROADMAP.md · dokumentacja · Git <span>Generator kokpitu / 2.1</span></footer>
@@ -38,6 +39,7 @@ function render(input) {
     <script>${clean(getClientScript())}</script>
     <script>${require('./client_arch').getArchScript()}</script>
     <script>${require('./client_chat').getChatScript()}</script>
+    <script>${getFreshnessScript()}</script>
     <script>
       document.querySelectorAll('.filter-btn').forEach(button => button.addEventListener('click', () => setTaskFilter(button.dataset.filter)));
       document.addEventListener('keydown', event => { if (event.key === 'Escape') document.querySelectorAll('.modal-backdrop.open').forEach(modal => modal.classList.remove('open')); });

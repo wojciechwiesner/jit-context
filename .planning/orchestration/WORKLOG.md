@@ -79,3 +79,24 @@
   so user hooks and signing never run.
 - gaps: relative time ("2 h temu") not shown, absolute pl-PL date only; newestActivity is not yet used by the
   freshness UX (H5). .planning/state.html was regenerated outside this task, committed as is.
+
+## 2026-11-04T01:00:00+01:00 · H5 · DONE
+- files: cockpit/freshness.js, cockpit/freshness.test.js, cockpit/render.js, cockpit/style.js,
+  cockpit/build_state_template.js (--hub-slug), src/hub/refresher.py (passes the registry slug),
+  src/tests/test_hub_refresher.py, CHANGELOG.md, .planning/state.html
+- tests: bash scripts/hub_gate.sh -> pytest 290 passed, 7 skipped; node --test cockpit/ 23 pass 0 fail; ruff OK;
+  smoke: built this repo's cockpit, opened as file:// in Chrome: stamp "Zbudowano: ..., źródło: feat/project-hub
+  @ 61f92f6", hub link visible -> http://127.0.0.1:8767/hub/jit-context, no version polling
+- decisions: one static HTML is opened both as file:// and from the hub, so the http(s)/file decision is made in
+  the browser (location.protocol); tests run the shipped client script in node:vm with a fake location/fetch/
+  setInterval (file: and about: -> no fetch, no interval; http/https -> 30 s interval + fetch). Hub URL slug =
+  the registry slug (can differ from collect.js slug): refresher passes `--hub-slug`, other builds look it up in
+  projects.json by realpath of the root or the main worktree; unknown -> "Projekt poza rejestrem huba" instead of a
+  guessed link. Over http the slug comes from the /hub/<slug> path first. Version key = payload.version if a
+  string, else [signature, built_at]; the first poll sets the baseline, a later different key reloads; HTTP
+  errors and responses without a version are shown as text, never ignored. Notice = newest worktree whose
+  last_commit_at is strictly newer than the source HEAD committer date (same commit -> equal time -> no notice).
+  The header pill with the bare hash was replaced by the stamp (it carried the same sha).
+- gaps: the version endpoint itself is H13 (not built yet); first poll is the baseline, so a rebuild that
+  lands between serving and the first poll is caught only at the next change (H13 can embed the version);
+  .planning/state.html was regenerated outside this task, committed as is.

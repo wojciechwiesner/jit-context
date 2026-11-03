@@ -92,12 +92,12 @@ def _git_value(project: Path, *args: str) -> Optional[str]:
     return lines[0].strip() if lines else None
 
 
-def _run_builder(project: Path, output: Optional[Path]) -> None:
+def _run_builder(project: Path, output: Optional[Path], slug: str) -> None:
     """Run the vendored generator; raises RuntimeError with the builder's own message on failure."""
     builder = config.cockpit_builder()
     if not builder.exists():
         raise RuntimeError(f"builder missing: {builder}")
-    command = ["node", str(builder), str(project)]
+    command = ["node", str(builder), str(project), "--hub-slug", slug]
     if output is not None:
         command += ["--out", str(output)]
     try:
@@ -120,7 +120,7 @@ def build_project(entry: dict, signature: str, previous: dict) -> dict:
             raise RuntimeError(f"project path missing: {project}")
         tracked = cockpit_is_tracked(project)
         output = hub_cockpit_path(entry["slug"]) if tracked else project / COCKPIT_FILE
-        _run_builder(project, output if tracked else None)
+        _run_builder(project, output if tracked else None, entry["slug"])
         state.update(built_at=_now(), output=str(output),
                      source_sha=_git_value(project, "rev-parse", "HEAD"),
                      source_branch=_git_value(project, "rev-parse", "--abbrev-ref", "HEAD"))

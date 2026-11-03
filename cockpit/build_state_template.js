@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Project cockpit generator: node build_state_template.js <project_dir> [--out <file>]
+// Project cockpit generator: node build_state_template.js <project_dir> [--out <file>] [--hub-slug <slug>]
 // Writes <project_dir>/.planning/state.html (and refreshes ./state.html if the project keeps one).
 // With --out it writes only <file> (atomically) and leaves the project tree untouched: the Project Hub
 // uses this for repos that track state.html in git.
@@ -9,6 +9,7 @@ const fs = require("fs");
 const path = require("path");
 const { collect } = require("./collect");
 const { render } = require("./render");
+const { resolveHubSlug } = require("./freshness");
 
 const RESTRICTED_MODE = 0o600;
 const DEFAULT_MODE = 0o644;
@@ -20,11 +21,14 @@ if (outIndex >= 0 && !args[outIndex + 1]) {
   process.exit(2);
 }
 const outFile = outIndex >= 0 ? path.resolve(args.splice(outIndex, 2)[1]) : null;
+const hubSlugIndex = args.indexOf("--hub-slug");
+const hubSlugArg = hubSlugIndex >= 0 ? args.splice(hubSlugIndex, 2)[1] : null;
 const root = path.resolve(args[0] || process.cwd());
 const planning = path.join(root, ".planning");
 if (!outFile) fs.mkdirSync(planning, { recursive: true });
 
 const data = collect(root);
+data.hubSlug = resolveHubSlug(root, data.worktrees, hubSlugArg);
 const html = render(data);
 const restricted = Boolean(data.chatRuntime || (data.credentials && data.credentials.entries.length));
 

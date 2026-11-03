@@ -8,6 +8,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Cockpit freshness UX (`cockpit/freshness.js`): the header shows "Zbudowano: <time>, źródło: <branch> @ <sha>",
+  a yellow notice names a worktree branch with a newer commit than the build source; over http(s) the page polls
+  `/api/hub/version?slug=` every 30 s and reloads when the version changes, as file:// it shows a link
+  "Otwórz w hubie (zawsze aktualne)". The generator takes `--hub-slug` (passed by the refresher) or looks the
+  slug up in the hub registry by path.
 - Cockpit worktree activity: `cockpit/worktrees.js` adds `worktrees` (every `git worktree list --porcelain`
   entry with branch, HEAD, last commit time and subject, dirty file count; newest first) and `newestActivity`
   to the cockpit data; the overview tab shows a "Gałęzie robocze" card (8 newest, the rest collapsed).
