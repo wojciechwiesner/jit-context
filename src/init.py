@@ -26,6 +26,7 @@ from context import project_scan
 from context.project_scan import ProjectScanner, dossier_stem, legacy_dossier_stem  # noqa: F401  (re-exported)
 from skills_cli import write_project_skills
 from l1.obsidian_sync import refresh_dossier_header
+from config import cockpit_builder
 
 OBSIDIAN_VAULT = Path(os.path.expanduser("~/Documents/Wojciech"))
 OBSIDIAN_PROJECTS_DIR = project_scan.OBSIDIAN_PROJECTS_DIR
@@ -262,7 +263,7 @@ def run_init(target_path: Path, tier: str = "standard", goal: Optional[str] = No
     # 3. Operator Scratchpad .planning/THOUGHTS.md if missing
     thoughts_file = planning_dir / "THOUGHTS.md"
     if not thoughts_file.exists():
-        thoughts_template = Path.home() / "Documents/Wojciech/templates/sota-starter/THOUGHTS_TEMPLATE.md"
+        thoughts_template = cockpit_builder().parent / "THOUGHTS_TEMPLATE.md"
         if thoughts_template.exists():
             t_content = thoughts_template.read_text(encoding="utf-8").replace("{{DATE}}", datetime.now().strftime("%Y-%m-%d"))
         else:
@@ -272,7 +273,7 @@ def run_init(target_path: Path, tier: str = "standard", goal: Optional[str] = No
     # 4. Architecture Diagram .planning/ARCHITECTURE.mmd if missing
     arch_file = planning_dir / "ARCHITECTURE.mmd"
     if not arch_file.exists():
-        arch_template = Path.home() / "Documents/Wojciech/templates/sota-starter/ARCHITECTURE_TEMPLATE.mmd"
+        arch_template = cockpit_builder().parent / "ARCHITECTURE_TEMPLATE.mmd"
         if arch_template.exists():
             a_content = arch_template.read_text(encoding="utf-8")
         else:
@@ -280,7 +281,7 @@ def run_init(target_path: Path, tier: str = "standard", goal: Optional[str] = No
         arch_file.write_text(a_content, encoding="utf-8")
 
     # 5. Visual Cockpit .planning/state.html
-    builder_script = Path.home() / "Documents/Wojciech/templates/sota-starter/build_state_template.js"
+    builder_script = cockpit_builder()
     if builder_script.exists():
         try:
             subprocess.run(["node", str(builder_script), str(target_path)], capture_output=True, timeout=5)

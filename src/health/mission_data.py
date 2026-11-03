@@ -1,8 +1,8 @@
 """Mission Control data: projects, project detail (cockpit) and session history.
 
-Read-only. Cockpit data comes from the canonical cockpit generator
-(~/Documents/Wojciech/templates/sota-starter/cockpit/export.js) so Mission Control and
-.planning/state.html always show the same thing. Spec: docs/MISSION_CONTROL.md.
+Read-only. Cockpit data comes from the cockpit generator vendored in <repo>/cockpit/ (export.js,
+resolved via config.cockpit_builder()) so Mission Control and .planning/state.html always show the
+same thing. Spec: docs/MISSION_CONTROL.md.
 """
 from __future__ import annotations
 
@@ -14,12 +14,23 @@ import time
 from pathlib import Path
 from typing import Any
 
+from config import cockpit_builder
 from health.livestream_session import _ro
+
+COCKPIT_EXPORT_NAME = "export.js"
+
+
+def _default_cockpit_export() -> Path:
+    """export.js sits next to the builder (repo copy) or in cockpit/ beside it (old sota-starter layout)."""
+    builder_dir = cockpit_builder().parent
+    beside = builder_dir / COCKPIT_EXPORT_NAME
+    legacy = builder_dir / "cockpit" / COCKPIT_EXPORT_NAME
+    return legacy if not beside.exists() and legacy.exists() else beside
+
 
 HOME = Path.home()
 PROJECTS_ROOT = Path(os.environ.get("JIT_MC_PROJECTS_ROOT", HOME / "Projects" / "active"))
-COCKPIT_EXPORT = Path(os.environ.get(
-    "JIT_MC_COCKPIT_EXPORT", HOME / "Documents/Wojciech/templates/sota-starter/cockpit/export.js"))
+COCKPIT_EXPORT = Path(os.environ.get("JIT_MC_COCKPIT_EXPORT", _default_cockpit_export()))
 OBSIDIAN_PROJECTS = Path(os.environ.get("JIT_MC_OBSIDIAN_PROJECTS", HOME / "Documents/Wojciech/projects"))
 LIST_CACHE_S = 20.0
 DETAIL_CACHE_S = 10.0

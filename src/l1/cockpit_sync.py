@@ -8,7 +8,8 @@ import subprocess
 from pathlib import Path
 from typing import Optional, Tuple
 
-BUILDER_SCRIPT = Path.home() / "Documents/Wojciech/templates/sota-starter/build_state_template.js"
+from config import cockpit_builder
+
 ARCHITECTURE_FILE = ".planning/ARCHITECTURE.mmd"
 COCKPIT_FILE = ".planning/state.html"
 # Commits touching code since the diagram last changed, before we call the diagram stale.
@@ -29,10 +30,11 @@ def is_tracked(repo: Path, rel_path: str) -> bool:
     return _git(repo, "ls-files", "--error-unmatch", rel_path) is not None
 
 
-def regenerate_cockpit(repo: Path, builder: Path = BUILDER_SCRIPT) -> Tuple[bool, str]:
+def regenerate_cockpit(repo: Path, builder: Optional[Path] = None) -> Tuple[bool, str]:
     """Rebuild state.html from STATE.md, git and the diagram. Skips repos that commit state.html,
     because rebuilding after every commit would leave their tree permanently dirty."""
     repo = Path(repo)
+    builder = Path(builder) if builder else cockpit_builder()
     if not (repo / ".planning").is_dir():
         return False, "no .planning/ directory"
     if not builder.exists():

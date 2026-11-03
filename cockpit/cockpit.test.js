@@ -50,7 +50,7 @@ test('starter architecture is replaced by a sourced documentation diagram', t =>
 
 test('rendered UI is emoji-free and JSON cannot terminate script tags', t => {
   const root = fixture(t);
-  put(root, '.planning/STATE.md', '## State 🚀\n- [ ] Fix 📋 </script><img src=x onerror=alert(1)>');
+  put(root, '.planning/STATE.md', '## State \u{1F680}\n- [ ] Fix \u{1F4CB} </script><img src=x onerror=alert(1)>');
   const html = render(collect(root));
   assert.doesNotMatch(html, /[\p{Extended_Pictographic}\p{Regional_Indicator}\uFE0F]/u);
   assert.doesNotMatch(html, /<img src=x/);

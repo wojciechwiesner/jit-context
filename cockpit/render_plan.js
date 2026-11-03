@@ -1,10 +1,11 @@
 // Readable plan browser. Document assertions are not runtime verification certificates.
 const { esc } = require('./html');
 const { documentHtml } = require('./presentation');
+const CHECK_SVG = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" aria-hidden="true"><path d="m5 12 5 5 9-10"/></svg>';
 function taskRow(task) {
   const status = task.isBlocker ? 'blocker' : task.done ? 'done' : 'open';
   const args = esc(JSON.stringify([task.id || '', task.text, task.done, `${task.section} · ${task.source}:${task.line}`]));
-  return `<div class="task-row" role="button" tabindex="0" data-task-status="${status}" data-task-title="${esc(task.text.toLowerCase())}" onclick="openTaskDetail(...${args})" onkeydown="if(event.key==='Enter')this.click()"><div class="task-left"><span class="check-icon ${task.done ? 'done' : ''}">${task.done ? '✓' : task.partial ? '−' : ''}</span><span class="task-text ${task.done ? 'done' : ''}">${esc(task.text.replace(/\*\*/g, ''))}</span></div><div class="task-badges"><span class="pill">${task.partial ? 'Częściowo' : task.done ? 'Ukończone wg pliku' : 'Do zrobienia'}</span><span class="btn btn-sm">Szczegóły</span></div></div>`;
+  return `<div class="task-row" role="button" tabindex="0" data-task-status="${status}" data-task-title="${esc(task.text.toLowerCase())}" onclick="openTaskDetail(...${args})" onkeydown="if(event.key==='Enter')this.click()"><div class="task-left"><span class="check-icon ${task.done ? 'done' : ''}">${task.done ? CHECK_SVG : task.partial ? '−' : ''}</span><span class="task-text ${task.done ? 'done' : ''}">${esc(task.text.replace(/\*\*/g, ''))}</span></div><div class="task-badges"><span class="pill">${task.partial ? 'Częściowo' : task.done ? 'Ukończone wg pliku' : 'Do zrobienia'}</span><span class="btn btn-sm">Szczegóły</span></div></div>`;
 }
 function waveRow(wave) {
   const args = esc(JSON.stringify([wave.id, wave.title || wave.id, false, 'Orchestration · status deklarowany w pliku']));

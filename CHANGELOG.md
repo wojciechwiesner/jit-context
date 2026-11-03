@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Cockpit generator vendored into `cockpit/` (builder, modules, mermaid, templates) with `package.json` and a
+  `node --test cockpit/` entry; `config.cockpit_builder()` resolves it for `l1/cockpit_sync.py`, `init.py` and
+  Mission Control (`JIT_COCKPIT_BUILDER` overrides, runtime snapshots find the repo via `DEPLOYED_FROM.txt`).
+
 ### Fixed
 - Turn-1 capsule now carries the hand-curated project card (`<vault>/context/projects/<name>.md`: server, port, URL,
   integrations) ahead of the auto-synced vault note; before, only the vault note was read and facts like the
