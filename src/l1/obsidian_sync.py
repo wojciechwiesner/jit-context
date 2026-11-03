@@ -213,6 +213,9 @@ def record_session_snapshot_to_obsidian(
     intent: str = ""
 ) -> Tuple[bool, str]:
     """Updates high-level project snapshot in Obsidian SSOT without epistemic self-poisoning."""
+    if os.environ.get("JIT_STATE_DIR"):
+        # Isolated runs (benchmarks, probes, tests) must never rewrite the real project note.
+        return False, "Skipped: isolated JIT_STATE_DIR run"
     dossier = find_obsidian_project_dossier(scope)
     if not dossier:
         return False, f"No Obsidian dossier found for scope '{scope}'"

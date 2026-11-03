@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- Turn-1 capsule now carries the hand-curated project card (`<vault>/context/projects/<name>.md`: server, port, URL,
+  integrations) ahead of the auto-synced vault note; before, only the vault note was read and facts like the
+  production port never reached the model.
+- The auto-synced `## Ostatnia Sesja JIT` block (a previous prompt) is stripped from the dossier before injection.
+- Runs with an explicit `JIT_STATE_DIR` (benchmarks, probes) no longer rewrite the real Obsidian project note.
+
 ### Security
 - Removed customer and personal identifiers from code, tests, fixtures and docs: hardcoded project names
   dropped from `l1/scope.py`, private keywords dropped from `context/domain_router.py`, test fixtures switched to

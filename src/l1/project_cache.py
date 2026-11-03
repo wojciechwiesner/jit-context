@@ -115,23 +115,52 @@ def get_project_context(
                     target_file = loc
                     break
 
-    if not target_file or not target_file.exists():
+    # The hand-curated card (context/projects/<name>.md: server, port, URL, integrations) is
+    # a different file from the auto-synced vault note. It goes first so the capsule budget
+    # never truncates the facts the model would otherwise have to search for.
+    curated_file = _curated_card(norm_name, raw_name)
+    if not target_file and not curated_file:
         return None
-            
+
+    files: List[Path] = []
+    for path in (curated_file, target_file):
+        if path and path.exists() and path not in files:
+            files.append(path)
+    parts = [text for text in (_read_cached(norm_name, path) for path in files) if text and text.strip()]
+    return "\n\n".join(parts) if parts else None
+
+
+def _curated_card(norm_name: str, raw_name: str) -> Optional[Path]:
+    """Hand-written project card under <vault>/context/projects, if one exists."""
+    for stem in (norm_name, raw_name, legacy_dossier_stem(norm_name), legacy_dossier_stem(raw_name)):
+        if not stem:
+            continue
+        candidate = VAULT_DIR / "context" / "projects" / f"{stem}.md"
+        try:
+            resolved = candidate.resolve()
+            if resolved.is_relative_to(VAULT_DIR.resolve()) and resolved.is_file():
+                return resolved
+        except (ValueError, RuntimeError, OSError):
+            continue
+    return None
+
+
+def _read_cached(norm_name: str, target_file: Path) -> Optional[str]:
+    """Read a dossier file through the mtime/size cache."""
     try:
         stat_res = target_file.stat()
         mtime_ns = stat_res.st_mtime_ns
         size = stat_res.st_size
-        
+
         cache_key = f"{norm_name}_{target_file}"
         cached = _CACHE.get(cache_key)
         if cached and cached.mtime_ns == mtime_ns and cached.size == size:
             return cached.content
-            
+
         # File changed or not cached -> reload
         with open(target_file, "r", encoding="utf-8") as f:
             content = f.read()
-            
+
         sha256_hash = hashlib.sha256(content.encode("utf-8")).hexdigest()
         _CACHE[cache_key] = ProjectCacheEntry(
             path=target_file,
