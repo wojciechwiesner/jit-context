@@ -14,6 +14,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Project Hub registry `src/hub/` (`~/.hermes/state/jit-hub/projects.json`, `JIT_HUB_DIR` overrides): atomic,
   locked writes, worktrees resolve to their main repo, a corrupt file is backed up and rebuilt. `jit init`
   registers the project; new `jit hub scan [root]` and `jit hub list [--json]`.
+- Hub freshness refresher `jit hub refresh [--once] [--interval 60]` (`src/hub/refresher.py`, `signature.py`):
+  rebuilds a registered cockpit only when worktree HEADs, `.planning` files or the Obsidian dossier change;
+  tracked `state.html` is never rewritten (hub copy in `cockpits/<slug>.html`, via the new builder `--out`),
+  per project `state/<slug>.json`, failures isolated and skipped after 3 until the signature changes.
 
 ### Fixed
 - Turn-1 capsule now carries the hand-curated project card (`<vault>/context/projects/<name>.md`: server, port, URL,

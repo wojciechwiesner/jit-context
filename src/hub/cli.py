@@ -1,13 +1,15 @@
-"""CLI for `jit hub scan [root]` and `jit hub list`, plus the registration hook used by `jit init`."""
+"""CLI for `jit hub scan [root]`, `jit hub list` and `jit hub refresh`, plus the registration hook used by `jit init`."""
 
 from __future__ import annotations
 
 import argparse
 import json
+from datetime import datetime
 from pathlib import Path
+from typing import List
 
 import config
-from hub import registry
+from hub import refresher, registry
 from hub.scan import MAX_SCAN_DEPTH, ScanReport, scan
 
 EXIT_USAGE = 2
@@ -21,6 +23,10 @@ def add_arguments(parser: argparse.ArgumentParser) -> None:
     scan_parser.add_argument("--max-depth", type=int, default=MAX_SCAN_DEPTH, help="Directory depth limit")
     list_parser = actions.add_parser("list", help="Print the project registry")
     list_parser.add_argument("--json", action="store_true", help="Print raw JSON entries")
+    refresh_parser = actions.add_parser("refresh", help="Rebuild cockpits whose sources changed")
+    refresh_parser.add_argument("--once", action="store_true", help="One pass, then exit (1 if a build failed)")
+    refresh_parser.add_argument("--interval", type=float, default=refresher.DEFAULT_INTERVAL_SECONDS,
+                                help="Seconds between passes")
 
 
 def _print_scan(report: ScanReport) -> None:
@@ -62,13 +68,33 @@ def _run_list(args: argparse.Namespace) -> int:
     return 0
 
 
+def _print_refresh(results: List[refresher.RefreshResult]) -> None:
+    stamp = datetime.now().astimezone().isoformat(timespec="seconds")
+    changed = [r for r in results if r.status != refresher.UNCHANGED]
+    print(f"Hub refresh {stamp}: projekty {len(results)}, bez zmian {len(results) - len(changed)}", flush=True)
+    for result in changed:
+        print(f"  {result.status:<16} {result.slug}  {result.detail}", flush=True)
+
+
+def _run_refresh(args: argparse.Namespace) -> int:
+    if args.interval <= 0:
+        print("jit hub refresh: --interval musi być większe od zera")
+        return EXIT_USAGE
+    try:
+        return refresher.run(args.interval, args.once, _print_refresh)
+    except KeyboardInterrupt:
+        return 0
+
+
 def main(args: argparse.Namespace) -> int:
     action = getattr(args, "hub_action", None)
     if action == "scan":
         return _run_scan(args)
     if action == "list":
         return _run_list(args)
-    print("Użycie: jit hub scan [root] | jit hub list [--json]")
+    if action == "refresh":
+        return _run_refresh(args)
+    print("Użycie: jit hub scan [root] | jit hub list [--json] | jit hub refresh [--once] [--interval 60]")
     return EXIT_USAGE
 
 

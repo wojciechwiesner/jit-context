@@ -370,7 +370,7 @@ def main():
     skills_cli.add_arguments(subparsers.add_parser("skills", help="Show/write per-project skill selection; 'sync <worktree>' links must-have skills"))
 
     from hub import cli as hub_cli
-    hub_cli.add_arguments(subparsers.add_parser("hub", help="Project Hub registry: 'scan [root]' and 'list'"))
+    hub_cli.add_arguments(subparsers.add_parser("hub", help="Project Hub: 'scan [root]', 'list', 'refresh [--once] [--interval 60]'"))
 
     # Allow running directly as 'jit <path>' without subcommand
     parser.add_argument("direct_path", nargs="?", default=None, help=argparse.SUPPRESS)
