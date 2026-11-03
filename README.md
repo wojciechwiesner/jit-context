@@ -234,7 +234,7 @@ One repository, one installer, four agent hosts. Versions are independent:
 | Host | Integration | Version | Install |
 |---|---|---|---|
 | Claude Code | [hooks](integrations/claude-code/hooks) + MCP server | core 0.5.1 (MIT) | `jit install --only claude-code` |
-| Hermes Agent | `src/` as the `ona-context` plugin | core 0.5.1 (MIT) | `jit install --only hermes` |
+| Hermes Agent | `src/` as the `ona-context` hook plugin + `src/hermes_engine` as the `jit` context engine | core 0.5.1 (MIT) | `jit install --only hermes`, then `context.engine: jit` in `~/.hermes/config.yaml` |
 | OpenCode | [native plugin](integrations/opencode/README.md) | 0.2.0 (MIT) | OpenCode 2.x: `jit-context-opencode-v2.js` from the [opencode-v0.2.0 release](https://github.com/wojciechwiesner/jit-context/releases/tag/opencode-v0.2.0) into `~/.config/opencode/plugins/`. OpenCode 1.x: `jit install --only opencode` |
 | Agent Zero | [plugin `jit_context`](integrations/agent-zero/README.md) | 0.4.1 (Apache-2.0) | `jit install --only agent-zero`, or in the Agent Zero UI: install from git `https://github.com/wojciechwiesner/jit-context-os` or from the `jit_context-<version>.zip` release asset |
 
@@ -408,7 +408,17 @@ MCP only (no prompt injection): add to `opencode.json`:
 ```
 
 ### 3. Hermes Agent
-Native plugin integration via `plugins/context_engine/jit` (PR #110874).
+Two plugins from one snapshot, both installed by `jit install --only hermes`:
+
+- `~/.hermes/plugins/ona-context` — `pre_llm_call` hook that appends the JIT capsule.
+- `~/.hermes/plugins/jit` — context engine (`context.engine: jit`). It is Hermes' built-in compressor
+  (same thresholds and summaries) plus `select_context`: tool results older than the last 2 user turns
+  and longer than 1,200 chars are sent as one-line pointers. The stored transcript is not changed.
+  Tune with `JIT_ENGINE_KEEP_TURNS`, `JIT_ENGINE_MIN_CHARS`; `JIT_ENGINE_DISABLED=1` turns it into a pass-through.
+
+Check it inside Hermes' own runtime: `benchmarks/run_hermes_engine_checks.py` (see its docstring).
+Before 2026-10-31 the engine only existed in the unmerged Hermes PR #110874, so `context.engine: jit`
+fell back to the built-in compressor and Hermes measurements ran with the hook alone.
 
 ---
 
