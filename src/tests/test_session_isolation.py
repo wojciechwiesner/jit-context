@@ -72,6 +72,10 @@ def test_capsule_physical_file_persistence(tmp_path, monkeypatch):
     monkeypatch.setattr("config.LATEST_CONTEXT_SYMLINK", tmp_path / "latest_context.xml")
     monkeypatch.setattr("config.MODE_FILE", tmp_path / "mode.json")
     monkeypatch.setenv("ONA_CONTEXT_MODE", "active")
+    # A local CLI turn falls back to the launch cwd (TERMINAL_CWD / process cwd); keep it neutral
+    # so the scope comes from the message, not from wherever the suite was started.
+    monkeypatch.delenv("TERMINAL_CWD", raising=False)
+    monkeypatch.chdir(tmp_path)
     
     sess_id = "test_run_persist_999"
     ctx = {
