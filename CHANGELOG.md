@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Cockpit worktree activity: `cockpit/worktrees.js` adds `worktrees` (every `git worktree list --porcelain`
+  entry with branch, HEAD, last commit time and subject, dirty file count; newest first) and `newestActivity`
+  to the cockpit data; the overview tab shows a "Gałęzie robocze" card (8 newest, the rest collapsed).
 - Cockpit generator vendored into `cockpit/` (builder, modules, mermaid, templates) with `package.json` and a
   `node --test cockpit/` entry; `config.cockpit_builder()` resolves it for `l1/cockpit_sync.py`, `init.py` and
   Mission Control (`JIT_COCKPIT_BUILDER` overrides, runtime snapshots find the repo via `DEPLOYED_FROM.txt`).

@@ -63,3 +63,19 @@
   signature, by spec; cockpit/collect.js still hardcodes the Obsidian vault path while the signature uses
   config.VAULT_DIR (same path on this Mac unless OBSIDIAN_VAULT is set); the launchd service is H6.
   .planning/state.html was regenerated outside this task, committed as is.
+
+## 2026-11-04T01:05:00+01:00 · H4 · DONE
+- files: cockpit/worktrees.js, cockpit/worktrees.test.js, cockpit/collect.js, cockpit/render_overview.js,
+  CHANGELOG.md, .planning/state.html
+- tests: bash scripts/hub_gate.sh -> pytest 290 passed, 7 skipped; node --test cockpit/ 13 pass 0 fail; ruff OK;
+  smoke collect+render on this repo: 3 worktrees, newest feat/project-hub, card rendered, 0.55 s
+- decisions: logic in a new `cockpit/worktrees.js` (collect.js was 277 lines, would pass 300). Data keys follow
+  the spec (snake_case per entry) plus `detached`, `bare`, `prunable`, `error`; top-level `worktrees`,
+  `newestActivity` (newest entry with a commit, else null) and `worktreesError`. Sorted by Date.parse of the
+  committer ISO date (string compare breaks across time zones); entries without a commit go last. Missing data
+  stays null and git errors are kept per entry (prunable/missing path shows the error, "stan nieznany"), no
+  guessing. Non-git projects: empty list, no card, no error. Card sits in the overview aside after credentials;
+  8 newest visible, rest in <details>; all text escaped with esc(). Test repo uses GIT_CONFIG_GLOBAL=/dev/null
+  so user hooks and signing never run.
+- gaps: relative time ("2 h temu") not shown, absolute pl-PL date only; newestActivity is not yet used by the
+  freshness UX (H5). .planning/state.html was regenerated outside this task, committed as is.

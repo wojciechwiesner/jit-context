@@ -249,6 +249,7 @@ function collect(root) {
   const obsidian = collectObsidian(slug);
   const jit = collectJit(planning, root, slug);
   const git = collectGit(root);
+  const worktreeInfo = git.isRepo ? require('./worktrees').collectWorktrees(root) : { worktrees: [], newestActivity: null, error: null };
   const thoughtsRaw = safeRead(path.join(planning, "THOUGHTS.md"));
   const thoughts = thoughtsRaw ? thoughtsRaw.split("\n").filter(l => l.trim().startsWith("-")).map(l => l.replace(/^-\s*/, "")) : [];
   const architectureMeta = require('./architecture').collectArchitecture(root);
@@ -267,6 +268,9 @@ function collect(root) {
     obsidian,
     jit,
     git,
+    worktrees: worktreeInfo.worktrees,
+    newestActivity: worktreeInfo.newestActivity,
+    worktreesError: worktreeInfo.error,
     thoughts,
     architecture,
     architectureMeta,
