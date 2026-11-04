@@ -1,5 +1,5 @@
-"""CLI for `jit hub scan [root]`, `jit hub list`, `jit hub refresh`, `jit hub install-service` and `jit hub usage`,
-plus the registration hook used by `jit init`."""
+"""CLI for `jit hub scan [root]`, `jit hub list`, `jit hub refresh`, `jit hub install-service`, `jit hub usage`
+and `jit hub compare`, plus the registration hook used by `jit init`."""
 
 from __future__ import annotations
 
@@ -34,6 +34,10 @@ def add_arguments(parser: argparse.ArgumentParser) -> None:
     usage_parser = actions.add_parser("usage", help="Collect new usage and print per project totals")
     usage_parser.add_argument("--days", type=int, default=USAGE_DEFAULT_DAYS, help="Days to sum (default 7)")
     usage_parser.add_argument("--json", action="store_true", help="Print the daily rollup rows as JSON")
+    compare_parser = actions.add_parser("compare", help="Observational JIT on/off medians per project and day")
+    compare_parser.add_argument("--days", type=int, default=USAGE_DEFAULT_DAYS, help="Days to include (default 7)")
+    compare_parser.add_argument("--project", default=None, help="Only this project slug")
+    compare_parser.add_argument("--json", action="store_true", help="Print the comparison as JSON")
 
 
 def _print_scan(report: ScanReport) -> None:
@@ -126,6 +130,21 @@ def _run_usage(args: argparse.Namespace) -> int:
     return 1 if result.errors else 0
 
 
+def _run_compare(args: argparse.Namespace) -> int:
+    from hub import jit_compare, jit_compare_report, usage
+
+    if args.days <= 0:
+        print("jit hub compare: --days musi być większe od zera")
+        return EXIT_USAGE
+    result = usage.collect_usage()
+    comparison = jit_compare.jit_comparison(days=args.days, project=args.project)
+    if args.json:
+        print(json.dumps(comparison, indent=2, ensure_ascii=False))
+    else:
+        print(jit_compare_report.render(comparison, result.errors))
+    return 1 if result.errors else 0
+
+
 def main(args: argparse.Namespace) -> int:
     action = getattr(args, "hub_action", None)
     if action == "scan":
@@ -138,8 +157,11 @@ def main(args: argparse.Namespace) -> int:
         return _run_install_service(args)
     if action == "usage":
         return _run_usage(args)
+    if action == "compare":
+        return _run_compare(args)
     print("Użycie: jit hub scan [root] | jit hub list [--json] | jit hub refresh [--once] [--interval 60]"
-          " | jit hub install-service [--load] | jit hub usage [--days 7] [--json]")
+          " | jit hub install-service [--load] | jit hub usage [--days 7] [--json]"
+          " | jit hub compare [--days 7] [--project slug] [--json]")
     return EXIT_USAGE
 
 

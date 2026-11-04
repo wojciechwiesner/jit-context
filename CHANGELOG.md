@@ -8,6 +8,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Observational JIT comparison (`src/hub/jit_compare.py`, `jit_compare_report.py`) and
+  `jit hub compare [--days 7] [--project slug] [--json]`: per project and day, Claude/Hermes session-days split
+  into "JIT on" (a capsule was recorded for the session id) and "JIT off", with medians of tokens per turn,
+  cache-read share, turns per session and tool errors (missing until collected), n per group and metric, the
+  label "obserwacja, nie eksperyment" and "za mało danych" below n=20 in either group. No savings value.
 - Usage collectors per project (`src/hub/usage.py` + `usage_claude.py`, `usage_dbs.py`, `usage_store.py`,
   `usage_report.py`) and `jit hub usage [--days 7] [--json]`: incremental daily rollups in
   `~/.hermes/state/jit-hub/usage.sqlite` from Claude Code transcripts (byte offsets, one count per API response),

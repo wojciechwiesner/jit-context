@@ -370,7 +370,7 @@ def main():
     skills_cli.add_arguments(subparsers.add_parser("skills", help="Show/write per-project skill selection; 'sync <worktree>' links must-have skills"))
 
     from hub import cli as hub_cli
-    hub_cli.add_arguments(subparsers.add_parser("hub", help="Project Hub: 'scan [root]', 'list', 'refresh [--once] [--interval 60]', 'install-service [--load]', 'usage [--days 7] [--json]'"))
+    hub_cli.add_arguments(subparsers.add_parser("hub", help="Project Hub: 'scan [root]', 'list', 'refresh [--once] [--interval 60]', 'install-service [--load]', 'usage [--days 7] [--json]', 'compare [--days 7] [--project slug] [--json]'"))
     from hub import untrack as cockpit_cli
     cockpit_cli.add_arguments(subparsers.add_parser("cockpit", help="Cockpit file: 'untrack [path] [--yes]'"))
 

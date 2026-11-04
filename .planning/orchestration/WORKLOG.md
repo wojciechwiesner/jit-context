@@ -164,3 +164,24 @@
 - gaps: no real run over all of ~/.claude/projects or the real overlay DBs (session permissions block reads
   outside the working dir); not called by the refresher yet (H12); Hermes sessions without cwd stay
   unattributed; tool errors per session are not collected (H9 says "when available").
+
+## 2026-11-04T02:21:15+01:00 · H9 · DONE
+- files: src/hub/jit_compare.py, src/hub/jit_compare_report.py, src/hub/cli.py (`jit hub compare`),
+  src/init.py (help text), src/tests/test_hub_jit_compare.py, CHANGELOG.md
+- tests: bash scripts/hub_gate.sh -> pytest 327 passed, 7 skipped; node --test cockpit/ 23 pass 0 fail; ruff OK
+- decisions: input is H8 session_days (per-session rollup), not daily_usage (sessions already merged there).
+  Unit of analysis = one session-day (source + session id + day + project; subagent transcript units of one
+  session are summed), grouped by (project, day) as the task says; sessions per source are listed per group
+  because Claude and Hermes are mixed. JIT on = the session id has any jit row with capsules > 0 on any day
+  (hook session_id = host session id, so it joins Claude sessionId / Hermes id directly); jit rows are never
+  sessions themselves. tokens per turn = (input + output + cache-read + cache-write) / turns; cache-read share =
+  cache-read / (input + cache-read + cache-write); Hermes turns are unknown (H8 stores 0, Hermes has no user
+  turn count), so Hermes sessions feed only cache-read share. Every metric carries its own n; no values -> median
+  null, text "brak danych". Tool errors are not collected (H8 gap) -> always null with n=0, not 0. Low-n rule:
+  n < 20 in either group -> enough_data false + warning "za mało danych". No difference between groups is
+  computed at all (no delta/savings keys; a test walks every key). `jit hub compare` collects first like `usage`.
+  Runtime proof: .loop-runs/h9_runtime_proof.py (isolated hub dir, 22 on / 5 off synthetic sessions) ->
+  `python3.11 src/init.py hub compare --days 1 [--json]` exit 0, labels and n printed; imports on python 3.9.6.
+- gaps: capsules recorded in shadow mode count as "JIT on" (H8 does not store turn_telemetry.mode); tool errors
+  per session not collected; no run on the real usage store (session permissions block reads outside the
+  worktree); not shown in the cockpit yet (H12).
