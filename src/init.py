@@ -306,7 +306,7 @@ def run_init(target_path: Path, tier: str = "standard", goal: Optional[str] = No
     }
 
 def main():
-    known_cmds = {"init", "mode", "config", "configure", "off", "on", "status", "doctor", "stream", "jev", "worker", "solve", "skills", "hub", "cockpit", "install", "uninstall", "-h", "--help"}
+    known_cmds = {"init", "mode", "config", "configure", "off", "on", "status", "doctor", "stream", "jev", "worker", "solve", "skills", "hub", "bench", "cockpit", "install", "uninstall", "-h", "--help"}
     if len(sys.argv) > 1 and sys.argv[1] not in known_cmds:
         first = sys.argv[1]
         # Shorthand `jit <path>` only for real directories; anything else is a mistyped command, not a path.
@@ -371,6 +371,8 @@ def main():
 
     from hub import cli as hub_cli
     hub_cli.add_arguments(subparsers.add_parser("hub", help="Project Hub: 'scan [root]', 'list', 'refresh [--once] [--interval 60]', 'install-service [--load]', 'usage [--days 7] [--json]', 'compare [--days 7] [--project slug] [--json]'"))
+    from hub import bench_cli
+    bench_cli.add_arguments(subparsers.add_parser("bench", help="Benchmarks: 'ab <project> [--tasks file] [--runs 3] [--model sonnet] [--yes]' (controlled JIT on/off A/B, costs tokens)"))
     from hub import untrack as cockpit_cli
     cockpit_cli.add_arguments(subparsers.add_parser("cockpit", help="Cockpit file: 'untrack [path] [--yes]'"))
 
@@ -394,6 +396,9 @@ def main():
 
     if cmd == "hub":
         sys.exit(hub_cli.main(args))
+
+    if cmd == "bench":
+        sys.exit(bench_cli.main(args))
 
     if cmd == "cockpit":
         sys.exit(cockpit_cli.main(args))

@@ -185,3 +185,30 @@
 - gaps: capsules recorded in shadow mode count as "JIT on" (H8 does not store turn_telemetry.mode); tool errors
   per session not collected; no run on the real usage store (session permissions block reads outside the
   worktree); not shown in the cockpit yet (H12).
+
+## 2026-11-04T02:39:04+01:00 · H10 · DONE
+- files: src/hub/bench.py, src/hub/bench_tasks.py, src/hub/bench_store.py, src/hub/bench_cli.py,
+  src/init.py (`jit bench` command), src/tests/test_hub_bench.py, CHANGELOG.md, .planning/state.html
+- tests: bash scripts/hub_gate.sh -> pytest 336 passed, 7 skipped; node --test cockpit/ 23 pass 0 fail; ruff OK
+- decisions: JIT off switch checked in code: the Claude Code hooks honour JIT_CLAUDE_HOOK / JIT_SPILL_HOOK /
+  JIT_COMPACT_HOOK (integrations/claude-code/hooks); JIT_DISABLE is read nowhere and ONA_CONTEXT_MODE env loses
+  to mode.json in hooks.py, so the off arm sets the three hook switches to 0 and the on arm strips them.
+  One fresh detached worktree per call at one fixed HEAD sha, placed in a sibling dir `<repo>-jitbench-<batch>`
+  so l1/scope.py maps it to the main repo scope (a /tmp path would give a different scope); removed + pruned
+  after each call and in a finally. Read-only = `--tools Read,Grep,Glob` + `--allowedTools` same; MCP servers
+  off in both arms (`--strict-mcp-config` + empty config) so only the hooks differ; `--no-session-persistence`
+  keeps bench calls out of `jit hub usage`. Arm order alternates per run (on/off, off/on) to balance prompt
+  cache warmup. Default tasks: open STATE.md items fill 2 slots + 1 README question (3 open items when no
+  README); no sources -> exit 2 "podaj --tasks", nothing invented. --tasks: JSON list (strings or {id,prompt})
+  or one prompt per line. Without --yes: plan + "Szacowana liczba wywołań modelu: N" (tasks x runs x 2), exit 2.
+  ab_runs in usage.sqlite via bench_store (usage_store untouched); values absent from the JSON stay NULL, a
+  failed call is is_error=1 with its error text; summary = per-arm medians with n + median of paired
+  (task, run) on-minus-off differences; exit 1 if any call failed. Runtime proof:
+  .loop-runs/h10_runtime_proof.sh (real `python3.11 src/init.py bench ab`, fake claude, tmp HOME/hub) ->
+  without --yes exit 2 and 0 calls; with --yes 12 rows (6 on / 6 off), paired tokens -400 (n=6), 1 worktree
+  left (main), no bench dirs; modules import on python 3.9.6. .planning/state.html was regenerated outside
+  this task, committed as is.
+- gaps: no real `claude` run (costs tokens; plan step 6 = owner request only). Hooks other than JIT (user
+  settings) run in both arms. Not verified that the on arm really received a capsule (JSON output does not
+  expose hook context). Quality of answers is not scored (only usage, turns, wall time, cost). Not shown in
+  the cockpit yet (H12).

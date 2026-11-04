@@ -8,6 +8,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Controlled A/B `jit bench ab <project> [--tasks file] [--runs 3] [--model sonnet] [--yes]`
+  (`src/hub/bench.py`, `bench_tasks.py`, `bench_store.py`, `bench_cli.py`), generalised from
+  `benchmarks/run_jit_ab_opus55.py`: each task runs `claude -p --output-format json` with JIT on and off (arm
+  order alternates per run) in a fresh detached worktree, read-only tools (Read, Grep, Glob), no MCP servers, no
+  session persistence. JIT off = `JIT_CLAUDE_HOOK=0`, `JIT_SPILL_HOOK=0`, `JIT_COMPACT_HOOK=0` (the switches the
+  Claude Code hooks honour). Default tasks: open STATE.md items + one README question (3). Without `--yes` only
+  the plan and the estimated number of model calls are printed. Rows (usage, turns, cost, wall time; missing
+  values NULL) go to `usage.sqlite` table `ab_runs`; the summary shows per-arm and paired medians with n.
 - Observational JIT comparison (`src/hub/jit_compare.py`, `jit_compare_report.py`) and
   `jit hub compare [--days 7] [--project slug] [--json]`: per project and day, Claude/Hermes session-days split
   into "JIT on" (a capsule was recorded for the session id) and "JIT off", with medians of tokens per turn,
