@@ -1,5 +1,22 @@
 # Project State: hermes-jit-context-os-v0.1
 
+## 2026-11-04 — Project Hub (branch `feat/project-hub`, not merged, not deployed)
+Plan: `docs/plans/2026-11-03-project-hub.md`; loop queue `.planning/orchestration/QUEUE.md`, log `WORKLOG.md`.
+- [x] A. Freshness: H1 vendored `cockpit/` generator, H2 registry, H3 refresher, H4 worktree activity card,
+  H5 freshness header + hub polling, H6 launchd plist writer (not loaded), H7 `jit cockpit untrack`.
+- [x] B. Measurement: H8 usage collectors, H9 observational JIT on/off, H10 `jit bench ab`, H11 suggestions,
+  H12 "Statystyki" tab.
+- [x] C. Hub, chat, actions: H13 hub API, H14 `/hub` UI, H15/H16 chat backend + UI, H17/H18 action runs + UI.
+- [x] D. H19 docs (README Project Hub, `docs/MISSION_CONTROL.md`, `ARCHITECTURE.mmd` redrawn) and
+  `scripts/hub_e2e.sh` (tmp HOME + tmp project, exit 0).
+- Verification: `bash scripts/hub_gate.sh` per task (pytest, `node --test cockpit/`, Ruff, size, emoji, clean
+  tree); every model call in tests is faked.
+- [ ] Operator cutover (plan section "Not done by the loop"): runtime UAT, merge, push, `jit install`,
+  sota-starter shim, load the refresher agent + `jit hub scan`, `jit cockpit untrack` here, browser checks of
+  hub/stats/chat (real model reply) and one real action run, first `jit bench ab` only on request.
+- Open gap: the signature reads planning files only from the main tree, so an uncommitted STATE.md edit inside
+  a linked worktree does not change the hub version until it is committed (HEAD change).
+
 ## 2026-10-29 — cockpit freshness + architecture map
 - [x] `713d77e` cockpit_sync + post_commit: git post-commit rebuilds `.planning/state.html` (skips tracked cockpits),
   syncs Obsidian, warns when `ARCHITECTURE.mmd` is 15+ code commits behind; `<ARCHITECTURE_DRIFT_ALERT>` in the capsule.

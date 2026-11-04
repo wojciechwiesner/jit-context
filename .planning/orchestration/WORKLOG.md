@@ -429,3 +429,26 @@
   cancel button (no backend endpoint); markdown subset only (headings, paragraphs, lists, code, quotes,
   tables, hr, bold/italic/code/links; no nested lists or images). .planning/state.html rebuilt by the session
   hook was restored with git restore, not committed.
+
+## 2026-11-04T05:23:36Z · H19 · DONE
+- files: scripts/hub_e2e.sh, src/tests/test_hub_e2e_script.py (new); README.md (Project Hub section),
+  docs/MISSION_CONTROL.md (hub routes, vendored generator paths), .planning/STATE.md (Project Hub block),
+  .planning/ARCHITECTURE.mmd (hub/ subgraph, cockpit/, Mission Control hub routes, launchd refresher, hub state,
+  usage sources, chat upstream, read-only agent), CHANGELOG.md
+- tests: bash scripts/hub_e2e.sh -> "hub e2e OK", exit 0 (~2 s); bash scripts/hub_gate.sh -> pytest 433 passed,
+  7 skipped; node --test cockpit/ 49 pass 0 fail; ruff OK; size + emoji OK (clean tree checked after the commit).
+- decisions: the script isolates HOME and HERMES_HOME in a mktemp dir and unsets every JIT_*/vault/workspace
+  override, runs the CLI from src/ (`$PY src/init.py`, PY defaults to Homebrew python3.11) and the real vendored
+  generator (node), no fake builder, so it exercises the real chain. The worktree STATE.md edit is committed in
+  the worktree: the H3 signature reads planning files only from the main tree, so an uncommitted worktree edit
+  would not change the version (recorded as a gap, not patched here, out of H19 scope). Version change is
+  asserted on the signature (built_at can repeat within a second); /api/hub/version must equal the last build.
+  Server: `python -m health.livestream --port <free port>` with a readiness loop; trap kills it and removes the
+  tmp dir. A pytest wrapper runs the script so it stays covered by the gate (skips without bash/git/node/curl).
+  Docs state the port fact: file:// cockpits link to 127.0.0.1:8767 (cockpit/freshness.js) while
+  health.livestream defaults to 8766, so the hub must run with --port 8767.
+- gaps: uncommitted STATE.md edits inside a linked worktree are not part of the signature (plan DoD wording says
+  "editing STATE.md in a worktree"; works today only after a commit there). The diagram was not rendered by a
+  Mermaid parser here (no mmdc), only edited by hand from the import scan. Writes outside the repo could not be
+  re-checked from this sandbox (reads outside the worktree blocked); all write paths derive from the tmp HOME.
+  .planning/state.html rebuilt by the session hook was restored with git restore, not committed.

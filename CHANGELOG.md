@@ -8,6 +8,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- `scripts/hub_e2e.sh`: end-to-end Project Hub check against a tmp HOME and a tmp git project (no network, no
+  model calls): `jit init`, `jit hub scan`, `jit hub refresh --once`, a STATE.md edit committed in a worktree,
+  a second refresh that must change the hub version, then the Mission Control server on a free port and curl of
+  `/api/hub/projects`, `/hub/<slug>` (CSRF meta present) and `/api/hub/version` (matches the last build).
+  `src/tests/test_hub_e2e_script.py` runs it in the pytest suite.
+- Docs: README "Project Hub" section, Project Hub routes in `docs/MISSION_CONTROL.md` (cockpit generator path
+  now the vendored `cockpit/`), Project Hub status in `.planning/STATE.md`, `.planning/ARCHITECTURE.mmd`
+  redrawn with the `hub/` package, `cockpit/`, the hub routes and the refresher agent.
 - Hub actions UI in the cockpit "Akcje" tab: when served at `/hub/<slug>` (the hub injects `jit-hub-actions`,
   `jit-hub-runs`, `jit-hub-report` meta tags) it shows the four actions (Audyt 360, Audyt bezpieczeństwa,
   Badanie rynku, Monetyzacja) behind a confirm dialog that says a model runs and may cost tokens, a runs list

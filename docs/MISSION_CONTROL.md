@@ -25,6 +25,34 @@ Mission Control is a new route plus a few read-only API endpoints on the same se
 
 Existing routes (`/live`, `/api/session`, `/api/session/stream`, ...) are unchanged.
 
+## Project Hub routes (`src/health/hub_routes.py`)
+
+The same server also mounts the Project Hub (plan: `docs/plans/2026-11-03-project-hub.md`).
+Projects come from the hub registry (`jit init`, `jit hub scan`), not from the folder list
+behind `/api/mc/projects`; worktrees are grouped under their main repo.
+
+| Route | Returns |
+|---|---|
+| `GET /hub` | hub page (`hub.html` + CSRF meta), assets `hub.js` / `hub.css` from `/static/` |
+| `GET /api/hub/projects` | every registered project: freshness, last activity, open tasks, blockers, 7-day tokens, top suggestion |
+| `GET /api/hub/version?slug=` | `{slug, built_at, signature, error}` of the last recorded build (cockpits poll it every 30 s) |
+| `GET /hub/<slug>` | the freshest cockpit (hub copy, else repo `.planning/state.html`) + CSRF, chat and action meta tags |
+| `POST /api/hub/refresh?slug=` | rebuild that cockpit now (stats first) |
+| `GET /api/hub/chat?slug=`, `POST /api/hub/chat` | chat history; `{slug, messages}` -> reply grounded in the project's files, upstream errors returned as errors |
+| `POST /api/hub/actions` | `{slug, action}` -> 202, queued read-only agent run (`audit360`, `security`, `market`, `monetization`) |
+| `GET /api/hub/runs[?slug=]`, `GET /api/hub/report?run=` | action runs, newest first; a run's report markdown (hub reports dir only) |
+
+Every route passes `health.mission_access` first. POST routes also need an allowed `Origin`
+(loopback on the server port plus `JIT_HUB_ALLOWED_ORIGINS`, default `https://live.borg.tools`)
+and the per-process token from `<meta name="jit-hub-csrf">` in the `X-JIT-Hub-CSRF` header.
+Cockpits opened as `file://` link to `http://127.0.0.1:8767/hub/<slug>` (`cockpit/freshness.js`),
+so the hub expects the server on 8767 (`--port 8767`; the bare default is 8766).
+
+End-to-end check without network or model calls: `bash scripts/hub_e2e.sh` (tmp HOME, tmp
+project, `jit init`, `jit hub scan`, two refresher passes around a STATE.md commit in a
+worktree, then the server on a free port and curl of `/api/hub/projects`, `/hub/<slug>`,
+`/api/hub/version`).
+
 ## Data shapes
 
 ```
@@ -46,9 +74,9 @@ SessionRow = {id, title, source, model, started_at, last_activity, messages, too
               live: bool, live_url: "/live?session=<id>"}
 ```
 
-Cockpit data comes from the canonical generator
-(`~/Documents/Wojciech/templates/sota-starter/cockpit/collect.js`) via a small Node
-export script, so Mission Control and `state.html` never disagree.
+Cockpit data comes from the generator vendored in this repo (`cockpit/collect.js`, resolved
+through `config.cockpit_builder()`, override `JIT_COCKPIT_BUILDER`) via a small Node export
+script, so Mission Control and `state.html` never disagree.
 
 Sessions are matched to a project by `sessions.cwd` (exact path or a subdirectory).
 
@@ -63,7 +91,7 @@ diagram at all. Mission Control never hides it:
   (docker-compose services, `apps/*` / `packages/*`, top-level code dirs, detected stack:
   Next.js, FastAPI, Postgres, Supabase, Redis, Prisma), with `note` saying it is generated.
 
-One implementation: `~/Documents/Wojciech/templates/sota-starter/cockpit/arch.js`, used by
+One implementation: `cockpit/arch.js` (vendored from `sota-starter` in H1), used by
 `collect.js`. It fixes every project's `state.html` and Mission Control (which reads
 cockpit data through `collect.js`) at the same time. `ARCHITECTURE.mmd` files are never
 rewritten automatically.
