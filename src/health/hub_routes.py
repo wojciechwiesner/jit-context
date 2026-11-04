@@ -4,6 +4,7 @@
   GET  /api/hub/projects        -> every registered project with freshness, activity, tasks, tokens, advice
   GET  /api/hub/version?slug=   -> built_at + signature of the last recorded build (polled by cockpits)
   GET  /hub/<slug>              -> the freshest cockpit (hub copy or repo .planning/state.html) + CSRF meta tag
+                                   + chat config meta tags (endpoint, slug) read by the cockpit "Czat" tab
   POST /api/hub/refresh?slug=   -> rebuild the cockpit now (stats first), synchronous
   GET  /api/hub/chat?slug=      -> the project's chat history
   POST /api/hub/chat            -> {slug, messages} -> model reply grounded in the project's files (hub.chat)
@@ -22,6 +23,7 @@ import re
 import secrets
 import threading
 import time
+from html import escape as html_escape
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 from urllib.parse import unquote
@@ -46,6 +48,8 @@ CHAT_ROUTE = "/api/hub/chat"
 POST_PREFIX = "/api/hub/"
 CSRF_HEADER = "X-JIT-Hub-CSRF"
 CSRF_META_NAME = "jit-hub-csrf"
+CHAT_META_NAME = "jit-hub-chat"
+SLUG_META_NAME = "jit-hub-slug"
 CSRF_TOKEN_BYTES = 32
 ORIGINS_ENV = "JIT_HUB_ALLOWED_ORIGINS"
 DEFAULT_EXTRA_ORIGINS = "https://live.borg.tools"
@@ -121,9 +125,15 @@ def freshest_cockpit(entry: dict) -> Optional[Path]:
     return max(existing, key=lambda path: path.stat().st_mtime) if existing else None
 
 
-def with_csrf(html: bytes) -> bytes:
-    """Insert the CSRF meta tag right after <head>, or in front of the document when there is no head."""
-    meta = csrf_meta().encode("utf-8")
+def chat_meta(slug: str) -> str:
+    """Chat endpoint + project slug for the cockpit served at /hub/<slug> (cockpit/hub_chat.js reads them)."""
+    return (f'<meta name="{CHAT_META_NAME}" content="{CHAT_ROUTE}">'
+            f'<meta name="{SLUG_META_NAME}" content="{html_escape(slug, quote=True)}">')
+
+
+def with_csrf(html: bytes, extra_meta: str = "") -> bytes:
+    """Insert the CSRF meta tag (and extra_meta) right after <head>, or in front of the document without head."""
+    meta = (csrf_meta() + extra_meta).encode("utf-8")
     match = HEAD_TAG_RE.search(html)
     if match is None:
         return meta + html
@@ -135,7 +145,7 @@ def cockpit_page(path: str) -> Reply:
     target = freshest_cockpit(entry)
     if target is None:
         raise NotFound(f"no cockpit for {entry['slug']!r}: run POST {REFRESH_ROUTE}?slug={entry['slug']}")
-    return 200, with_csrf(target.read_bytes()), HTML_TYPE
+    return 200, with_csrf(target.read_bytes(), chat_meta(entry["slug"])), HTML_TYPE
 
 
 def hub_page() -> Reply:

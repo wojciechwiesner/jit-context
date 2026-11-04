@@ -256,7 +256,6 @@ function collect(root) {
   const architecture = architectureMeta.diagram;
 
   return {
-    chatRuntime: require('./runtime').chatRuntime(root),
     credentials: require('./credentials').collectCredentials(root),
     links: require('./links').collectLinks(root),
     root,

@@ -32,7 +32,7 @@ const data = collect(root);
 data.hubSlug = resolveHubSlug(root, data.worktrees, hubSlugArg);
 data.stats = collectStats(data.hubSlug);
 const html = render(data);
-const restricted = Boolean(data.chatRuntime || (data.credentials && data.credentials.entries.length));
+const restricted = Boolean(data.credentials && data.credentials.entries.length);
 
 function writeOut(file) {
   fs.mkdirSync(path.dirname(file), { recursive: true });

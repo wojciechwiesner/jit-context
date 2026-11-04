@@ -341,3 +341,38 @@
   plan's final verification step); a long conversation can exceed the 64 KiB POST limit (413), so H16 should send
   only recent turns; the server does not merge stored history into the request (the client sends the turns);
   .planning/state.html rebuilt by the session hook was restored with git restore, not committed.
+
+## 2026-11-04T04:14:14Z · H16 · DONE
+- files: cockpit/hub_chat.js, cockpit/hub_chat.test.js, src/tests/test_hub_chat_ui.py (new),
+  cockpit/client_chat.js, cockpit/render_chat.js, cockpit/style.js, cockpit/collect.js,
+  cockpit/build_state_template.js, cockpit/runtime.js (deleted), src/health/hub_routes.py, CHANGELOG.md
+- tests: bash scripts/hub_gate.sh -> pytest 407 passed, 7 skipped; node --test cockpit/ 39 pass 0 fail; ruff OK.
+  New node (10): message node text via textContent (fake DOM whose innerHTML setter throws, hostile <img>/<b>
+  kept as text), meta line + source chips (included/missing/error, history name lists), emoji strip keeps
+  digits and Polish letters, recentTurns (errors dropped, turn/char limits, starts with user), meta config +
+  mode by protocol, rendered tab (hub button href http://127.0.0.1:8767/hub/<slug>#chat, 4 quick prompts, no
+  old bridge text, unregistered project -> /hub), browser script in vm: file:// -> button, zero fetch;
+  http + meta -> GET history, POST with X-JIT-Hub-CSRF and recent turns, reply bubble + badge; 502 -> error
+  bubble with upstream status and the question restored; http without meta -> explanation, zero fetch.
+  New pytest (3): real generator + refresher + livestream.Handler: /hub/<slug> head has jit-hub-csrf,
+  jit-hub-chat=/api/hub/chat, jit-hub-slug=<slug>, chat panel present, no bridge token; the announced endpoint
+  answers for the announced slug with empty history; the disk cockpit has no chat meta but links to the hub
+  chat; slug escaped in the meta. Runtime proof: real server on :18768 (tmp HOME + JIT_HUB_DIR under
+  .loop-runs/h16proof) in Chrome (DevTools MCP): /hub/demo-proof#chat opens the Czat tab, 4 history bubbles
+  (user, assistant with STATE.md/README.md chips, user, error with "Błąd HTTP 502 · dostawca: HTTP 500"),
+  0 injected <b>/<img>, badge "Model: m-proof"; the file:// copy shows the hub button (SVG icon), panel hidden,
+  no meta tags, no "Most czatu" text.
+- decisions: the hub project view /hub/<slug> IS the served cockpit, so one implementation covers both. Config
+  comes from meta tags injected by hub_routes.cockpit_page (endpoint + slug; CSRF already there), never baked
+  into the file, so a file:// copy can never post. Helpers live in cockpit/hub_chat.js and are injected into
+  the page with Function#toString, so the browser runs exactly the code the node tests cover. History is the
+  server's (no localStorage, no "clear" button: there is no delete endpoint). Only the last 12 user/assistant
+  turns within 40k chars are sent (64 KiB POST limit from H15); error records never go to the model. Client
+  timeout 100 s (server upstream timeout 90 s). Removed the old loopback bridge from cockpits (collect no
+  longer embeds runtime.json url/model/token; runtime.js deleted; restricted file mode now only for
+  credentials) because the plan rejects tokens in state.html and the new UI no longer uses it; cockpit/server.py
+  (the old bridge) is untouched.
+- gaps: no real model reply verified (no message sent in the browser proof, to avoid a live upstream call from
+  the sandbox; covered by vm tests with fake fetch); no streaming (spinner text only); macOS python 3.9 import of
+  health.hub_routes not re-run here (sandbox blocked the command; the only new import is html.escape);
+  .planning/state.html rebuilt by the session hook was restored with git restore, not committed.

@@ -8,6 +8,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Hub chat UI in the cockpit "Czat projektu" tab: when served at `/hub/<slug>` (the hub now injects
+  `jit-hub-chat` + `jit-hub-slug` meta tags next to the CSRF token) it loads the history from the hub, sends
+  recent turns to `POST /api/hub/chat`, shows source chips, model/latency and upstream errors as error bubbles,
+  and offers quick prompts (Status projektu, Co dalej, Ryzyka, Wyjaśnij architekturę). Model text is rendered
+  with textContent only. A `file://` cockpit shows an "Otwórz czat w hubie" button instead of the old
+  "bridge not configured" text; the old bridge token (`runtime.json`) is no longer embedded in cockpits.
 - Hub project chat backend: `POST /api/hub/chat {slug, messages}` (Origin + CSRF guarded) and
   `GET /api/hub/chat?slug=` (history). The server builds the system prompt (max 24k chars) from the Obsidian
   dossier, STATE.md, ROADMAP.md, README head, ARCHITECTURE.mmd and the hub stats + suggestions, with a visible
