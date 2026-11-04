@@ -1,4 +1,4 @@
-"""CLI for `jit hub scan [root]`, `jit hub list` and `jit hub refresh`, plus the registration hook used by `jit init`."""
+"""CLI for `jit hub scan [root]`, `jit hub list`, `jit hub refresh` and `jit hub install-service`, plus the registration hook used by `jit init`."""
 
 from __future__ import annotations
 
@@ -27,6 +27,8 @@ def add_arguments(parser: argparse.ArgumentParser) -> None:
     refresh_parser.add_argument("--once", action="store_true", help="One pass, then exit (1 if a build failed)")
     refresh_parser.add_argument("--interval", type=float, default=refresher.DEFAULT_INTERVAL_SECONDS,
                                 help="Seconds between passes")
+    service_parser = actions.add_parser("install-service", help="Write the refresher launchd plist (load with --load)")
+    service_parser.add_argument("--load", action="store_true", help="Also load the agent with launchctl bootstrap")
 
 
 def _print_scan(report: ScanReport) -> None:
@@ -86,6 +88,24 @@ def _run_refresh(args: argparse.Namespace) -> int:
         return 0
 
 
+def _run_install_service(args: argparse.Namespace) -> int:
+    from installer import hub_refresher
+
+    result = hub_refresher.install()
+    print(f"Hub refresher: {result.status}  {result.detail}")
+    if result.status != hub_refresher.OK:
+        return 1
+    print(f"  Plist: {hub_refresher.plist_path()}")
+    print(f"  Log: {hub_refresher.log_path()}")
+    if not args.load:
+        print(f"  Nie załadowano. Załaduj: {' '.join(hub_refresher.load_command())}")
+        print("  albo: jit hub install-service --load")
+        return 0
+    loaded, detail = hub_refresher.load()
+    print(f"  launchctl: {detail}")
+    return 0 if loaded else 1
+
+
 def main(args: argparse.Namespace) -> int:
     action = getattr(args, "hub_action", None)
     if action == "scan":
@@ -94,7 +114,10 @@ def main(args: argparse.Namespace) -> int:
         return _run_list(args)
     if action == "refresh":
         return _run_refresh(args)
-    print("Użycie: jit hub scan [root] | jit hub list [--json] | jit hub refresh [--once] [--interval 60]")
+    if action == "install-service":
+        return _run_install_service(args)
+    print("Użycie: jit hub scan [root] | jit hub list [--json] | jit hub refresh [--once] [--interval 60]"
+          " | jit hub install-service [--load]")
     return EXIT_USAGE
 
 

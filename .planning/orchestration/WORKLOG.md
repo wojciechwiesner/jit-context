@@ -100,3 +100,23 @@
 - gaps: the version endpoint itself is H13 (not built yet); first poll is the baseline, so a rebuild that
   lands between serving and the first poll is caught only at the next change (H13 can embed the version);
   .planning/state.html was regenerated outside this task, committed as is.
+
+## 2026-11-04T09:30:00+01:00 · H6 · DONE
+- files: src/installer/hub_refresher.py, src/installer/cli.py (host hub-refresher), src/hub/cli.py
+  (install-service [--load]), src/init.py (help text), src/tests/test_hub_service.py, CHANGELOG.md,
+  .planning/state.html
+- tests: bash scripts/hub_gate.sh -> pytest 300 passed, 7 skipped; node --test cockpit/ 23 pass 0 fail; ruff OK
+- decisions: the plist step is an installer host (`hub-refresher`), so `jit install` keeps plist and snapshot
+  current; detect = darwin and ~/Library exists (tmp HOMEs without Library skip it). Own src snapshot under
+  ~/.hermes/state/jit-hub/runtime with a `current` link as WorkingDirectory (not the Claude Code runtime, not
+  ~/Documents); the link survives snapshot pruning, a restart picks up the newest install. Program =
+  `<python> -m init hub refresh --interval 60` (init:main is the `jit` entry; -m puts the cwd snapshot on
+  sys.path). Python = oldest executable Homebrew python3.N, N >= 11, by its unresolved bin path (3.11 is what
+  the gate tests; brew patch upgrades keep the path); none found -> FAIL, no fallback to system python.
+  PATH in the plist includes Homebrew bin dirs, because launchd's default PATH has no node for the generator.
+  Stdout and stderr both go to ~/Library/Logs/jit-hub-refresher.log. --load uses `launchctl bootstrap
+  gui/<uid>`, booting out a loaded copy first; uninstall refuses while loaded and prints the bootout command.
+  Runtime proof in tests: the plist's own arguments (with --once) run from the snapshot WorkingDirectory, exit 0.
+- gaps: not loaded on this machine (task forbids it, plan step 3 does it); `jit install` does not restart a
+  loaded agent after writing a new snapshot (kickstart -k is manual); .planning/state.html was regenerated
+  outside this task, committed as is.

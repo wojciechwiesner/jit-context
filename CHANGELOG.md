@@ -8,6 +8,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Hub refresher launchd agent (`src/installer/hub_refresher.py`): `jit install` (host `hub-refresher`, macOS only)
+  snapshots src to `~/.hermes/state/jit-hub/runtime/current` and writes
+  `~/Library/LaunchAgents/io.theones.jit-hub-refresher.plist` (oldest Homebrew python3.11+, `-m init hub refresh
+  --interval 60`, KeepAlive, ThrottleInterval 30, log `~/Library/Logs/jit-hub-refresher.log`) without loading it.
+  `jit hub install-service` prints the `launchctl bootstrap` command; `--load` boots out a loaded copy and loads.
+  `jit uninstall` removes the plist only when the agent is not loaded.
 - Cockpit freshness UX (`cockpit/freshness.js`): the header shows "Zbudowano: <time>, źródło: <branch> @ <sha>",
   a yellow notice names a worktree branch with a newer commit than the build source; over http(s) the page polls
   `/api/hub/version?slug=` every 30 s and reloads when the version changes, as file:// it shows a link
