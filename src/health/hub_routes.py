@@ -8,6 +8,8 @@
   POST /api/hub/refresh?slug=   -> rebuild the cockpit now (stats first), synchronous
   GET  /api/hub/chat?slug=      -> the project's chat history
   POST /api/hub/chat            -> {slug, messages} -> model reply grounded in the project's files (hub.chat)
+  POST /api/hub/actions         -> {slug, action} -> 202, a queued read-only agent run (hub.actions.api)
+  GET  /api/hub/runs[?slug=]    -> action runs, newest first, optionally for one project
 
 Access to every route goes through health.mission_access first (livestream does that). POST routes also need
 an allowed Origin header and the per-process CSRF token from the hub page (`<meta name="jit-hub-csrf">`) in the
@@ -31,6 +33,7 @@ from urllib.parse import unquote
 from health.mission_access import HeaderLookup
 from health.mission_routes import NotFound
 from hub import chat, chat_history, overview, refresher, registry
+from hub.actions import api as actions_api
 from l1.cockpit_sync import COCKPIT_FILE
 
 Reply = Tuple[int, bytes, str]
@@ -45,6 +48,8 @@ PROJECTS_ROUTE = "/api/hub/projects"
 VERSION_ROUTE = "/api/hub/version"
 REFRESH_ROUTE = "/api/hub/refresh"
 CHAT_ROUTE = "/api/hub/chat"
+ACTIONS_ROUTE = "/api/hub/actions"
+RUNS_ROUTE = "/api/hub/runs"
 POST_PREFIX = "/api/hub/"
 CSRF_HEADER = "X-JIT-Hub-CSRF"
 CSRF_META_NAME = "jit-hub-csrf"
@@ -161,6 +166,9 @@ def _get(path: str, query: Dict[str, List[str]]) -> Optional[Reply]:
         return _json(200, overview.version(find_project(_first(query, "slug"))["slug"]))
     if path == CHAT_ROUTE:
         return _json(200, chat_history.load(find_project(_first(query, "slug"))["slug"]))
+    if path == RUNS_ROUTE:
+        slug = _first(query, "slug")
+        return _json(200, actions_api.runs_payload(find_project(slug)["slug"] if slug else None))
     if path.startswith(HUB_PAGE_PREFIX) and "/" not in path[len(HUB_PAGE_PREFIX):]:
         return cockpit_page(path)
     return None
@@ -202,6 +210,14 @@ def chat_turn(body: bytes) -> Reply:
     return _json(*chat.run_chat(find_project(slug), messages))
 
 
+def action_run(body: bytes) -> Reply:
+    try:
+        slug, action = actions_api.parse_request(body)
+    except actions_api.ActionRequestError as exc:
+        return _json(400, {"error": str(exc)})
+    return _json(*actions_api.start(find_project(slug), action))
+
+
 def handle_post(path: str, query: Dict[str, List[str]], headers: HeaderLookup, port: int,
                 body: bytes = b"") -> Optional[Reply]:
     """Reply for a hub POST route (guarded by Origin + CSRF), or None when the path is not a hub route."""
@@ -215,6 +231,8 @@ def handle_post(path: str, query: Dict[str, List[str]], headers: HeaderLookup, p
             return refresh(_first(query, "slug"))
         if path == CHAT_ROUTE:
             return chat_turn(body)
+        if path == ACTIONS_ROUTE:
+            return action_run(body)
     except NotFound as exc:
         return _json(404, {"error": str(exc)})
     except Exception as exc:

@@ -376,3 +376,31 @@
   the sandbox; covered by vm tests with fake fetch); no streaming (spinner text only); macOS python 3.9 import of
   health.hub_routes not re-run here (sandbox blocked the command; the only new import is html.escape);
   .planning/state.html rebuilt by the session hook was restored with git restore, not committed.
+
+## 2026-11-04T04:34:24Z · H17 · DONE
+- files: src/hub/actions/{__init__,agent,run_store,runner,report,api}.py, src/hub/actions/{common,audit360,security,market,monetization}.md,
+  src/health/hub_routes.py (POST /api/hub/actions, GET /api/hub/runs), pyproject.toml (package-data *.md),
+  src/tests/{fake_hub_agent,test_hub_actions,test_hub_actions_http}.py, CHANGELOG.md
+- tests: bash scripts/hub_gate.sh -> pytest 428 passed, 7 skipped; node --test cockpit/ 39 pass 0 fail; ruff OK;
+  size + emoji OK. New pytest (21), all with a fake agent script (no model call): success (state, cost, usage,
+  report in hub dir + vault copy, emoji stripped and counted), argv/cwd/stdin of the agent (read-only tool flags,
+  prompt from the template), default `claude` found on PATH, exit code 3 + stderr, is_error result and non-JSON
+  output as failures, missing executable, timeout 1 s kills the process group (pid gone, no end marker),
+  concurrency 2 with the third run queued until one finishes (observed states + start/end timestamps), 409 for a
+  duplicate active pair, -2 suffix for a second same-day report, orphaned runs of a dead server -> interrupted.
+  HTTP through livestream.Handler: 202 queued -> poll /api/hub/runs -> succeeded; failed run listed with error;
+  409; 400 bad action / missing slug; 404 unknown slug; 403 wrong CSRF / foreign Origin. macOS /usr/bin/python3
+  3.9.6 imports health.hub_routes and hub.actions.* (script in .loop-runs/).
+- decisions: prompt goes to stdin (the tool options are variadic and would swallow a positional prompt).
+  Besides --allowedTools the agent gets --tools (available set), --disallowedTools Edit/Write/NotebookEdit,
+  --permission-mode dontAsk and --restricted + --strict-mcp-config + --no-session-persistence, because user
+  settings may allow all Bash and would otherwise widen the read-only set; an older claude without these flags
+  fails the run with its stderr (visible), not silently. Queue = 2 daemon worker threads on a FIFO queue.Queue
+  (a 30 min run never blocks server shutdown; such runs are marked interrupted on the next listing via the
+  recorded server_pid). One active run per (slug, action) -> 409, to avoid double-click cost. A second report of
+  the same action on the same day gets -2 instead of overwriting. Vault copy goes to config.PROJECTS_DIR/<slug>/
+  reports/ (PROJECTS_DIR = ~/Documents/Wojciech/projects); a failed copy is recorded as mirror_error, the run
+  stays succeeded. Shared rules live in common.md appended to every action template.
+- gaps: no real `claude -p` run (by design; plan step 5 does one real action run); no endpoint to read a report's
+  content yet (H18 report viewer needs one, or reads report_path through a new route); no cancel endpoint;
+  .planning/state.html rebuilt by the session hook was restored with git restore, not committed.

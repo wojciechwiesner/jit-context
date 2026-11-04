@@ -8,6 +8,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Hub action runs backend: `POST /api/hub/actions {slug, action}` (audit360, security, market, monetization)
+  queues a headless read-only agent (`claude -p`, or `$JIT_HUB_AGENT_CMD`) in the project directory with the
+  prompt template `src/hub/actions/<action>.md` on stdin, `--output-format json`, only Read/Grep/Glob/WebSearch/
+  WebFetch and `git log`/`git status`/`ls` (restricted mode, `dontAsk`), 30 min timeout that kills the process
+  group, at most 2 concurrent runs (FIFO queue) and one active run per project and action (409). Run state in
+  `<hub dir>/runs/<id>.json`; the emoji-stripped report goes to `<hub dir>/reports/<slug>/<date>-<action>.md`
+  and is copied to the vault `projects/<slug>/reports/`. `GET /api/hub/runs?slug=` lists runs, marking runs
+  orphaned by a dead server process as interrupted.
 - Hub chat UI in the cockpit "Czat projektu" tab: when served at `/hub/<slug>` (the hub now injects
   `jit-hub-chat` + `jit-hub-slug` meta tags next to the CSRF token) it loads the history from the hub, sends
   recent turns to `POST /api/hub/chat`, shows source chips, model/latency and upstream errors as error bubbles,
