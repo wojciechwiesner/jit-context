@@ -8,6 +8,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Usage collectors per project (`src/hub/usage.py` + `usage_claude.py`, `usage_dbs.py`, `usage_store.py`,
+  `usage_report.py`) and `jit hub usage [--days 7] [--json]`: incremental daily rollups in
+  `~/.hermes/state/jit-hub/usage.sqlite` from Claude Code transcripts (byte offsets, one count per API response),
+  Hermes `state.db` sessions (read-only, `mode=ro` then `query_only`) and JIT overlay `turn_telemetry`. Worktree
+  cwds map to the main project via the registry; each source fails open; missing cost stays NULL.
 - `jit cockpit untrack [path] [--yes]` (`src/hub/untrack.py`): when `.planning/state.html` is tracked, runs
   `git rm --cached` and appends the path to `.gitignore` only after an interactive yes or `--yes`; never commits,
   prints the commands to commit. Non-interactive without `--yes`: no change, exit code 2.

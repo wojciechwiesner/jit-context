@@ -1,4 +1,5 @@
-"""CLI for `jit hub scan [root]`, `jit hub list`, `jit hub refresh` and `jit hub install-service`, plus the registration hook used by `jit init`."""
+"""CLI for `jit hub scan [root]`, `jit hub list`, `jit hub refresh`, `jit hub install-service` and `jit hub usage`,
+plus the registration hook used by `jit init`."""
 
 from __future__ import annotations
 
@@ -14,6 +15,7 @@ from hub.scan import MAX_SCAN_DEPTH, ScanReport, scan
 
 EXIT_USAGE = 2
 MISSING = "brak"
+USAGE_DEFAULT_DAYS = 7
 
 
 def add_arguments(parser: argparse.ArgumentParser) -> None:
@@ -29,6 +31,9 @@ def add_arguments(parser: argparse.ArgumentParser) -> None:
                                 help="Seconds between passes")
     service_parser = actions.add_parser("install-service", help="Write the refresher launchd plist (load with --load)")
     service_parser.add_argument("--load", action="store_true", help="Also load the agent with launchctl bootstrap")
+    usage_parser = actions.add_parser("usage", help="Collect new usage and print per project totals")
+    usage_parser.add_argument("--days", type=int, default=USAGE_DEFAULT_DAYS, help="Days to sum (default 7)")
+    usage_parser.add_argument("--json", action="store_true", help="Print the daily rollup rows as JSON")
 
 
 def _print_scan(report: ScanReport) -> None:
@@ -106,6 +111,21 @@ def _run_install_service(args: argparse.Namespace) -> int:
     return 0 if loaded else 1
 
 
+def _run_usage(args: argparse.Namespace) -> int:
+    from hub import usage, usage_report
+
+    if args.days <= 0:
+        print("jit hub usage: --days musi być większe od zera")
+        return EXIT_USAGE
+    result = usage.collect_usage()
+    rows = usage.daily_usage(days=args.days)
+    if args.json:
+        print(json.dumps(rows, indent=2, ensure_ascii=False))
+    else:
+        print(usage_report.render(result, rows, args.days))
+    return 1 if result.errors else 0
+
+
 def main(args: argparse.Namespace) -> int:
     action = getattr(args, "hub_action", None)
     if action == "scan":
@@ -116,8 +136,10 @@ def main(args: argparse.Namespace) -> int:
         return _run_refresh(args)
     if action == "install-service":
         return _run_install_service(args)
+    if action == "usage":
+        return _run_usage(args)
     print("Użycie: jit hub scan [root] | jit hub list [--json] | jit hub refresh [--once] [--interval 60]"
-          " | jit hub install-service [--load]")
+          " | jit hub install-service [--load] | jit hub usage [--days 7] [--json]")
     return EXIT_USAGE
 
 

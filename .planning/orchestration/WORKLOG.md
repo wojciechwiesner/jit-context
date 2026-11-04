@@ -137,3 +137,30 @@
   cockpit (`git add -f`) because a global excludesFile on this machine already ignores .planning/state.html.
 - gaps: not run on the jit-context repo itself (plan step 4, owner confirmation); .planning/state.html was
   regenerated outside this task, committed as is.
+
+## 2026-11-04T10:40:00+01:00 · H8 · DONE
+- files: src/hub/usage.py, src/hub/usage_claude.py, src/hub/usage_dbs.py, src/hub/usage_store.py,
+  src/hub/usage_report.py, src/hub/cli.py (`jit hub usage`), src/init.py (help text),
+  src/tests/test_hub_usage.py, CHANGELOG.md, .planning/state.html
+- tests: bash scripts/hub_gate.sh -> pytest 317 passed, 7 skipped; node --test cockpit/ 23 pass 0 fail; ruff OK
+- decisions: split into five modules to stay < 300 lines. Store keeps raw per-(source, unit, day) rows
+  (unit = transcript file / Hermes session id / overlay DB) and rebuilds daily_usage only when rows changed or
+  the registry signature changed, so project mapping is applied at rollup time (a later registration re-labels
+  old data). Claude: one API response is written as several lines with identical usage, so usage counts once
+  per (message.id, requestId) via a seen_messages table (verified on real transcripts: 24 of 36 keys
+  duplicated); only complete lines are consumed; a shrunk/replaced file is dropped and re-read; turn = user
+  line that is not meta, not sidechain, not only tool results; subagent files (<session>/subagents/*.jsonl)
+  are included under the parent session. Project = line cwd, else the registered path whose encoding equals
+  the dir name, else the raw dir name (no guessing). Hermes keeps running totals, so a changed session
+  replaces its row, attributed to the local day it started (no per-message timing in sessions); skip when
+  state.db + WAL size/mtime are unchanged. JIT: rows after the remembered turn_telemetry id; scope equal to
+  a slug maps to it; capsules = rows with capsule_tokens_est > 0. Cost only from Hermes estimated_cost_usd,
+  NULL stays NULL (cost_sessions counts known ones). Days are local dates.
+  Runtime proof (scoped to sources this session may read, hub dir under .loop-runs): real transcripts of the
+  jit-context-wt-hub dir + real ~/.hermes/state.db -> run 1 added claude 333 / hermes 883, run 2 added 0;
+  claude totals equal an independent dedup count (input 646, output 224052, 323 calls); hermes totals equal
+  state.db sums (input 120040668, cache-read 3874365026, cost 143.3508; 5 sessions without cost stay NULL);
+  the worktree cwd mapped to the jit-context slug.
+- gaps: no real run over all of ~/.claude/projects or the real overlay DBs (session permissions block reads
+  outside the working dir); not called by the refresher yet (H12); Hermes sessions without cwd stay
+  unattributed; tool errors per session are not collected (H9 says "when available").
