@@ -212,3 +212,28 @@
   settings) run in both arms. Not verified that the on arm really received a capsule (JSON output does not
   expose hook context). Quality of answers is not scored (only usage, turns, wall time, cost). Not shown in
   the cockpit yet (H12).
+
+## 2026-11-04T03:05:00+01:00 · H11 · DONE
+- files: src/hub/suggestions.py (engine), src/hub/suggestion_model.py, src/hub/suggestion_rules_git.py,
+  src/hub/suggestion_rules_files.py, src/hub/suggestion_rules_usage.py, src/hub/suggestion_state.py,
+  src/tests/test_hub_suggestions_git.py, test_hub_suggestions_files.py, test_hub_suggestions_usage.py, CHANGELOG.md
+- tests: bash scripts/hub_gate.sh -> pytest 363 passed, 7 skipped; node --test cockpit/ 23 pass 0 fail; ruff OK.
+  New: 27 tests (positive + negative per rule on tmp repos / tmp usage.sqlite, engine sorting/skipped/errors).
+  Runtime proof: project_suggestions(this worktree) -> state_stale (6.1 d), architecture_drift (20 commits since
+  a05856c, same as the JIT alert), cockpit_tracked, large_files (35 files, top 5); usage rules skipped (store
+  path pointed at an absent file so ~/.hermes was not touched); Python 3.9.6 imports the package.
+- decisions: rule contract = None | Suggestion | raise MissingData(reason) -> report {suggestions sorted by
+  severity, skipped [id, reason], errors [id, error]}; missing inputs are never turned into findings. Split into
+  model / git rules / file rules / usage rules / STATE parser to stay < 300 lines. STATE.md age = newest commit
+  touching it on any branch, or its mtime when dirty (checkout mtime would hide staleness); newest commit =
+  `git log --branches HEAD -1`. Blockers: open checklist items under a bloker/blocker heading or tagged
+  [bloker] (as collect.js), template table rows with a non-empty blocker cell and status not closed, plain
+  bullets except placeholders. no_tests fires when tests OR a test command is missing (python test files count
+  as a pytest command). changelog_stale needs 10 code commits (code = not .planning/, docs/, *.md) and does not
+  fire on shorter history. Usage rules read session_days through jit_compare.session_days (same records as
+  `jit hub compare`); spike without a previous-week baseline is skipped, not reported; "active" = >= 5
+  sessions in 7 days, "most" = more than half without a capsule. An unreadable usage store is an error.
+  .planning/state.html was rebuilt by the JIT session-start hook (only the HEAD sha changed); restored with
+  `git restore`, not part of this commit.
+- gaps: no CLI (`jit hub suggest`) and not wired into the refresher/cockpit yet (H12 writes stats/<slug>.json);
+  uncommitted STATE.md edits in other worktrees are not seen; thresholds are constants, not per-project config.

@@ -8,6 +8,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Suggestions engine `src/hub/suggestions.py` (rules in `suggestion_rules_git.py`, `suggestion_rules_files.py`,
+  `suggestion_rules_usage.py`, STATE.md blocker parser `suggestion_state.py`): 12 deterministic rules, each
+  finding with id, severity, evidence (file/command/value) and one action in Polish: stale STATE.md, diagram
+  drift, tracked cockpit, files over 300 lines (top 5), missing tests or test command, CHANGELOG untouched in the
+  last 10 code commits, README without quickstart, tracked `.env`, open blockers, 14 idle days with open tasks,
+  week-over-week token spike, JIT off in most sessions. Missing inputs are listed as skipped with the reason,
+  crashing rules as errors; no model calls.
 - Controlled A/B `jit bench ab <project> [--tasks file] [--runs 3] [--model sonnet] [--yes]`
   (`src/hub/bench.py`, `bench_tasks.py`, `bench_store.py`, `bench_cli.py`), generalised from
   `benchmarks/run_jit_ab_opus55.py`: each task runs `claude -p --output-format json` with JIT on and off (arm
