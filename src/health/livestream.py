@@ -11,8 +11,10 @@ Routes:
   GET /mc                                       -> Mission Control (live + cockpit + history)
   GET /api/mc/projects | project?slug= | sessions?project=&hours=&limit= | whoami
   GET /cockpit/<slug>                           -> the project's .planning/state.html
+  GET /api/hub/projects | version?slug= | /hub/<slug>, POST /api/hub/refresh?slug= -> Project Hub (hub_routes)
 
-Read-only by design: the panel never writes to run directories or telemetry databases.
+Read-only by design: the panel never writes to run directories or telemetry databases (the only write is the
+hub's POST /api/hub/refresh, which rebuilds a cockpit and its stats file, guarded by Origin + CSRF token).
 Access: loopback, or borg nginx with a Borg SSO identity header (health.mission_access).
 """
 from __future__ import annotations
@@ -25,7 +27,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, urlparse
 
-from health import livestream_data, livestream_session, mission_routes
+from health import hub_routes, livestream_data, livestream_session, mission_routes
 from health.mission_access import check_access
 
 HERE = Path(__file__).parent
@@ -73,8 +75,11 @@ class Handler(BaseHTTPRequestHandler):
         run_id = (query.get("run") or [None])[0]
         session_id = (query.get("session") or [None])[0]
         path = url.path.rstrip("/") or "/"
+        hub_reply = hub_routes.handle_get(path, query)
         mc_route = mission_routes.json_route(path, query, access.user, access.via)
-        if mc_route is not None:
+        if hub_reply is not None:
+            self._send(*hub_reply)
+        elif mc_route is not None:
             self._json(mc_route)
         elif path == "/mc":
             self._send(200, mission_routes.page(), "text/html; charset=utf-8")
@@ -96,6 +101,22 @@ class Handler(BaseHTTPRequestHandler):
             self._run_stream(run_id)
         else:
             self._send(404, b'{"error":"not found"}', "application/json")
+
+    def do_POST(self) -> None:  # noqa: N802 - stdlib naming
+        access = check_access(self.client_address[0], self.headers)
+        if not access.allowed:
+            self._send(403, b'{"error":"forbidden"}', "application/json")
+            return
+        raw_length = self.headers.get("Content-Length") or "0"
+        length = int(raw_length) if raw_length.isdigit() else -1
+        if not 0 <= length <= hub_routes.MAX_POST_BODY_BYTES:
+            self._send(413, b'{"error":"bad or too large request body"}', "application/json")
+            return
+        self.rfile.read(length)  # bodies are not used yet; drain so the reply is not cut off
+        url = urlparse(self.path)
+        reply = hub_routes.handle_post(url.path.rstrip("/"), parse_qs(url.query), self.headers,
+                                       self.server.server_address[1])
+        self._send(*(reply or (404, b'{"error":"not found"}', "application/json")))
 
     def _cockpit(self, path: str) -> None:
         try:

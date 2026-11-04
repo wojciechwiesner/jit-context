@@ -160,14 +160,16 @@ def _refresh_stats(entry: dict, previous: dict, force: bool,
         return previous.get("stats_digest"), str(exc)[:ERROR_TEXT_LIMIT]
 
 
-def refresh_project(entry: dict, collect_errors: Optional[Dict[str, List[str]]] = None) -> RefreshResult:
+def refresh_project(entry: dict, collect_errors: Optional[Dict[str, List[str]]] = None,
+                    force: bool = False) -> RefreshResult:
+    """Refresh one project; `force` rebuilds even an unchanged or repeatedly failing one (hub "rebuild now")."""
     slug = entry["slug"]
     previous = load_state(slug)
     try:
         signature = compute_signature(Path(entry["path"]))
     except Exception as exc:  # signature errors are reported like build errors
         signature = f"error:{exc}"
-    skip = _decide(previous, signature)
+    skip = None if force else _decide(previous, signature)
     digest, stats_error = _refresh_stats(entry, previous, skip is None, collect_errors)
     if skip == UNCHANGED and digest != previous.get("stats_digest"):
         skip = None

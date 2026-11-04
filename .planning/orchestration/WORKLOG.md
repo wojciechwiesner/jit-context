@@ -257,3 +257,32 @@
 - gaps: no browser render check (string/DOM-marker tests only); ProjectResolver is built per project, not shared
   across one cycle; suggestions with age values change the digest, so a stale project may rebuild every 10 min;
   live stats appear only after `jit install` redeploys the refresher.
+
+## 2026-11-04T02:54:51Z · H13 · DONE
+- files: src/health/hub_routes.py (new), src/hub/overview.py (new), src/tests/test_hub_routes.py (new),
+  src/health/livestream.py, src/hub/refresher.py, CHANGELOG.md
+- tests: bash scripts/hub_gate.sh -> pytest 381 passed, 7 skipped; node --test cockpit/ 29 pass 0 fail; ruff OK.
+  New: 13 HTTP/unit tests against livestream.Handler on an ephemeral port with a tmp JIT_HUB_DIR registry and a
+  fake node builder (5 parametrized 403 cases: no headers, foreign origin, Origin null, no token, wrong token;
+  none of them runs the builder). Runtime proof: real server thread, tmp hub dir with this repo registered,
+  GET /api/hub/projects 200 (never_built, last activity feat/project-hub, 5 open tasks, tokens_7d missing with the
+  stats path), GET /api/hub/version 200 with nulls; macOS python 3.9.6 imports hub.overview + health.hub_routes.
+- decisions: route code in health/hub_routes.py, row assembly in hub/overview.py (keeps both < 200 lines).
+  livestream.Handler is the Mission Control server, so hub GETs are dispatched there and a do_POST was added
+  (same mission_access guard, body drained, > 64 KiB or bad Content-Length -> 413). CSRF token = one random
+  token per server process, delivered as <meta name="jit-hub-csrf"> injected after <head> of every /hub/<slug>
+  page (H14's /hub page should embed hub_routes.csrf_meta()), checked from header X-JIT-Hub-CSRF with
+  compare_digest. Allowed Origin = loopback hosts on the server's bound port + JIT_HUB_ALLOWED_ORIGINS (default
+  https://live.borg.tools, the SSO proxy); the Host header is never trusted (DNS rebinding); Origin "null"
+  (file://) is rejected. Origin is checked before the token, both before slug lookup. Refresh = synchronous
+  refresher.refresh_project(entry, force=True) (new flag, also bypasses the MAX_FAILURES skip), one per slug at a
+  time (409 when busy), 500 with the builder error when it fails; usage ingest is not run per request.
+  /hub/<slug> serves the newest-mtime file of hub copy and repo .planning/state.html (covers tracked ->
+  untracked transitions where an old hub copy remains). Projects rows read the refresher-written stats file for
+  7-day tokens and the top suggestion (no engine run per request); 7-day = days >= today-6 present in
+  usage.days, no rows -> missing, not 0. Last activity = newest local branch via git for-each-ref.
+  .planning/state.html was rebuilt by the session-start hook; restored with git restore, not in the commit.
+- gaps: real ~/.hermes registry not exercised (sandbox blocks reads outside the worktree); detached worktrees and
+  uncommitted edits are not part of "last activity"; GET /hub (list page) is H14; the CSRF token cannot be
+  fetched before a cockpit exists for some project until H14 adds the /hub page; refresh is synchronous and can
+  take up to BUILD_TIMEOUT_SECONDS (60 s).

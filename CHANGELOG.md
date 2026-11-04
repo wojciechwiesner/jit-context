@@ -8,6 +8,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Hub API on the Mission Control server (`src/health/hub_routes.py`, data in `src/hub/overview.py`):
+  `GET /api/hub/projects` (registry rows with freshness, last branch activity, open tasks, blockers, 7-day tokens
+  and top suggestion from the refresher-written stats file; missing inputs reported as missing),
+  `GET /api/hub/version?slug=`, `GET /hub/<slug>` (newest of hub copy / repo cockpit, with a CSRF meta tag) and
+  `POST /api/hub/refresh?slug=` (forced rebuild, `refresher.refresh_project(force=True)`), POST guarded by an
+  allowed Origin (loopback on the server port + `JIT_HUB_ALLOWED_ORIGINS`) and the `X-JIT-Hub-CSRF` token.
 - Cockpit tab "Statystyki" (`cockpit/render_stats.js`, loader `cockpit/stats.js`): 30-day usage bars as inline
   SVG (days without stored data drawn as gaps), totals and cost where a source recorded it, observational JIT
   on/off medians with n and the low-n label, the newest A/B batch (date, model, paired median delta with n) and
