@@ -286,3 +286,30 @@
   uncommitted edits are not part of "last activity"; GET /hub (list page) is H14; the CSRF token cannot be
   fetched before a cockpit exists for some project until H14 adds the /hub page; refresh is synchronous and can
   take up to BUILD_TIMEOUT_SECONDS (60 s).
+
+## 2026-11-04T03:20:24Z · H14 · DONE
+- files: src/health/hub.html, src/health/hub.js, src/health/hub.css, src/hub/project_links.py (new),
+  src/tests/test_hub_page.py, src/tests/hub_render.test.js (new), src/health/hub_routes.py, src/health/livestream.py,
+  src/hub/overview.py, CHANGELOG.md
+- tests: bash scripts/hub_gate.sh -> pytest 391 passed, 7 skipped; node --test cockpit/ 29 pass 0 fail; ruff OK.
+  New: HTTP tests on an ephemeral port (GET /hub 200 with CSRF meta + asset tags, /static/hub.js fetches
+  /api/hub/projects, /static/hub.css has both themes, API rows carry worktrees + dossier for a tmp repo with a
+  real `git worktree add`), 4 dossier-name cases, and `node --test src/tests/hub_render.test.js` (9 string tests of
+  renderRows: columns, escaping, missing vs error vs zero, sort, worktree grouping/search, empty states, unsafe
+  dossier URI) run from pytest. Runtime proof: real livestream server on :18767 with a tmp HOME + JIT_HUB_DIR
+  under .loop-runs/h14proof, headless Chrome DOM check: 1 project row, worktree row after toggle, links /hub/demo,
+  obsidian://...demo-proof.md, file:// folders; search "zzz" -> empty state, "feat/side" -> worktree row;
+  theme toggle dark -> light; commit subject "<b>" rendered as text (0 injected <b>); no emoji; error banner hidden.
+  macOS python 3.9.6 imports hub.project_links, hub.overview, health.hub_routes.
+- decisions: the registry maps worktrees to the main repo, so the API had no worktree list; added
+  hub/project_links.py (git worktree list --porcelain, last commit per worktree, max 30) and the dossier name
+  (same order as cockpit/collect.js: SSOT line, Projekt, jit.json, dir name). The vault is not read (launchd has
+  no TCC access to ~/Documents), so the link says where the note should be, not that it exists. /hub reuses
+  hub_routes.with_csrf so H16/H18 can POST from this page. Rendering = escaped string building (esc) put into
+  innerHTML, exported for node; worktrees are collapsed by default (most registry rows have many) and shown on
+  toggle or when the search matches a worktree branch/path. Sort: last activity (newest first, missing last) or
+  name. Auto refresh every 60 s and on R. Theme from localStorage or prefers-color-scheme.
+- gaps: file:// folder links are usually blocked by browsers on an http page (works via copy link / some
+  browsers); dossier existence is not checked; real ~/.hermes registry not exercised (sandbox); no per-row
+  refresh button (POST /api/hub/refresh) in the table yet; .planning/state.html rebuilt by the session hook was
+  restored with git restore, not committed.

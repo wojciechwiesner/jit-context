@@ -8,6 +8,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Hub UI at `GET /hub` (`src/health/hub.html`, `hub.js`, `hub.css`): table of every registered project with
+  cockpit freshness badge, last activity with branch, open tasks, blockers, 7-day tokens and top suggestion;
+  search, sort by activity or name, linked worktrees grouped (collapsible) under their repo, links to the cockpit
+  (`/hub/<slug>`), the Obsidian dossier (`obsidian://`) and the folder; Polish labels, SVG icons, dark and light
+  theme; missing data shown as missing. `/api/hub/projects` rows gain `worktrees` and `dossier`
+  (`src/hub/project_links.py`, same dossier name rules as the cockpit generator).
 - Hub API on the Mission Control server (`src/health/hub_routes.py`, data in `src/hub/overview.py`):
   `GET /api/hub/projects` (registry rows with freshness, last branch activity, open tasks, blockers, 7-day tokens
   and top suggestion from the refresher-written stats file; missing inputs reported as missing),

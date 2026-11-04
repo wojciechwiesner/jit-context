@@ -11,7 +11,7 @@ Routes:
   GET /mc                                       -> Mission Control (live + cockpit + history)
   GET /api/mc/projects | project?slug= | sessions?project=&hours=&limit= | whoami
   GET /cockpit/<slug>                           -> the project's .planning/state.html
-  GET /api/hub/projects | version?slug= | /hub/<slug>, POST /api/hub/refresh?slug= -> Project Hub (hub_routes)
+  GET /hub | /api/hub/projects | version?slug= | /hub/<slug>, POST /api/hub/refresh?slug= -> Project Hub (hub_routes)
 
 Read-only by design: the panel never writes to run directories or telemetry databases (the only write is the
 hub's POST /api/hub/refresh, which rebuilds a cockpit and its stats file, guarded by Origin + CSRF token).
@@ -37,6 +37,7 @@ STATIC = {
     "livestream_session.js": "text/javascript; charset=utf-8",
     "livestream_bench.js": "text/javascript; charset=utf-8",
     **mission_routes.MC_STATIC,
+    **hub_routes.HUB_STATIC,
 }
 DEFAULT_PORT = int(os.environ.get("JIT_LIVESTREAM_PORT", "8766"))
 BACKLOG_LINES = 400

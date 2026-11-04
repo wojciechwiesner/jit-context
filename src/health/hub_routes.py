@@ -1,5 +1,6 @@
 """Project Hub HTTP routes, mounted by health.livestream.Handler (Mission Control server, port 8767).
 
+  GET  /hub                     -> the hub page (hub.html + CSRF meta); hub.js / hub.css are served from /static/
   GET  /api/hub/projects        -> every registered project with freshness, activity, tasks, tokens, advice
   GET  /api/hub/version?slug=   -> built_at + signature of the last recorded build (polled by cockpits)
   GET  /hub/<slug>              -> the freshest cockpit (hub copy or repo .planning/state.html) + CSRF meta tag
@@ -32,7 +33,10 @@ Reply = Tuple[int, bytes, str]
 
 JSON_TYPE = "application/json"
 HTML_TYPE = "text/html; charset=utf-8"
+HUB_PAGE_ROUTE = "/hub"
 HUB_PAGE_PREFIX = "/hub/"
+HUB_PAGE_FILE = Path(__file__).parent / "hub.html"
+HUB_STATIC = {"hub.css": "text/css; charset=utf-8", "hub.js": "text/javascript; charset=utf-8"}
 PROJECTS_ROUTE = "/api/hub/projects"
 VERSION_ROUTE = "/api/hub/version"
 REFRESH_ROUTE = "/api/hub/refresh"
@@ -131,7 +135,13 @@ def cockpit_page(path: str) -> Reply:
     return 200, with_csrf(target.read_bytes()), HTML_TYPE
 
 
+def hub_page() -> Reply:
+    return 200, with_csrf(HUB_PAGE_FILE.read_bytes()), HTML_TYPE
+
+
 def _get(path: str, query: Dict[str, List[str]]) -> Optional[Reply]:
+    if path == HUB_PAGE_ROUTE:
+        return hub_page()
     if path == PROJECTS_ROUTE:
         return _json(200, projects_payload())
     if path == VERSION_ROUTE:

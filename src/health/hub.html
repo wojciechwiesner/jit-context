@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Project Hub · JIT</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect x='3' y='3' width='7' height='7' rx='1.5' fill='none' stroke='%235eead4' stroke-width='2'/%3E%3Crect x='14' y='3' width='7' height='7' rx='1.5' fill='none' stroke='%235eead4' stroke-width='2'/%3E%3Crect x='3' y='14' width='7' height='7' rx='1.5' fill='none' stroke='%235eead4' stroke-width='2'/%3E%3Crect x='14' y='14' width='7' height='7' rx='1.5' fill='%235eead4'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="/static/hub.css">
+<script>
+  (function () {
+    var saved = null;
+    try { saved = localStorage.getItem("jit-hub-theme"); } catch (e) {}
+    var dark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+    document.documentElement.dataset.theme = saved || (dark ? "dark" : "light");
+  })();
+</script>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="i-hub" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></symbol>
+    <symbol id="i-search" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></symbol>
+    <symbol id="i-refresh" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-3-6.7L21 8"/><path d="M21 3v5h-5"/></symbol>
+    <symbol id="i-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></symbol>
+    <symbol id="i-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></symbol>
+    <symbol id="i-cockpit" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M8 13h3M8 16h6"/></symbol>
+    <symbol id="i-note" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2 4 7v10l8 5 8-5V7z"/><path d="m12 2 3 8-3 12-3-12z"/></symbol>
+    <symbol id="i-folder" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></symbol>
+    <symbol id="i-branch" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="6" cy="5" r="2"/><circle cx="6" cy="19" r="2"/><circle cx="18" cy="8" r="2"/><path d="M6 7v10M18 10c0 4-6 3-11 7"/></symbol>
+    <symbol id="i-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 6 6 6-6 6"/></symbol>
+  </defs>
+</svg>
+<div class="hub">
+  <header class="bar">
+    <div class="brand">
+      <svg class="ic ic-brand"><use href="#i-hub"/></svg>
+      Project Hub <small>wszystkie projekty z jit init</small>
+    </div>
+    <label class="search">
+      <svg class="ic"><use href="#i-search"/></svg>
+      <input id="hub-search" type="search" placeholder="Szukaj projektu, gałęzi, ścieżki" aria-label="Szukaj projektu">
+    </label>
+    <label class="field">
+      <span>sortuj</span>
+      <select id="hub-sort" aria-label="Sortowanie">
+        <option value="activity">ostatnia aktywność</option>
+        <option value="name">nazwa</option>
+      </select>
+    </label>
+    <div class="sp"></div>
+    <span class="meta" id="hub-meta">ładowanie</span>
+    <button class="icon-btn" id="hub-refresh" title="Odśwież listę (R)" aria-label="Odśwież listę">
+      <svg class="ic"><use href="#i-refresh"/></svg>
+    </button>
+    <button class="icon-btn" id="hub-theme" title="Zmień motyw" aria-label="Zmień motyw jasny lub ciemny">
+      <svg class="ic theme-dark"><use href="#i-sun"/></svg>
+      <svg class="ic theme-light"><use href="#i-moon"/></svg>
+    </button>
+  </header>
+  <div id="hub-error" class="err" role="alert" hidden></div>
+  <main class="panel">
+    <table class="grid">
+      <thead>
+        <tr>
+          <th scope="col">Projekt</th>
+          <th scope="col">Świeżość kokpitu</th>
+          <th scope="col">Ostatnia aktywność</th>
+          <th scope="col" class="num">Otwarte zadania</th>
+          <th scope="col" class="num">Blokery</th>
+          <th scope="col" class="num">Tokeny 7 dni</th>
+          <th scope="col">Główna sugestia</th>
+          <th scope="col">Linki</th>
+        </tr>
+      </thead>
+      <tbody id="hub-rows">
+        <tr><td colspan="8" class="empty">Ładowanie listy projektów z /api/hub/projects</td></tr>
+      </tbody>
+    </table>
+  </main>
+  <footer class="foot" id="hub-foot"></footer>
+</div>
+<script src="/static/hub.js"></script>
+</body>
+</html>

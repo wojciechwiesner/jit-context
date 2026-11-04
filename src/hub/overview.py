@@ -13,7 +13,7 @@ from datetime import date, timedelta
 from pathlib import Path
 from typing import List, Optional
 
-from hub import refresher
+from hub import project_links, refresher
 from hub import stats as hub_stats
 from hub.bench_tasks import STATE_RELATIVE, open_tasks
 from hub.gitinfo import _git_lines
@@ -141,10 +141,12 @@ def project_summary(entry: dict, today: Optional[date] = None) -> dict:
     row["freshness"] = freshness(entry)
     if not row["exists"]:
         gone = _missing(f"katalog projektu nie istnieje: {path}")
-        row.update(last_activity=gone, open_tasks=gone, blockers=gone)
+        row.update(last_activity=gone, open_tasks=gone, blockers=gone, worktrees=gone, dossier=gone)
     else:
         row["last_activity"] = last_activity(path)
         row.update(tasks_and_blockers(path))
+        row["worktrees"] = project_links.worktrees(path)
+        row["dossier"] = project_links.dossier(path)
     stats = load_stats(entry["slug"])
     row["tokens_7d"] = tokens_last_days(stats, today or date.today())
     row["top_suggestion"] = top_suggestion(stats)
