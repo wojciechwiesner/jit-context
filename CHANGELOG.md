@@ -8,6 +8,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Hub project chat backend: `POST /api/hub/chat {slug, messages}` (Origin + CSRF guarded) and
+  `GET /api/hub/chat?slug=` (history). The server builds the system prompt (max 24k chars) from the Obsidian
+  dossier, STATE.md, ROADMAP.md, README head, ARCHITECTURE.mmd and the hub stats + suggestions, with a visible
+  source list (included size, truncation, or the missing/unreadable reason), calls the OpenAI-compatible endpoint
+  (default `http://127.0.0.1:8788/v1`; `<hub dir>/config.json` `chat`, `$JIT_HUB_CHAT_URL`, `_MODEL`, `_TIMEOUT`,
+  `_API_KEY`; 90 s timeout) and returns the reply in one piece. Upstream failures return 502/504 with the upstream
+  HTTP status, never a canned answer. History in `<hub dir>/chats/<slug>.jsonl` (`src/hub/chat*.py`).
 - Hub UI at `GET /hub` (`src/health/hub.html`, `hub.js`, `hub.css`): table of every registered project with
   cockpit freshness badge, last activity with branch, open tasks, blockers, 7-day tokens and top suggestion;
   search, sort by activity or name, linked worktrees grouped (collapsible) under their repo, links to the cockpit

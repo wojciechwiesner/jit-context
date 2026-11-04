@@ -11,10 +11,12 @@ Routes:
   GET /mc                                       -> Mission Control (live + cockpit + history)
   GET /api/mc/projects | project?slug= | sessions?project=&hours=&limit= | whoami
   GET /cockpit/<slug>                           -> the project's .planning/state.html
-  GET /hub | /api/hub/projects | version?slug= | /hub/<slug>, POST /api/hub/refresh?slug= -> Project Hub (hub_routes)
+  GET /hub | /api/hub/projects | version?slug= | /hub/<slug> | chat?slug=,
+  POST /api/hub/refresh?slug= | /api/hub/chat                    -> Project Hub (hub_routes)
 
-Read-only by design: the panel never writes to run directories or telemetry databases (the only write is the
-hub's POST /api/hub/refresh, which rebuilds a cockpit and its stats file, guarded by Origin + CSRF token).
+Read-only by design: the panel never writes to run directories or telemetry databases (the only writes are the
+hub's POST /api/hub/refresh, which rebuilds a cockpit and its stats file, and POST /api/hub/chat, which appends
+to the hub chat history; both guarded by Origin + CSRF token).
 Access: loopback, or borg nginx with a Borg SSO identity header (health.mission_access).
 """
 from __future__ import annotations
@@ -113,10 +115,10 @@ class Handler(BaseHTTPRequestHandler):
         if not 0 <= length <= hub_routes.MAX_POST_BODY_BYTES:
             self._send(413, b'{"error":"bad or too large request body"}', "application/json")
             return
-        self.rfile.read(length)  # bodies are not used yet; drain so the reply is not cut off
+        body = self.rfile.read(length)
         url = urlparse(self.path)
         reply = hub_routes.handle_post(url.path.rstrip("/"), parse_qs(url.query), self.headers,
-                                       self.server.server_address[1])
+                                       self.server.server_address[1], body)
         self._send(*(reply or (404, b'{"error":"not found"}', "application/json")))
 
     def _cockpit(self, path: str) -> None:

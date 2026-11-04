@@ -313,3 +313,31 @@
   browsers); dossier existence is not checked; real ~/.hermes registry not exercised (sandbox); no per-row
   refresh button (POST /api/hub/refresh) in the table yet; .planning/state.html rebuilt by the session hook was
   restored with git restore, not committed.
+
+## 2026-11-04T03:41:31Z · H15 · DONE
+- files: src/hub/chat.py, src/hub/chat_prompt.py, src/hub/chat_upstream.py, src/hub/chat_history.py,
+  src/tests/test_hub_chat.py (new), src/health/hub_routes.py, src/health/livestream.py, CHANGELOG.md
+- tests: bash scripts/hub_gate.sh -> pytest 404 passed, 7 skipped; node --test cockpit/ 29 pass 0 fail; ruff OK.
+  New (13): real HTTP through livestream.Handler on an ephemeral port against a fake OpenAI-compatible server:
+  success (system prompt has STATE.md marker, dossier marker, suggestion id, "Źródła w tym prompcie:" list with
+  ROADMAP "brak", <= 24k chars; history user+assistant via GET /api/hub/chat), upstream 500 -> 502 with
+  upstream_status 500 and the provider body, slow upstream with timeout 0.3 s -> 504 well before the server
+  answers, refused port -> 502, bad bodies -> 400, unknown slug -> 404, wrong CSRF -> 403 (no upstream call),
+  100k STATE.md + long ROADMAP -> capped and marked truncated, missing dossier reported with the name source,
+  settings precedence (default < bridge runtime.json < hub config.json < env). macOS python 3.9.6 imports
+  hub.chat*, health.hub_routes.
+- decisions: reply returned in one piece (no SSE): the Mission Control handler sends Content-Length replies and
+  H16 can show a spinner; 90 s timeout bounds the wait. Server owns the system prompt (client roles user/assistant
+  only, last must be user, <= 40 messages, <= 20k chars each). Per-source caps in priority order (dossier 6k,
+  STATE 7k, ROADMAP 3k, README 2k, ARCHITECTURE 2.5k, stats 2.5k) inside a 24k total with 1.6k reserved for the
+  header + source list; ROADMAP "trimmed" = head cut with an "[... obcięto N znaków]" note. Dossier path =
+  config.PROJECTS_DIR/<project_links.dossier name>.md; unreadable vault (launchd TCC) is listed as "błąd", not
+  hidden. Model: env > hub config.json "chat" > old bridge runtime.json model > "gemini-3.8-flash" (the model the
+  repo already uses with :8788); the reply carries model_origin. Errors: 504 timeout, 502 otherwise, always with
+  upstream_status (null when none), the URL and the source list; the error is also written to the history as
+  role "error". Max 2 concurrent model calls (429 when busy). Upstream opened without proxies (loopback).
+  POST bodies are now passed from livestream.do_POST to hub_routes.handle_post (64 KiB limit unchanged).
+- gaps: no streaming; no real model call verified (tests use a fake upstream; a real reply in the browser is the
+  plan's final verification step); a long conversation can exceed the 64 KiB POST limit (413), so H16 should send
+  only recent turns; the server does not merge stored history into the request (the client sends the turns);
+  .planning/state.html rebuilt by the session hook was restored with git restore, not committed.
