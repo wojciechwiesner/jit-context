@@ -2,7 +2,10 @@
 
 Untracked `.planning/state.html` is rebuilt in place; a tracked one is never touched and the hub keeps its own
 copy at <hub dir>/cockpits/<slug>.html. Per project state lives in <hub dir>/state/<slug>.json:
-{signature, built_at, source_sha, source_branch, duration_ms, error, failures, output}.
+{signature, built_at, source_sha, source_branch, duration_ms, error, failures, output, stats_digest, stats_error}.
+Before a build (and at least every stats.STATS_MAX_AGE_SECONDS) the refresher writes <hub dir>/stats/<slug>.json
+from the usage store and the suggestions engine; a changed stats digest rebuilds the cockpit even when the
+signature did not change.
 One failing project never stops the others; after MAX_FAILURES failed builds with the same signature the
 project is skipped until the signature changes.
 """
@@ -17,10 +20,11 @@ import time
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
-from typing import Callable, List, Optional
+from typing import Callable, Dict, List, Optional, Tuple
 
 import config
 from hub import registry
+from hub import stats as hub_stats
 from hub.gitinfo import _git_lines
 from hub.signature import compute_signature
 from l1.cockpit_sync import COCKPIT_FILE, is_tracked
@@ -144,7 +148,19 @@ def _decide(previous: dict, signature: str) -> Optional[str]:
     return UNCHANGED if output and Path(output).exists() else None
 
 
-def refresh_project(entry: dict) -> RefreshResult:
+def _refresh_stats(entry: dict, previous: dict, force: bool,
+                   collect_errors: Optional[Dict[str, List[str]]]) -> Tuple[Optional[str], Optional[str]]:
+    """Write stats/<slug>.json when a build is due or the file is stale; returns (digest, error).
+    A failed write keeps the previous digest and never blocks the build."""
+    if not force and not hub_stats.is_due(entry["slug"]):
+        return previous.get("stats_digest"), previous.get("stats_error")
+    try:
+        return hub_stats.write_stats(entry, collect_errors=collect_errors), None
+    except Exception as exc:
+        return previous.get("stats_digest"), str(exc)[:ERROR_TEXT_LIMIT]
+
+
+def refresh_project(entry: dict, collect_errors: Optional[Dict[str, List[str]]] = None) -> RefreshResult:
     slug = entry["slug"]
     previous = load_state(slug)
     try:
@@ -152,20 +168,28 @@ def refresh_project(entry: dict) -> RefreshResult:
     except Exception as exc:  # signature errors are reported like build errors
         signature = f"error:{exc}"
     skip = _decide(previous, signature)
+    digest, stats_error = _refresh_stats(entry, previous, skip is None, collect_errors)
+    if skip == UNCHANGED and digest != previous.get("stats_digest"):
+        skip = None
     if skip is not None:
         return RefreshResult(slug, skip, previous.get("error") or "")
     state = build_project(entry, signature, previous)
+    state.update(stats_digest=digest, stats_error=stats_error)
     save_state(slug, state)
     if state["error"]:
         return RefreshResult(slug, FAILED, f"{state['error']} (próba {state['failures']}/{MAX_FAILURES})")
     return RefreshResult(slug, REBUILT, f"{state['output']} ({state['duration_ms']} ms)")
 
 
-def refresh_all(entries: Optional[List[dict]] = None) -> List[RefreshResult]:
+def refresh_all(entries: Optional[List[dict]] = None,
+                collect: Optional[Callable[[], Dict[str, List[str]]]] = None) -> List[RefreshResult]:
+    """Ingest new usage once, then refresh every project (stats first, the cockpit when something changed)."""
+    entries = registry.load_projects() if entries is None else entries
+    collect_errors = (collect or hub_stats.collect_usage_errors)() if entries else {}
     results = []
-    for entry in registry.load_projects() if entries is None else entries:
+    for entry in entries:
         try:
-            results.append(refresh_project(entry))
+            results.append(refresh_project(entry, collect_errors))
         except Exception as exc:  # e.g. an unwritable state dir for one slug
             results.append(RefreshResult(str(entry.get("slug")), FAILED, str(exc)[:ERROR_TEXT_LIMIT]))
     return results

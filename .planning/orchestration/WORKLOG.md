@@ -237,3 +237,23 @@
   `git restore`, not part of this commit.
 - gaps: no CLI (`jit hub suggest`) and not wired into the refresher/cockpit yet (H12 writes stats/<slug>.json);
   uncommitted STATE.md edits in other worktrees are not seen; thresholds are constants, not per-project config.
+
+## 2026-11-04T02:26:25Z · H12 · DONE
+- files: src/hub/stats.py (new), src/hub/refresher.py, cockpit/stats.js (new), cockpit/render_stats.js (new),
+  cockpit/render.js, cockpit/build_state_template.js, cockpit/presentation.js, cockpit/stats.test.js (new),
+  src/tests/test_hub_stats.py (new), CHANGELOG.md
+- tests: python3.11 -m pytest src/tests -q + node --test cockpit/ -> see gate run (stats: 5 py + 6 node tests pass)
+- decisions: refresher ingests usage once per cycle (collect_usage, fail-open, errors embedded as collect_errors)
+  and writes stats/<slug>.json when a build is due or the file is older than 600 s, so stats stay fresh without
+  rebuilding every cycle; the doc digest (without timestamps) is kept in the refresher state and a changed digest
+  rebuilds an otherwise unchanged cockpit. Usage = daily_usage rows of the slug (claude+hermes tokens/sessions,
+  turns only from claude, JIT rows add capsules only, cost None unless hermes recorded it); days without rows are
+  drawn as gap marks, never zero bars. Comparison reuses jit_compare (session-days, medians with n, observation
+  label, low-n warning, no delta). A/B = newest ab_runs batch of the slug via bench_store.summarize. Each section
+  carries its own missing/error reason. No stats file -> tab says which file and who writes it. Runtime proof:
+  built this repo cockpit with the real generator: pane-stats present, notice names the missing
+  ~/.hermes/state/jit-hub/stats/jit-context.json (deployed refresher predates H12). .planning/state.html is
+  rebuilt by the session-start hook and restored with git restore, not part of the commit.
+- gaps: no browser render check (string/DOM-marker tests only); ProjectResolver is built per project, not shared
+  across one cycle; suggestions with age values change the digest, so a stale project may rebuild every 10 min;
+  live stats appear only after `jit install` redeploys the refresher.

@@ -9,12 +9,13 @@ const { renderArchTab } = require('./render_arch');
 const { renderContextTab } = require('./render_context');
 const { renderStreamTab } = require('./render_stream');
 const { renderChatTab } = require('./render_chat');
+const { renderStatsTab } = require('./render_stats');
 const { clean, cleanData, documentHtml, icon } = require('./presentation');
 const { esc } = require('./html');
 const { renderFreshnessStamp, renderNewerNotice, getFreshnessScript } = require('./freshness');
 
 const TABS = [['overview', 'Stan projektu'], ['tasks', 'Plan i zadania'], ['arch', 'Architektura'],
-  ['context', 'Wiedza i kontekst'], ['stream', 'Livestream'], ['chat', 'Czat projektu'], ['thoughts', 'Notatki']];
+  ['context', 'Wiedza i kontekst'], ['stats', 'Statystyki'], ['stream', 'Livestream'], ['chat', 'Czat projektu'], ['thoughts', 'Notatki']];
 
 function render(input) {
   const data = cleanData(input);
@@ -22,7 +23,7 @@ function render(input) {
   const json = value => JSON.stringify(value).replace(/</g, '\\u003c');
   const mermaid = fs.readFileSync(path.join(__dirname, 'vendor/mermaid-10.9.3.min.js')).toString('base64');
   const panels = { overview: renderOverview(data), tasks: renderTasksTab(data), arch: renderArchTab(data),
-    context: renderContextTab(data), stream: renderStreamTab(data), chat: renderChatTab(data),
+    context: renderContextTab(data), stats: renderStatsTab(data), stream: renderStreamTab(data), chat: renderChatTab(data),
     thoughts: `<article class="card"><div class="card-heading"><div><span class="eyebrow">.planning/THOUGHTS.md</span><h2>Notatki projektu</h2></div></div><div class="document-body">${data.thoughts.length ? documentHtml(data.thoughts.map(t => '- ' + t).join('\n')) : '<p>Brak wpisów w THOUGHTS.md.</p>'}</div><p class="source-meta">Widok odczytu. Notatki edytujesz w .planning/THOUGHTS.md.</p></article>` };
   return `<!doctype html><html lang="pl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>${esc(title)} — Kokpit projektu</title><style>${getStyles()}</style></head><body>
     <aside class="sidebar"><div class="workspace-brand"><span class="brand-mark">W</span><span>Workspace<small>Kokpit projektu</small></span></div>

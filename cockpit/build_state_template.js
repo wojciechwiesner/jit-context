@@ -10,6 +10,7 @@ const path = require("path");
 const { collect } = require("./collect");
 const { render } = require("./render");
 const { resolveHubSlug } = require("./freshness");
+const { collectStats } = require("./stats");
 
 const RESTRICTED_MODE = 0o600;
 const DEFAULT_MODE = 0o644;
@@ -29,6 +30,7 @@ if (!outFile) fs.mkdirSync(planning, { recursive: true });
 
 const data = collect(root);
 data.hubSlug = resolveHubSlug(root, data.worktrees, hubSlugArg);
+data.stats = collectStats(data.hubSlug);
 const html = render(data);
 const restricted = Boolean(data.chatRuntime || (data.credentials && data.credentials.entries.length));
 

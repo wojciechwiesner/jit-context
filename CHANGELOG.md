@@ -8,6 +8,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Cockpit tab "Statystyki" (`cockpit/render_stats.js`, loader `cockpit/stats.js`): 30-day usage bars as inline
+  SVG (days without stored data drawn as gaps), totals and cost where a source recorded it, observational JIT
+  on/off medians with n and the low-n label, the newest A/B batch (date, model, paired median delta with n) and
+  suggestions with severity and evidence; every empty or broken section says what is missing. The refresher
+  ingests usage once per cycle and writes `<hub dir>/stats/<slug>.json` (`src/hub/stats.py`) before building;
+  a changed stats digest rebuilds the cockpit, a stats failure never blocks the build.
 - Suggestions engine `src/hub/suggestions.py` (rules in `suggestion_rules_git.py`, `suggestion_rules_files.py`,
   `suggestion_rules_usage.py`, STATE.md blocker parser `suggestion_state.py`): 12 deterministic rules, each
   finding with id, severity, evidence (file/command/value) and one action in Polish: stale STATE.md, diagram
