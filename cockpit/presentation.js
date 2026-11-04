@@ -30,6 +30,7 @@ function icon(name) {
     stats: '<path d="M3 21h18M6 17v-6m5 6V5m5 12v-9m4 9v-4"/>',
     stream: '<rect x="2" y="4" width="20" height="14" rx="2"/><path d="m10 8 5 3-5 3zM8 22h8m-4-4v4"/>',
     chat: '<path d="M21 15a3 3 0 0 1-3 3H8l-5 4V6a3 3 0 0 1 3-3h12a3 3 0 0 1 3 3z"/>',
+    actions: '<circle cx="12" cy="12" r="9"/><path d="m10 8 6 4-6 4z"/>',
     thoughts: '<path d="M5 3h10l4 4v14H5zM14 3v5h5M8 12h8m-8 4h6"/>',
   };
   return `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">${paths[name] || paths.overview}</svg>`;

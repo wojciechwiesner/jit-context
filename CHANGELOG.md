@@ -8,6 +8,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Hub actions UI in the cockpit "Akcje" tab: when served at `/hub/<slug>` (the hub injects `jit-hub-actions`,
+  `jit-hub-runs`, `jit-hub-report` meta tags) it shows the four actions (Audyt 360, Audyt bezpieczeństwa,
+  Badanie rynku, Monetyzacja) behind a confirm dialog that says a model runs and may cost tokens, a runs list
+  polled every 3 s while a run is active (30 s idle, backoff on errors, errors shown with the URL) and a report
+  viewer. Reports render through a DOM-only safe markdown helper (`cockpit/safe_markdown.js`: text nodes only,
+  http(s) links only, emoji stripped). New `GET /api/hub/report?run=` returns a run's report markdown, reading
+  only files under the hub reports dir of the run's project (403 outside, 404 unknown run or no report).
+  A `file://` cockpit links to the hub instead.
 - Hub action runs backend: `POST /api/hub/actions {slug, action}` (audit360, security, market, monetization)
   queues a headless read-only agent (`claude -p`, or `$JIT_HUB_AGENT_CMD`) in the project directory with the
   prompt template `src/hub/actions/<action>.md` on stdin, `--output-format json`, only Read/Grep/Glob/WebSearch/

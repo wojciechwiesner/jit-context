@@ -5,11 +5,13 @@
   GET  /api/hub/version?slug=   -> built_at + signature of the last recorded build (polled by cockpits)
   GET  /hub/<slug>              -> the freshest cockpit (hub copy or repo .planning/state.html) + CSRF meta tag
                                    + chat config meta tags (endpoint, slug) read by the cockpit "Czat" tab
+                                   + action endpoints meta tags read by the cockpit "Akcje" tab
   POST /api/hub/refresh?slug=   -> rebuild the cockpit now (stats first), synchronous
   GET  /api/hub/chat?slug=      -> the project's chat history
   POST /api/hub/chat            -> {slug, messages} -> model reply grounded in the project's files (hub.chat)
   POST /api/hub/actions         -> {slug, action} -> 202, a queued read-only agent run (hub.actions.api)
   GET  /api/hub/runs[?slug=]    -> action runs, newest first, optionally for one project
+  GET  /api/hub/report?run=     -> markdown of a run's report (read from the hub reports dir only)
 
 Access to every route goes through health.mission_access first (livestream does that). POST routes also need
 an allowed Origin header and the per-process CSRF token from the hub page (`<meta name="jit-hub-csrf">`) in the
@@ -50,11 +52,15 @@ REFRESH_ROUTE = "/api/hub/refresh"
 CHAT_ROUTE = "/api/hub/chat"
 ACTIONS_ROUTE = "/api/hub/actions"
 RUNS_ROUTE = "/api/hub/runs"
+REPORT_ROUTE = "/api/hub/report"
 POST_PREFIX = "/api/hub/"
 CSRF_HEADER = "X-JIT-Hub-CSRF"
 CSRF_META_NAME = "jit-hub-csrf"
 CHAT_META_NAME = "jit-hub-chat"
 SLUG_META_NAME = "jit-hub-slug"
+ACTIONS_META_NAME = "jit-hub-actions"
+RUNS_META_NAME = "jit-hub-runs"
+REPORT_META_NAME = "jit-hub-report"
 CSRF_TOKEN_BYTES = 32
 ORIGINS_ENV = "JIT_HUB_ALLOWED_ORIGINS"
 DEFAULT_EXTRA_ORIGINS = "https://live.borg.tools"
@@ -136,6 +142,13 @@ def chat_meta(slug: str) -> str:
             f'<meta name="{SLUG_META_NAME}" content="{html_escape(slug, quote=True)}">')
 
 
+def actions_meta() -> str:
+    """Action endpoints for the cockpit "Akcje" tab (cockpit/hub_actions.js reads them, slug from chat_meta)."""
+    return (f'<meta name="{ACTIONS_META_NAME}" content="{ACTIONS_ROUTE}">'
+            f'<meta name="{RUNS_META_NAME}" content="{RUNS_ROUTE}">'
+            f'<meta name="{REPORT_META_NAME}" content="{REPORT_ROUTE}">')
+
+
 def with_csrf(html: bytes, extra_meta: str = "") -> bytes:
     """Insert the CSRF meta tag (and extra_meta) right after <head>, or in front of the document without head."""
     meta = (csrf_meta() + extra_meta).encode("utf-8")
@@ -150,7 +163,7 @@ def cockpit_page(path: str) -> Reply:
     target = freshest_cockpit(entry)
     if target is None:
         raise NotFound(f"no cockpit for {entry['slug']!r}: run POST {REFRESH_ROUTE}?slug={entry['slug']}")
-    return 200, with_csrf(target.read_bytes(), chat_meta(entry["slug"])), HTML_TYPE
+    return 200, with_csrf(target.read_bytes(), chat_meta(entry["slug"]) + actions_meta()), HTML_TYPE
 
 
 def hub_page() -> Reply:
@@ -169,6 +182,8 @@ def _get(path: str, query: Dict[str, List[str]]) -> Optional[Reply]:
     if path == RUNS_ROUTE:
         slug = _first(query, "slug")
         return _json(200, actions_api.runs_payload(find_project(slug)["slug"] if slug else None))
+    if path == REPORT_ROUTE:
+        return _json(*actions_api.report_payload(_first(query, "run")))
     if path.startswith(HUB_PAGE_PREFIX) and "/" not in path[len(HUB_PAGE_PREFIX):]:
         return cockpit_page(path)
     return None

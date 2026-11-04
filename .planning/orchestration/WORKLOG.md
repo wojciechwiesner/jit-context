@@ -404,3 +404,28 @@
 - gaps: no real `claude -p` run (by design; plan step 5 does one real action run); no endpoint to read a report's
   content yet (H18 report viewer needs one, or reads report_path through a new route); no cancel endpoint;
   .planning/state.html rebuilt by the session hook was restored with git restore, not committed.
+
+## 2026-11-04T05:06:04Z · H18 · DONE
+- files: cockpit/safe_markdown.js, cockpit/hub_actions.js, cockpit/render_actions.js, cockpit/client_actions.js,
+  cockpit/hub_actions.test.js (new); cockpit/render.js, cockpit/presentation.js, cockpit/style.js,
+  src/health/hub_routes.py, src/hub/actions/api.py, src/tests/test_hub_actions_ui.py (new), CHANGELOG.md
+- tests: bash scripts/hub_gate.sh -> pytest 432 passed, 7 skipped; node --test cockpit/ 49 pass 0 fail; ruff OK;
+  size and emoji checks OK (clean tree checked after the commit). /usr/bin/python3 (3.9) imports
+  health.hub_routes and hub.actions.api.
+- decisions: new "Akcje" tab next to "Czat projektu" instead of a separate page, so it reuses the cockpit served
+  at /hub/<slug> and the CSRF meta from H16; endpoints reach the page as meta tags (jit-hub-actions/runs/report),
+  file:// shows a link to http://127.0.0.1:8767/hub/<slug>#actions and makes no requests. The report viewer
+  needed content, so H18 adds GET /api/hub/report?run=: run id validated by regex, file must resolve under
+  reports_dir(run slug) (403 otherwise, so a tampered run json cannot read arbitrary files), 2 MiB cap.
+  Markdown is rendered by a small DOM-only parser (text nodes, no innerHTML; links only http(s) with
+  rel=noopener; emoji, variation selectors and ZWJ stripped) because the cockpit has no dependencies and model
+  output is untrusted. Polling: 3 s while a run is queued/running, 30 s idle, exponential backoff to 60 s on
+  errors, the error is shown with its URL and the list is marked as possibly stale (no invented state). The
+  confirm dialog states a model runs (claude -p), read-only, up to 30 min, may cost tokens; the action button
+  is disabled while a run of that action is active, a 409 is shown verbatim. The concurrency limit shown comes
+  from the runs payload, not hardcoded. Browser code is injected with fn.toString() so node tests exercise the
+  same functions; all script blocks are compiled together in a test to catch global name clashes.
+- gaps: no browser (Chrome) run of the tab, only the node fake DOM and HTTP tests; no real model run; no
+  cancel button (no backend endpoint); markdown subset only (headings, paragraphs, lists, code, quotes,
+  tables, hr, bold/italic/code/links; no nested lists or images). .planning/state.html rebuilt by the session
+  hook was restored with git restore, not committed.
