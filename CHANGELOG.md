@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- `jit cockpit untrack [path] [--yes]` (`src/hub/untrack.py`): when `.planning/state.html` is tracked, runs
+  `git rm --cached` and appends the path to `.gitignore` only after an interactive yes or `--yes`; never commits,
+  prints the commands to commit. Non-interactive without `--yes`: no change, exit code 2.
 - Hub refresher launchd agent (`src/installer/hub_refresher.py`): `jit install` (host `hub-refresher`, macOS only)
   snapshots src to `~/.hermes/state/jit-hub/runtime/current` and writes
   `~/Library/LaunchAgents/io.theones.jit-hub-refresher.plist` (oldest Homebrew python3.11+, `-m init hub refresh

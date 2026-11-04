@@ -120,3 +120,20 @@
 - gaps: not loaded on this machine (task forbids it, plan step 3 does it); `jit install` does not restart a
   loaded agent after writing a new snapshot (kickstart -k is manual); .planning/state.html was regenerated
   outside this task, committed as is.
+
+## 2026-11-04T01:32:21+01:00 · H7 · DONE
+- files: src/hub/untrack.py, src/init.py (`jit cockpit` subcommand), src/tests/test_cockpit_untrack.py,
+  CHANGELOG.md, .planning/state.html
+- tests: bash scripts/hub_gate.sh -> pytest 307 passed, 7 skipped; node --test cockpit/ 23 pass 0 fail; ruff OK
+- decisions: `jit cockpit` is a new top-level command (the plan names `jit cockpit untrack`, not `jit hub`).
+  [path] = project dir (-> <dir>/.planning/state.html) or the cockpit file itself; repo = `git rev-parse
+  --show-toplevel` of the nearest existing dir, .gitignore at the repo root, entry = path relative to it
+  (`.planning/state.html`, an existing `/.planning/state.html` line counts as present). Tracked = non-empty
+  `git ls-files -- <entry>`; not tracked -> report and exit 0 with no change. Order: `git rm --cached` first,
+  then .gitignore, so a failed rm leaves nothing modified. Interactive = stdin is a tty; non-tty without --yes
+  -> exit 2, no change; interactive answers t/tak/y/yes proceed, anything else or EOF -> exit 1, no change.
+  .gitignore is not staged and nothing is committed; the printed hint lists `git add .gitignore` + `git commit`
+  and asks to check git status (an unscoped commit would take other staged changes). Tests force-add the
+  cockpit (`git add -f`) because a global excludesFile on this machine already ignores .planning/state.html.
+- gaps: not run on the jit-context repo itself (plan step 4, owner confirmation); .planning/state.html was
+  regenerated outside this task, committed as is.
