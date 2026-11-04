@@ -1,0 +1,10 @@
+{
+  "name": "jit-cockpit",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Project cockpit generator (.planning/state.html), vendored from sota-starter",
+  "main": "run_tests.js",
+  "scripts": {
+    "test": "node --test"
+  }
+}

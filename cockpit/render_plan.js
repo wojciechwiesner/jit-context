@@ -1,0 +1,30 @@
+// Readable plan browser. Document assertions are not runtime verification certificates.
+const { esc } = require('./html');
+const { documentHtml } = require('./presentation');
+const CHECK_SVG = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" aria-hidden="true"><path d="m5 12 5 5 9-10"/></svg>';
+function taskRow(task) {
+  const status = task.isBlocker ? 'blocker' : task.done ? 'done' : 'open';
+  const args = esc(JSON.stringify([task.id || '', task.text, task.done, `${task.section} · ${task.source}:${task.line}`]));
+  return `<div class="task-row" role="button" tabindex="0" data-task-status="${status}" data-task-title="${esc(task.text.toLowerCase())}" onclick="openTaskDetail(...${args})" onkeydown="if(event.key==='Enter')this.click()"><div class="task-left"><span class="check-icon ${task.done ? 'done' : ''}">${task.done ? CHECK_SVG : task.partial ? '−' : ''}</span><span class="task-text ${task.done ? 'done' : ''}">${esc(task.text.replace(/\*\*/g, ''))}</span></div><div class="task-badges"><span class="pill">${task.partial ? 'Częściowo' : task.done ? 'Ukończone wg pliku' : 'Do zrobienia'}</span><span class="btn btn-sm">Szczegóły</span></div></div>`;
+}
+function waveRow(wave) {
+  const args = esc(JSON.stringify([wave.id, wave.title || wave.id, false, 'Orchestration · status deklarowany w pliku']));
+  return `<div class="task-row" data-task-id="${esc(wave.id)}" data-task-status="wave" data-is-wave="true" data-task-title="${esc((wave.id + ' ' + (wave.title || '')).toLowerCase())}" onclick="openTaskDetail(...${args})"><div class="task-left"><span class="pill mono">${esc(wave.id)}</span><span>${esc(wave.title || wave.id)}</span></div><span class="pill">${esc(wave.status)}</span></div>`;
+}
+function renderTasksTab(data) {
+  const { state, orchestration } = data;
+  return `<div class="task-filter-bar"><div class="filter-pills">${[['all', 'Wszystkie', state.totalCount + orchestration.waves.length], ['open', 'Otwarte', state.openCount], ['done', 'Ukończone', state.doneCount], ['blocker', 'Blokery', state.blockers.length], ['waves', 'Fale', orchestration.waves.length]].map(([id, label, count]) => `<button class="filter-btn ${id === 'all' ? 'active' : ''}" data-filter="${id}">${label} <span class="mono">${count}</span></button>`).join('')}</div><div class="header-actions"><input class="search-input" id="task-search" aria-label="Szukaj zadania" placeholder="Szukaj w planie…" oninput="filterTasks()"><button class="btn" onclick="openAddTaskModal()">Nowy szkic zadania</button></div></div>
+  <div class="notice">Zadania z STATE.md i ROADMAP.md. Statusy pochodzą z dokumentów; nie zastępują dowodów wykonania. ${state.partialCount} wpisów jest częściowo wykonanych.</div>
+  <div id="staged-tasks-container" style="display:none"></div>
+  ${state.sections.map((section, index) => `<section class="task-section"><div class="section-header" onclick="toggleSection(${index})"><span>${esc(section.title)}</span><span class="pill mono">${esc(section.source)} · ${section.tasks.filter(t => t.done).length}/${section.tasks.length}</span></div><div id="sec-body-${index}" class="section-body">${section.tasks.map(taskRow).join('')}</div></section>`).join('') || '<section class="card">Brak checkboxów w dokumentach. Pełny stan projektu znajdziesz w zakładce Stan projektu.</section>'}
+  ${orchestration.waves.length ? `<section class="task-section"><div class="section-header">Historia orchestration <span class="pill">${orchestration.waves.length}</span></div><div class="section-body">${orchestration.waves.map(waveRow).join('')}</div></section>` : ''}
+  <details class="card"><summary>Pełny plan produktu · ROADMAP.md</summary><div class="document-body">${documentHtml(state.roadmap || 'Brak ROADMAP.md.')}</div></details>
+  ${detailModal()}${draftModal(state.sections, data.slug)}`;
+}
+function detailModal() {
+  return `<div class="modal-backdrop" id="task-detail-modal" onclick="closeTaskDetail(event)"><div class="modal-card" onclick="event.stopPropagation()"><div class="modal-header"><span class="pill" id="modal-task-badge"></span><h2 id="modal-task-title">Szczegóły</h2><button class="btn" onclick="closeTaskDetail()">Zamknij</button></div><div class="modal-body" id="modal-task-body"></div><div class="modal-footer"><button class="btn" id="modal-task-copy-btn" onclick="copyTaskAsMarkdown()">Kopiuj jako Markdown</button></div></div></div>`;
+}
+function draftModal(sections, slug) {
+  return `<div class="modal-backdrop" id="add-task-modal" onclick="closeAddTaskModal(event)"><div class="modal-card" onclick="event.stopPropagation()"><div class="modal-header"><h2>Szkic zadania</h2><button class="btn" onclick="closeAddTaskModal()">Zamknij</button></div><div class="modal-body"><div class="notice">Szkic jest zapisywany tylko w tej przeglądarce. Ten widok nie zapisuje do STATE.md ani nie uruchamia workerów.</div><div class="form-group"><label class="form-label" for="new-task-title">Tytuł</label><input class="form-input" id="new-task-title"></div><div class="form-group"><label class="form-label" for="new-task-section">Sekcja</label><select class="form-select" id="new-task-section">${[...new Set(sections.map(s => s.title))].map(title => `<option>${esc(title)}</option>`).join('')}<option>Nowe zadania</option></select></div><div class="form-group"><label class="form-label" for="new-task-desc">Kryteria akceptacji</label><textarea class="form-textarea" id="new-task-desc"></textarea></div><select id="new-task-prio" hidden><option>NORMAL</option></select><select id="new-task-target" hidden><option>manual</option></select><div id="add-task-output-wrap" style="display:none"><pre class="source-code" id="add-task-preview"></pre></div></div><div class="modal-footer"><button class="btn" id="btn-copy-agent-prompt" style="display:none" onclick="copyNewTaskPrompt()">Kopiuj prompt</button><button class="btn btn-primary" onclick="stageNewTask(${esc(JSON.stringify(slug))})">Zachowaj szkic lokalnie</button></div></div></div>`;
+}
+module.exports = { renderTasksTab };

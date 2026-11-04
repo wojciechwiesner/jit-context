@@ -1,0 +1,12 @@
+graph TD
+    subgraph Client ["Frontend / Client"]
+        UI["UI / Web Client"]
+    end
+
+    subgraph Backend ["Backend Service"]
+        API["API Service"]
+        DB[("Database")]
+        API --> DB
+    end
+
+    UI <--> API

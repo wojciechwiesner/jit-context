@@ -256,6 +256,28 @@ The capsule then carries `@skill:<name>` pointers for must-have skills and one `
 
 Why an allowlist and not one Hermes profile per project: a profile is a full isolated home (own memory, sessions, cron, gateway state, credentials), so per-project profiles would split memory and history across ~100 repos, and Hermes has no cwd-based automatic profile selection. Narrowing the skills index per trusted repo gives the token and focus win without fragmenting state.
 
+## Project Hub
+
+One local place for every project where `jit init` ran: always-fresh cockpits, measured usage, project chat and read-only agent actions. Plan and decisions: [`docs/plans/2026-11-03-project-hub.md`](docs/plans/2026-11-03-project-hub.md).
+
+- **Registry** (`src/hub/registry.py`): `~/.hermes/state/jit-hub/projects.json` (override the dir with `JIT_HUB_DIR`). `jit init` registers the project; worktrees map to their main repo and are never separate entries.
+- **Refresher** (`src/hub/refresher.py`): rebuilds a cockpit with the vendored generator (`cockpit/`, override `JIT_COCKPIT_BUILDER`) only when its signature changes: HEAD of every worktree, `.planning/{STATE,ROADMAP,THOUGHTS}.md`, `ARCHITECTURE.mmd`, `links.json` and the Obsidian dossier mtime. An untracked `state.html` is written in place; a tracked one is never touched, the hub keeps its own copy (`jit cockpit untrack` removes it from the index on request).
+- **Stats** (cockpit tab "Statystyki"): measured usage per day from Claude Code transcripts, Hermes `state.db` and JIT overlay DBs (read-only); an observational JIT on/off comparison with n and the label "obserwacja, nie eksperyment"; savings only from a controlled A/B run (`jit bench ab`, costs tokens, asks for `--yes`); deterministic suggestions with evidence.
+- **Hub UI and API** on the Mission Control server (`health.livestream`): `/hub` lists projects with freshness, activity, open tasks, blockers and 7-day tokens; `/hub/<slug>` serves the freshest cockpit with the chat ("Czat projektu", OpenAI-compatible endpoint, default `http://127.0.0.1:8788/v1`, `JIT_HUB_CHAT_URL` / `JIT_HUB_CHAT_MODEL`) and actions ("Akcje": audit 360, security, market, monetization as headless read-only `claude -p`, max 2 concurrent, reports in the hub dir and the vault). POST routes need the page's CSRF token and an allowed Origin.
+
+```bash
+jit hub scan ~/Projects/active        # register every repo with .planning/STATE.md or .planning/jit.json
+jit hub list                          # print the registry
+jit hub refresh --once                # one rebuild pass (the launchd agent runs --interval 60)
+jit hub install-service [--load]      # write the launchd plist; loads only with --load
+jit hub usage --days 7                # collect usage, totals per project
+jit hub compare --days 7              # observational JIT on/off medians
+python3 -m health.livestream --port 8767   # from src/: serves /mc, /hub, /api/hub/*
+bash scripts/hub_e2e.sh               # end-to-end check against a tmp HOME and a tmp project
+```
+
+File cockpits (`file://`) and the freshness poller link to `http://127.0.0.1:8767` (`cockpit/freshness.js`), so run the server on that port; its own default is 8766 (`JIT_LIVESTREAM_PORT`).
+
 ## Development workflow
 
 This repository is the single source of truth. Installed copies are read-only snapshots that the next install overwrites, so never edit them (`~/.hermes/plugins/ona-context`, `~/.claude/hooks`, `~/.claude/jit-context-runtime`, the Agent Zero container, the `jit-context-os` mirror).

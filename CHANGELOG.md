@@ -7,6 +7,117 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-11-04
+
+### Added
+- `scripts/hub_e2e.sh`: end-to-end Project Hub check against a tmp HOME and a tmp git project (no network, no
+  model calls): `jit init`, `jit hub scan`, `jit hub refresh --once`, a STATE.md edit committed in a worktree,
+  a second refresh that must change the hub version, then the Mission Control server on a free port and curl of
+  `/api/hub/projects`, `/hub/<slug>` (CSRF meta present) and `/api/hub/version` (matches the last build).
+  `src/tests/test_hub_e2e_script.py` runs it in the pytest suite.
+- Docs: README "Project Hub" section, Project Hub routes in `docs/MISSION_CONTROL.md` (cockpit generator path
+  now the vendored `cockpit/`), Project Hub status in `.planning/STATE.md`, `.planning/ARCHITECTURE.mmd`
+  redrawn with the `hub/` package, `cockpit/`, the hub routes and the refresher agent.
+- Hub actions UI in the cockpit "Akcje" tab: when served at `/hub/<slug>` (the hub injects `jit-hub-actions`,
+  `jit-hub-runs`, `jit-hub-report` meta tags) it shows the four actions (Audyt 360, Audyt bezpieczeństwa,
+  Badanie rynku, Monetyzacja) behind a confirm dialog that says a model runs and may cost tokens, a runs list
+  polled every 3 s while a run is active (30 s idle, backoff on errors, errors shown with the URL) and a report
+  viewer. Reports render through a DOM-only safe markdown helper (`cockpit/safe_markdown.js`: text nodes only,
+  http(s) links only, emoji stripped). New `GET /api/hub/report?run=` returns a run's report markdown, reading
+  only files under the hub reports dir of the run's project (403 outside, 404 unknown run or no report).
+  A `file://` cockpit links to the hub instead.
+- Hub action runs backend: `POST /api/hub/actions {slug, action}` (audit360, security, market, monetization)
+  queues a headless read-only agent (`claude -p`, or `$JIT_HUB_AGENT_CMD`) in the project directory with the
+  prompt template `src/hub/actions/<action>.md` on stdin, `--output-format json`, only Read/Grep/Glob/WebSearch/
+  WebFetch and `git log`/`git status`/`ls` (restricted mode, `dontAsk`), 30 min timeout that kills the process
+  group, at most 2 concurrent runs (FIFO queue) and one active run per project and action (409). Run state in
+  `<hub dir>/runs/<id>.json`; the emoji-stripped report goes to `<hub dir>/reports/<slug>/<date>-<action>.md`
+  and is copied to the vault `projects/<slug>/reports/`. `GET /api/hub/runs?slug=` lists runs, marking runs
+  orphaned by a dead server process as interrupted.
+- Hub chat UI in the cockpit "Czat projektu" tab: when served at `/hub/<slug>` (the hub now injects
+  `jit-hub-chat` + `jit-hub-slug` meta tags next to the CSRF token) it loads the history from the hub, sends
+  recent turns to `POST /api/hub/chat`, shows source chips, model/latency and upstream errors as error bubbles,
+  and offers quick prompts (Status projektu, Co dalej, Ryzyka, Wyjaśnij architekturę). Model text is rendered
+  with textContent only. A `file://` cockpit shows an "Otwórz czat w hubie" button instead of the old
+  "bridge not configured" text; the old bridge token (`runtime.json`) is no longer embedded in cockpits.
+- Hub project chat backend: `POST /api/hub/chat {slug, messages}` (Origin + CSRF guarded) and
+  `GET /api/hub/chat?slug=` (history). The server builds the system prompt (max 24k chars) from the Obsidian
+  dossier, STATE.md, ROADMAP.md, README head, ARCHITECTURE.mmd and the hub stats + suggestions, with a visible
+  source list (included size, truncation, or the missing/unreadable reason), calls the OpenAI-compatible endpoint
+  (default `http://127.0.0.1:8788/v1`; `<hub dir>/config.json` `chat`, `$JIT_HUB_CHAT_URL`, `_MODEL`, `_TIMEOUT`,
+  `_API_KEY`; 90 s timeout) and returns the reply in one piece. Upstream failures return 502/504 with the upstream
+  HTTP status, never a canned answer. History in `<hub dir>/chats/<slug>.jsonl` (`src/hub/chat*.py`).
+- Hub UI at `GET /hub` (`src/health/hub.html`, `hub.js`, `hub.css`): table of every registered project with
+  cockpit freshness badge, last activity with branch, open tasks, blockers, 7-day tokens and top suggestion;
+  search, sort by activity or name, linked worktrees grouped (collapsible) under their repo, links to the cockpit
+  (`/hub/<slug>`), the Obsidian dossier (`obsidian://`) and the folder; Polish labels, SVG icons, dark and light
+  theme; missing data shown as missing. `/api/hub/projects` rows gain `worktrees` and `dossier`
+  (`src/hub/project_links.py`, same dossier name rules as the cockpit generator).
+- Hub API on the Mission Control server (`src/health/hub_routes.py`, data in `src/hub/overview.py`):
+  `GET /api/hub/projects` (registry rows with freshness, last branch activity, open tasks, blockers, 7-day tokens
+  and top suggestion from the refresher-written stats file; missing inputs reported as missing),
+  `GET /api/hub/version?slug=`, `GET /hub/<slug>` (newest of hub copy / repo cockpit, with a CSRF meta tag) and
+  `POST /api/hub/refresh?slug=` (forced rebuild, `refresher.refresh_project(force=True)`), POST guarded by an
+  allowed Origin (loopback on the server port + `JIT_HUB_ALLOWED_ORIGINS`) and the `X-JIT-Hub-CSRF` token.
+- Cockpit tab "Statystyki" (`cockpit/render_stats.js`, loader `cockpit/stats.js`): 30-day usage bars as inline
+  SVG (days without stored data drawn as gaps), totals and cost where a source recorded it, observational JIT
+  on/off medians with n and the low-n label, the newest A/B batch (date, model, paired median delta with n) and
+  suggestions with severity and evidence; every empty or broken section says what is missing. The refresher
+  ingests usage once per cycle and writes `<hub dir>/stats/<slug>.json` (`src/hub/stats.py`) before building;
+  a changed stats digest rebuilds the cockpit, a stats failure never blocks the build.
+- Suggestions engine `src/hub/suggestions.py` (rules in `suggestion_rules_git.py`, `suggestion_rules_files.py`,
+  `suggestion_rules_usage.py`, STATE.md blocker parser `suggestion_state.py`): 12 deterministic rules, each
+  finding with id, severity, evidence (file/command/value) and one action in Polish: stale STATE.md, diagram
+  drift, tracked cockpit, files over 300 lines (top 5), missing tests or test command, CHANGELOG untouched in the
+  last 10 code commits, README without quickstart, tracked `.env`, open blockers, 14 idle days with open tasks,
+  week-over-week token spike, JIT off in most sessions. Missing inputs are listed as skipped with the reason,
+  crashing rules as errors; no model calls.
+- Controlled A/B `jit bench ab <project> [--tasks file] [--runs 3] [--model sonnet] [--yes]`
+  (`src/hub/bench.py`, `bench_tasks.py`, `bench_store.py`, `bench_cli.py`), generalised from
+  `benchmarks/run_jit_ab_opus55.py`: each task runs `claude -p --output-format json` with JIT on and off (arm
+  order alternates per run) in a fresh detached worktree, read-only tools (Read, Grep, Glob), no MCP servers, no
+  session persistence. JIT off = `JIT_CLAUDE_HOOK=0`, `JIT_SPILL_HOOK=0`, `JIT_COMPACT_HOOK=0` (the switches the
+  Claude Code hooks honour). Default tasks: open STATE.md items + one README question (3). Without `--yes` only
+  the plan and the estimated number of model calls are printed. Rows (usage, turns, cost, wall time; missing
+  values NULL) go to `usage.sqlite` table `ab_runs`; the summary shows per-arm and paired medians with n.
+- Observational JIT comparison (`src/hub/jit_compare.py`, `jit_compare_report.py`) and
+  `jit hub compare [--days 7] [--project slug] [--json]`: per project and day, Claude/Hermes session-days split
+  into "JIT on" (a capsule was recorded for the session id) and "JIT off", with medians of tokens per turn,
+  cache-read share, turns per session and tool errors (missing until collected), n per group and metric, the
+  label "obserwacja, nie eksperyment" and "za mało danych" below n=20 in either group. No savings value.
+- Usage collectors per project (`src/hub/usage.py` + `usage_claude.py`, `usage_dbs.py`, `usage_store.py`,
+  `usage_report.py`) and `jit hub usage [--days 7] [--json]`: incremental daily rollups in
+  `~/.hermes/state/jit-hub/usage.sqlite` from Claude Code transcripts (byte offsets, one count per API response),
+  Hermes `state.db` sessions (read-only, `mode=ro` then `query_only`) and JIT overlay `turn_telemetry`. Worktree
+  cwds map to the main project via the registry; each source fails open; missing cost stays NULL.
+- `jit cockpit untrack [path] [--yes]` (`src/hub/untrack.py`): when `.planning/state.html` is tracked, runs
+  `git rm --cached` and appends the path to `.gitignore` only after an interactive yes or `--yes`; never commits,
+  prints the commands to commit. Non-interactive without `--yes`: no change, exit code 2.
+- Hub refresher launchd agent (`src/installer/hub_refresher.py`): `jit install` (host `hub-refresher`, macOS only)
+  snapshots src to `~/.hermes/state/jit-hub/runtime/current` and writes
+  `~/Library/LaunchAgents/io.theones.jit-hub-refresher.plist` (oldest Homebrew python3.11+, `-m init hub refresh
+  --interval 60`, KeepAlive, ThrottleInterval 30, log `~/Library/Logs/jit-hub-refresher.log`) without loading it.
+  `jit hub install-service` prints the `launchctl bootstrap` command; `--load` boots out a loaded copy and loads.
+  `jit uninstall` removes the plist only when the agent is not loaded.
+- Cockpit freshness UX (`cockpit/freshness.js`): the header shows "Zbudowano: <time>, źródło: <branch> @ <sha>",
+  a yellow notice names a worktree branch with a newer commit than the build source; over http(s) the page polls
+  `/api/hub/version?slug=` every 30 s and reloads when the version changes, as file:// it shows a link
+  "Otwórz w hubie (zawsze aktualne)". The generator takes `--hub-slug` (passed by the refresher) or looks the
+  slug up in the hub registry by path.
+- Cockpit worktree activity: `cockpit/worktrees.js` adds `worktrees` (every `git worktree list --porcelain`
+  entry with branch, HEAD, last commit time and subject, dirty file count; newest first) and `newestActivity`
+  to the cockpit data; the overview tab shows a "Gałęzie robocze" card (8 newest, the rest collapsed).
+- Cockpit generator vendored into `cockpit/` (builder, modules, mermaid, templates) with `package.json` and a
+  `node --test cockpit/` entry; `config.cockpit_builder()` resolves it for `l1/cockpit_sync.py`, `init.py` and
+  Mission Control (`JIT_COCKPIT_BUILDER` overrides, runtime snapshots find the repo via `DEPLOYED_FROM.txt`).
+- Project Hub registry `src/hub/` (`~/.hermes/state/jit-hub/projects.json`, `JIT_HUB_DIR` overrides): atomic,
+  locked writes, worktrees resolve to their main repo, a corrupt file is backed up and rebuilt. `jit init`
+  registers the project; new `jit hub scan [root]` and `jit hub list [--json]`.
+- Hub freshness refresher `jit hub refresh [--once] [--interval 60]` (`src/hub/refresher.py`, `signature.py`):
+  rebuilds a registered cockpit only when worktree HEADs, `.planning` files or the Obsidian dossier change;
+  tracked `state.html` is never rewritten (hub copy in `cockpits/<slug>.html`, via the new builder `--out`),
+  per project `state/<slug>.json`, failures isolated and skipped after 3 until the signature changes.
+
 ### Fixed
 - Turn-1 capsule now carries the hand-curated project card (`<vault>/context/projects/<name>.md`: server, port, URL,
   integrations) ahead of the auto-synced vault note; before, only the vault note was read and facts like the

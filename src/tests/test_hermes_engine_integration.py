@@ -15,8 +15,11 @@ HERMES_ROOT = Path(os.environ.get("HERMES_AGENT_ROOT", Path.home() / ".hermes" /
 ENGINE_DIR = Path(__file__).resolve().parents[1] / "hermes_engine"
 
 pytestmark = pytest.mark.skipif(
-    not (HERMES_ROOT / "agent" / "context_compressor.py").exists() or importlib.util.find_spec("openai") is None,
-    reason="needs a Hermes checkout and its venv",
+    not (HERMES_ROOT / "agent" / "context_compressor.py").exists()
+    or Path(sys.prefix).resolve() != (HERMES_ROOT / "venv").resolve(),
+    # Importing hermes_cli from another interpreter re-execs the process under Hermes' own
+    # python (no pytest there), which silently killed the whole suite.
+    reason="run with Hermes' venv python (see module docstring)",
 )
 
 

@@ -112,6 +112,43 @@ VAULT_DIR = _resolve_default_vault()
 PROJECTS_DIR = VAULT_DIR / "projects" if (VAULT_DIR / "projects").exists() else VAULT_DIR
 WORKSPACE_DIR = _resolve_default_workspace()
 
+# Cockpit generator (.planning/state.html), vendored in <repo>/cockpit/
+COCKPIT_BUILDER_ENV = "JIT_COCKPIT_BUILDER"
+COCKPIT_DIR_NAME = "cockpit"
+COCKPIT_BUILDER_NAME = "build_state_template.js"
+SNAPSHOT_STAMP_FILE = "DEPLOYED_FROM.txt"
+
+
+def _source_dir() -> Path:
+    """The src/ this module belongs to. A runtime snapshot holds only src/, so its stamp
+    (`<sha> <timestamp> <source src dir>`) points back to the checkout it was deployed from."""
+    here = Path(__file__).resolve().parent
+    try:
+        parts = (here / SNAPSHOT_STAMP_FILE).read_text(encoding="utf-8").split(maxsplit=2)
+    except OSError:
+        return here
+    return Path(parts[2].strip()) if len(parts) == 3 else here
+
+
+def cockpit_builder() -> Path:
+    """Path of the cockpit generator: $JIT_COCKPIT_BUILDER if set, else the repo copy."""
+    override = os.environ.get(COCKPIT_BUILDER_ENV)
+    if override:
+        return Path(override).expanduser()
+    return _source_dir().parent / COCKPIT_DIR_NAME / COCKPIT_BUILDER_NAME
+
+
+# Project Hub state (registry, cockpit copies, stats)
+HUB_DIR_ENV = "JIT_HUB_DIR"
+
+
+def hub_dir() -> Path:
+    """Project Hub state dir: $JIT_HUB_DIR if set, else <HERMES_HOME>/state/jit-hub. Read per call."""
+    override = os.environ.get(HUB_DIR_ENV)
+    if override:
+        return Path(override).expanduser()
+    return HERMES_HOME / "state" / "jit-hub"
+
 # Performance & Timeouts
 L0_MAX_LATENCY_MS = 3.0
 L1_MAX_LATENCY_MS = 10.0

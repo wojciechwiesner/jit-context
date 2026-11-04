@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import argparse
 
-from installer import agent_zero, claude_code, hermes, opencode, pi
+from installer import agent_zero, claude_code, hermes, hub_refresher, opencode, pi
 from installer.common import FAIL, Result
 
 HOSTS = {
@@ -13,6 +13,7 @@ HOSTS = {
     opencode.HOST: opencode,
     pi.HOST: pi,
     agent_zero.HOST: agent_zero,
+    hub_refresher.HOST: hub_refresher,
 }
 
 

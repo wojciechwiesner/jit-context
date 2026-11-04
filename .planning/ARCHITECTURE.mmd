@@ -1,5 +1,6 @@
-%% jit-context architecture as built (master). Rebuilt from src/ imports on 2026-10-29; module import cycles: 0.
-%% Package edges come from an AST scan of src/ (tests excluded). Keep in sync when a package is added or split.
+%% jit-context architecture as built (feat/project-hub). Rebuilt on 2026-11-04 with the hub/ package, the vendored
+%% cockpit/ generator and the hub routes on the Mission Control server (base drawing 2026-10-29: 0 import cycles).
+%% Package edges come from an import scan of src/ (tests excluded). Keep in sync when a package is added or split.
 graph TD
     subgraph Hosts ["Agent hosts (integrations/ + installer/)"]
         HERMES["Hermes plugin ona-context"]
@@ -11,7 +12,7 @@ graph TD
 
     subgraph Entry ["Entry points"]
         HOOKS["hooks.py<br/>capsule per turn, tool evidence"]
-        CLI["init.py = jit CLI<br/>init, install, skills, doctor"]
+        CLI["init.py = jit CLI<br/>init, install, skills, doctor,<br/>hub, bench, cockpit untrack"]
         MCP["mcp_server.py<br/>get_jit_context, project state"]
         GIT["git post-commit<br/>l1/post_commit.py"]
     end
@@ -39,6 +40,21 @@ graph TD
         CSYNC["cockpit_sync.py<br/>state.html rebuild, diagram drift"]
     end
 
+    subgraph HUB ["hub/ Project Hub"]
+        REG["registry.py + scan.py<br/>projects.json, worktrees -> main repo"]
+        REFR["refresher.py + signature.py<br/>rebuild when HEADs or planning files change"]
+        USAGE["usage*.py<br/>daily rollups in usage.sqlite"]
+        CMPR["jit_compare.py<br/>observational JIT on/off, n shown"]
+        BENCH["bench*.py<br/>controlled A/B, jit bench ab"]
+        SUGG["suggestions.py + suggestion_rules_*<br/>deterministic rules with evidence"]
+        HSTATS["stats.py + overview.py<br/>stats per project, projects payload"]
+        CHAT["chat*.py<br/>prompt from project files, history"]
+        ACT["actions/<br/>runner, run_store, report, templates"]
+    end
+
+    COCKPIT["cockpit/ (Node, vendored)<br/>build_state_template.js, collect.js,<br/>render_*.js tabs, hub_chat, hub_actions"]
+    LAUNCHD["launchd io.theones.jit-hub-refresher<br/>installer/hub_refresher.py"]
+
     subgraph L2 ["l2/ deep path (off by default)"]
         TRIG["triggers.py"]
         L2C["client.py + circuit_breaker.py<br/>600 ms fail-open"]
@@ -50,7 +66,8 @@ graph TD
     end
 
     subgraph OPS ["health/ + telemetry/"]
-        HEALTH["health/server.py :8765<br/>observatory, mission, livestream"]
+        HEALTH["health/server.py :8765<br/>observatory"]
+        MC["health/livestream.py = Mission Control<br/>mission_routes /mc, hub_routes /hub, /api/hub/*"]
         DOCTOR["doctor, autocheck, diagnostics<br/>invariants I1-I10 on a disposable DB"]
         TELE["telemetry/<br/>collector, stream, turn_audit"]
     end
@@ -60,6 +77,10 @@ graph TD
     REPO[("project repo .planning/<br/>STATE.md, state.html, ARCHITECTURE.mmd")]
     BROKER["Borg broker / mem-agent"]
     JEVAPI["JEV decisions API"]
+    HUBDIR[("hub state ~/.hermes/state/jit-hub/<br/>projects.json, state, cockpits, stats,<br/>usage.sqlite, chats, runs, reports")]
+    USRC[("usage sources, read-only<br/>Claude jsonl, Hermes state.db, overlay DBs")]
+    LLM["OpenAI-compatible endpoint<br/>default 127.0.0.1:8788/v1"]
+    AGENT["claude -p, read-only tools<br/>max 2 concurrent"]
 
     HERMES --> HOOKS
     CC --> HOOKS
@@ -104,3 +125,35 @@ graph TD
     DOCTOR --> OVERLAY
     DOCTOR --> JEV
     EPI --> JUDGE
+    CLI --> REG
+    CLI --> REFR
+    CLI --> USAGE
+    CLI --> BENCH
+    CLI --> COCKPIT
+    LAUNCHD --> REFR
+    REFR --> REG
+    REFR --> HSTATS
+    REFR --> COCKPIT
+    REFR --> HUBDIR
+    REFR -.->|untracked state.html only| REPO
+    HSTATS --> USAGE
+    HSTATS --> CMPR
+    HSTATS --> SUGG
+    HSTATS --> BENCH
+    SUGG --> CSYNC
+    USAGE --> USRC
+    USAGE --> HUBDIR
+    BENCH --> AGENT
+    CSYNC --> COCKPIT
+    COCKPIT --> REPO
+    COCKPIT --> VAULT
+    MC --> REG
+    MC --> HSTATS
+    MC --> REFR
+    MC --> CHAT
+    MC --> ACT
+    CHAT --> LLM
+    CHAT --> HUBDIR
+    ACT --> AGENT
+    ACT --> HUBDIR
+    ACT --> VAULT

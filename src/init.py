@@ -26,6 +26,7 @@ from context import project_scan
 from context.project_scan import ProjectScanner, dossier_stem, legacy_dossier_stem  # noqa: F401  (re-exported)
 from skills_cli import write_project_skills
 from l1.obsidian_sync import refresh_dossier_header
+from config import cockpit_builder
 
 OBSIDIAN_VAULT = Path(os.path.expanduser("~/Documents/Wojciech"))
 OBSIDIAN_PROJECTS_DIR = project_scan.OBSIDIAN_PROJECTS_DIR
@@ -262,7 +263,7 @@ def run_init(target_path: Path, tier: str = "standard", goal: Optional[str] = No
     # 3. Operator Scratchpad .planning/THOUGHTS.md if missing
     thoughts_file = planning_dir / "THOUGHTS.md"
     if not thoughts_file.exists():
-        thoughts_template = Path.home() / "Documents/Wojciech/templates/sota-starter/THOUGHTS_TEMPLATE.md"
+        thoughts_template = cockpit_builder().parent / "THOUGHTS_TEMPLATE.md"
         if thoughts_template.exists():
             t_content = thoughts_template.read_text(encoding="utf-8").replace("{{DATE}}", datetime.now().strftime("%Y-%m-%d"))
         else:
@@ -272,7 +273,7 @@ def run_init(target_path: Path, tier: str = "standard", goal: Optional[str] = No
     # 4. Architecture Diagram .planning/ARCHITECTURE.mmd if missing
     arch_file = planning_dir / "ARCHITECTURE.mmd"
     if not arch_file.exists():
-        arch_template = Path.home() / "Documents/Wojciech/templates/sota-starter/ARCHITECTURE_TEMPLATE.mmd"
+        arch_template = cockpit_builder().parent / "ARCHITECTURE_TEMPLATE.mmd"
         if arch_template.exists():
             a_content = arch_template.read_text(encoding="utf-8")
         else:
@@ -280,7 +281,7 @@ def run_init(target_path: Path, tier: str = "standard", goal: Optional[str] = No
         arch_file.write_text(a_content, encoding="utf-8")
 
     # 5. Visual Cockpit .planning/state.html
-    builder_script = Path.home() / "Documents/Wojciech/templates/sota-starter/build_state_template.js"
+    builder_script = cockpit_builder()
     if builder_script.exists():
         try:
             subprocess.run(["node", str(builder_script), str(target_path)], capture_output=True, timeout=5)
@@ -305,7 +306,7 @@ def run_init(target_path: Path, tier: str = "standard", goal: Optional[str] = No
     }
 
 def main():
-    known_cmds = {"init", "mode", "config", "configure", "off", "on", "status", "doctor", "stream", "jev", "worker", "solve", "skills", "install", "uninstall", "-h", "--help"}
+    known_cmds = {"init", "mode", "config", "configure", "off", "on", "status", "doctor", "stream", "jev", "worker", "solve", "skills", "hub", "bench", "cockpit", "install", "uninstall", "-h", "--help"}
     if len(sys.argv) > 1 and sys.argv[1] not in known_cmds:
         first = sys.argv[1]
         # Shorthand `jit <path>` only for real directories; anything else is a mistyped command, not a path.
@@ -368,6 +369,13 @@ def main():
     import skills_cli
     skills_cli.add_arguments(subparsers.add_parser("skills", help="Show/write per-project skill selection; 'sync <worktree>' links must-have skills"))
 
+    from hub import cli as hub_cli
+    hub_cli.add_arguments(subparsers.add_parser("hub", help="Project Hub: 'scan [root]', 'list', 'refresh [--once] [--interval 60]', 'install-service [--load]', 'usage [--days 7] [--json]', 'compare [--days 7] [--project slug] [--json]'"))
+    from hub import bench_cli
+    bench_cli.add_arguments(subparsers.add_parser("bench", help="Benchmarks: 'ab <project> [--tasks file] [--runs 3] [--model sonnet] [--yes]' (controlled JIT on/off A/B, costs tokens)"))
+    from hub import untrack as cockpit_cli
+    cockpit_cli.add_arguments(subparsers.add_parser("cockpit", help="Cockpit file: 'untrack [path] [--yes]'"))
+
     # Allow running directly as 'jit <path>' without subcommand
     parser.add_argument("direct_path", nargs="?", default=None, help=argparse.SUPPRESS)
     parser.add_argument("--tier", choices=["simple", "standard", "deep", "xhigh"], default="standard", help=argparse.SUPPRESS)
@@ -385,6 +393,15 @@ def main():
 
     if cmd == "skills":
         sys.exit(skills_cli.main(args))
+
+    if cmd == "hub":
+        sys.exit(hub_cli.main(args))
+
+    if cmd == "bench":
+        sys.exit(bench_cli.main(args))
+
+    if cmd == "cockpit":
+        sys.exit(cockpit_cli.main(args))
 
     # Subcommand: jit mode
     if cmd == "mode":
@@ -654,6 +671,7 @@ def main():
         print(f"jit init: katalog nie istnieje: {target_dir}", file=sys.stderr)
         sys.exit(2)
     res = run_init(target_dir, tier=tier, goal=goal)
+    hub_line = hub_cli.register_after_init(target_dir)
     small_res = None
     if getattr(args, "profile", "default") == "small":
         from small_context import DEFAULT_SMALL_MODEL, write_small_profile
@@ -667,6 +685,7 @@ def main():
     print(f"• Bazy Danych: {', '.join(res['stack']['databases']) or 'Brak'}")
     print(f"• Obsidian SSOT: {res['obsidian_dossier']} ({'utworzony' if res.get('dossier_action') == 'created' else 'zachowany, nagłówek commita odświeżony' if res.get('dossier_action') == 'preserved_header_synced' else 'zachowany'})")
     print(f"• Local State: {res['state_file']}")
+    print(hub_line)
     print(f"• Zewnętrzne Zasoby (Context7/Docs): {len(res['external_resources'])} wykrytych")
     for r in res['external_resources']:
         print(f"   └─ [{r['type']}] {r['target']}: {r['description']}")
