@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Hub freshness signature now covers the planning files of every linked worktree, not only the main tree. An uncommitted `STATE.md` edit inside a worktree changes the digest and triggers a cockpit rebuild even when HEAD does not. `src/hub/signature.py`, covered by `test_uncommitted_state_in_worktree_triggers_rebuild`.
 - The hub actions test no longer asserts the stored run status in the same instant `submit()` returns. A worker can move the run from `queued` to `running` before that read, so the check now asserts the snapshot `submit()` returns and that the stored run exists. `src/tests/test_hub_actions.py`.
 - The compiler latency gate is 50 ms instead of 5 ms. The cascade does real file reads, and a loaded machine misses 5 ms without any regression; a real slowdown is seconds, which the gate still catches. `src/tests/test_performance.py`.
+- The project chat prompt now states the live git branch and HEAD, and tells the model to treat any other branch named in the sources as history. Before this the prompt had no branch at all, so the model guessed one from stale planning files and reported it as current. `src/hub/chat_prompt.py`, covered by `test_prompt_states_the_live_branch_not_the_one_in_the_files`.
 
 ### Changed
 - `.planning/state.html` is no longer tracked. `.gitignore` already ignored `state.html`, but the file stayed in the index, so the hub refresher treated the cockpit as hand-edited and skipped it. Removing it lets the refresher rebuild it.

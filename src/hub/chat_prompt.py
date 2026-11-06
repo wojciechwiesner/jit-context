@@ -16,6 +16,7 @@ from typing import Callable, List, Optional, Tuple
 
 import config
 from hub import overview, project_links
+from hub.gitinfo import _git_lines
 
 MAX_PROMPT_CHARS = 24000
 SOURCE_LIST_RESERVE = 1600
@@ -44,6 +45,8 @@ HEADER = (
     "nie wiesz, zamiast zgadywać. Podawaj, z którego źródła pochodzi informacja. Nie używaj emoji. Nie "
     "modyfikujesz plików: proponowane zmiany są tylko propozycjami.\n"
     "Ścieżka projektu: {path}\n"
+    "Aktualny git: branch {branch}, HEAD {head}. Gdy źródła niżej wspominają inną gałąź, "
+    "to historia, nie stan bieżący. Podawaj branch tylko z tej linii.\n"
 )
 
 
@@ -168,7 +171,10 @@ def source_list(sources: List[Source]) -> str:
 
 def build_system_prompt(entry: dict, today: Optional[date] = None) -> Tuple[str, List[dict]]:
     """(system prompt <= MAX_PROMPT_CHARS, public source list)."""
-    header = HEADER.format(slug=entry["slug"], path=entry["path"])
+    git_now = _git_lines(Path(entry["path"]), "rev-parse", "--abbrev-ref", "HEAD", "--short", "HEAD")
+    branch = git_now[0] if git_now else "nieznany"
+    head = git_now[1] if git_now and len(git_now) > 1 else "nieznany"
+    header = HEADER.format(slug=entry["slug"], path=entry["path"], branch=branch, head=head)
     budget = MAX_PROMPT_CHARS - len(header) - SOURCE_LIST_RESERVE
     sources = []
     for source, cap in collect_sources(entry, today):

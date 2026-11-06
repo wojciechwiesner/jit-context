@@ -189,6 +189,13 @@ def test_prompt_is_capped_and_lists_truncation(env):
     assert "znaków, obcięte" in prompt and "[... obcięto" in prompt
 
 
+def test_prompt_states_the_live_branch_not_the_one_in_the_files(env):
+    state = env["repo"] / ".planning" / "STATE.md"
+    state.write_text(state.read_text(encoding="utf-8") + "\nPraca na gałęzi feat/stale-branch.\n", encoding="utf-8")
+    prompt, _ = chat_prompt.build_system_prompt(env["entry"])
+    assert "branch main," in prompt and "feat/stale-branch" not in prompt.split("===", 1)[0]
+
+
 def test_unreadable_dossier_is_reported(env, monkeypatch):
     monkeypatch.setattr(config, "PROJECTS_DIR", env["repo"] / "no-vault")
     _, sources = chat_prompt.build_system_prompt(env["entry"])
