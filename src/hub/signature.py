@@ -1,7 +1,8 @@
 """Freshness signature of a registered project: what the cockpit is built from.
 
 Inputs: HEAD and branch of every worktree (`git worktree list --porcelain`), mtime and size of the planning
-files in the main tree, and the mtime of the Obsidian dossier. Same inputs -> same hex digest.
+files in the main tree and in every linked worktree, and the mtime of the Obsidian dossier. Same inputs ->
+same hex digest. A worktree's uncommitted STATE.md therefore changes the digest even when HEAD does not.
 """
 
 from __future__ import annotations
@@ -84,13 +85,24 @@ def dossier_path(project: Path) -> Path:
     return Path(config.VAULT_DIR) / "projects" / f"{dossier_slug(project)}.md"
 
 
+def _planning_stamps(root: Path) -> Dict[str, Optional[List[int]]]:
+    planning = root / ".planning"
+    return {name: _file_stamp(planning / name) for name in PLANNING_FILES}
+
+
 def signature_inputs(project: Path) -> dict:
     """The raw inputs; kept separate from the digest so tests and logs can show what changed."""
     project = Path(project)
-    planning = project / ".planning"
+    worktrees = sorted(list_worktrees(project), key=lambda w: w["path"] or "")
+    main = str(project.resolve())
     return {
-        "worktrees": sorted(list_worktrees(project), key=lambda w: w["path"] or ""),
-        "planning": {name: _file_stamp(planning / name) for name in PLANNING_FILES},
+        "worktrees": worktrees,
+        "planning": _planning_stamps(project),
+        "worktree_planning": {
+            item["path"]: _planning_stamps(Path(item["path"]))
+            for item in worktrees
+            if item["path"] and str(Path(item["path"]).resolve()) != main
+        },
         "dossier": _file_stamp(dossier_path(project)),
     }
 

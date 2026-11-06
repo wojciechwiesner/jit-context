@@ -95,6 +95,19 @@ def test_state_md_edit_triggers_rebuild(tmp_path, fake_builder):
     assert len(fake_builder()) == 2
 
 
+def test_uncommitted_state_in_worktree_triggers_rebuild(tmp_path, fake_builder):
+    repo = make_repo(tmp_path / "alpha")
+    worktree = tmp_path / "alpha-wt"
+    git(repo, "worktree", "add", "-q", "-b", "feat", str(worktree))
+    entry, _ = registry.register_project(worktree)
+    refresher.refresh_all()
+    before = refresher.load_state(entry["slug"])["signature"]
+    touch_newer(worktree / ".planning" / "STATE.md", "# State\n\n## Tasks\n- [ ] uncommitted in worktree\n")
+    assert statuses(refresher.refresh_all()) == {entry["slug"]: refresher.REBUILT}
+    assert refresher.load_state(entry["slug"])["signature"] != before
+    assert len(fake_builder()) == 2
+
+
 def test_new_commit_in_worktree_triggers_rebuild(tmp_path, fake_builder):
     repo = make_repo(tmp_path / "alpha")
     worktree = tmp_path / "alpha-wt"

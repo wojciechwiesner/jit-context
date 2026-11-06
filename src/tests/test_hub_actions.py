@@ -43,7 +43,8 @@ def calls(log_dir: Path, kind: str):
 def run_one(env, action="audit360", **runner_kwargs):
     jobs = runner.Runner(**runner_kwargs)
     run = jobs.submit(env["entry"], action)
-    assert run["status"] == run_store.QUEUED and run_store.load(run["id"])["status"] == run_store.QUEUED
+    # submit() returns the queued snapshot; a worker may already have moved the stored state to running.
+    assert run["status"] == run_store.QUEUED and run_store.load(run["id"]) is not None
     jobs.wait_idle()
     return run_store.load(run["id"])
 

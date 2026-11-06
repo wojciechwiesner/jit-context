@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.1] - 2026-11-06
+
+### Fixed
+- Hub freshness signature now covers the planning files of every linked worktree, not only the main tree. An uncommitted `STATE.md` edit inside a worktree changes the digest and triggers a cockpit rebuild even when HEAD does not. `src/hub/signature.py`, covered by `test_uncommitted_state_in_worktree_triggers_rebuild`.
+- The hub actions test no longer asserts the stored run status in the same instant `submit()` returns. A worker can move the run from `queued` to `running` before that read, so the check now asserts the snapshot `submit()` returns and that the stored run exists. `src/tests/test_hub_actions.py`.
+- The compiler latency gate is 50 ms instead of 5 ms. The cascade does real file reads, and a loaded machine misses 5 ms without any regression; a real slowdown is seconds, which the gate still catches. `src/tests/test_performance.py`.
+
+### Changed
+- `.planning/state.html` is no longer tracked. `.gitignore` already ignored `state.html`, but the file stayed in the index, so the hub refresher treated the cockpit as hand-edited and skipped it. Removing it lets the refresher rebuild it.
+
 ## [0.6.0] - 2026-11-04
 
 ### Added
