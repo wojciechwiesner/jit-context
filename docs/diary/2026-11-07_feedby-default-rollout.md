@@ -24,3 +24,14 @@
 - Feedby ingest lives on feedby-admin.borg.tools (CORS *); feedby.borg.tools only serves the widget assets.
 - Panel is a cross-origin iframe: DOM queries from the host page cannot reach it; use real pointer + Input.insertText.
 - A commit in the repo is not a live widget: every app still has to be deployed with its own procedure.
+
+## Prod rollout (17:24-17:33)
+- Shipped only the widget block to 12 live apps (48 static files + whatsapp hook + firestudio hotfix build + 2 container copies). Details and rollback: DEPLOYMENT_REGISTRY entry of 2026-11-07.
+- Ship invariant used: `strip(after) == prod_before` and balanced <script> tags before the marker, else refuse.
+- Bug found in prod: theones.io (minified `</script></body>`) got the block inside the script; widget never booted. Rolled back from backup within ~1 min, fixed snippet (8553e4c, tests), re-shipped, browser-verified.
+- Bug found while moving the uni-pro mount: own script dropped the full MVP page; caught by `git diff --stat` before push and restored (169 lines, diff vs pre-widget = 0).
+- Evidence: ~/Desktop/projects/files/feedby-rollout-20261107/prod/ (ship-*.txt, verify-prod.txt, browser-public.json, public-curl.txt, internal-curl.txt).
+
+## Gotchas
+- Always check what prod actually serves before mounting: uniproos serves the rosea SPA, not the module the repo name suggests.
+- `docker cp` hotfixes vanish on image rebuild; the repo commit must be in the next build.
