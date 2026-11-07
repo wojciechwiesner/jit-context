@@ -52,7 +52,7 @@ py-modules = ["broker_client", "config", "hooks", "init", "mcp_server", "session
 [tool.setuptools.packages.find]
 where = ["src"]
 namespaces = true
-include = ["cognitive*", "context*", "health*", "hub*", "installer*", "l0*", "l1*", "l2*", "telemetry*"]
+include = ["cognitive*", "context*", "feedby_std*", "health*", "hub*", "installer*", "l0*", "l1*", "l2*", "telemetry*"]
 
 [tool.setuptools.package-data]
 health = ["*.html", "*.css", "*.js"]

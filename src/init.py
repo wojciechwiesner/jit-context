@@ -306,7 +306,7 @@ def run_init(target_path: Path, tier: str = "standard", goal: Optional[str] = No
     }
 
 def main():
-    known_cmds = {"init", "mode", "config", "configure", "off", "on", "status", "doctor", "stream", "jev", "worker", "solve", "skills", "hub", "bench", "cockpit", "install", "uninstall", "-h", "--help"}
+    known_cmds = {"init", "mode", "config", "configure", "off", "on", "status", "doctor", "stream", "jev", "worker", "solve", "skills", "hub", "bench", "cockpit", "feedby", "install", "uninstall", "-h", "--help"}
     if len(sys.argv) > 1 and sys.argv[1] not in known_cmds:
         first = sys.argv[1]
         # Shorthand `jit <path>` only for real directories; anything else is a mistyped command, not a path.
@@ -375,6 +375,8 @@ def main():
     bench_cli.add_arguments(subparsers.add_parser("bench", help="Benchmarks: 'ab <project> [--tasks file] [--runs 3] [--model sonnet] [--yes]' (controlled JIT on/off A/B, costs tokens)"))
     from hub import untrack as cockpit_cli
     cockpit_cli.add_arguments(subparsers.add_parser("cockpit", help="Cockpit file: 'untrack [path] [--yes]'"))
+    from feedby_std import cli as feedby_cli
+    feedby_cli.add_arguments(subparsers.add_parser("feedby", help="Feedby default: 'inventory', 'provision <repo>|--live [--dry-run]', 'verify'"))
 
     # Allow running directly as 'jit <path>' without subcommand
     parser.add_argument("direct_path", nargs="?", default=None, help=argparse.SUPPRESS)
@@ -402,6 +404,9 @@ def main():
 
     if cmd == "cockpit":
         sys.exit(cockpit_cli.main(args))
+
+    if cmd == "feedby":
+        sys.exit(feedby_cli.main(args))
 
     # Subcommand: jit mode
     if cmd == "mode":
