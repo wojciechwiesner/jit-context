@@ -14,6 +14,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `verify` checks the key without writing to Feedby and checks whether the live page serves the widget.
 - Project Hub page now carries the Feedby widget (project `jit-context`).
 
+### Fixed
+- `jit feedby` snippet: a `</body>` sharing its line with `</script>` (minified Astro output) got the
+  block inserted inside the preceding script, so the widget never booted. The block now goes right
+  before `</body>` in that case and `strip()` restores the original bytes exactly.
+
 ## [0.6.1] - 2026-11-06
 
 ### Fixed

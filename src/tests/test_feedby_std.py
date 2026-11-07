@@ -144,3 +144,21 @@ def test_probes_send_named_user_agent(monkeypatch):
     assert verify.probe_key(KEY) == verify.KEY_UNKNOWN
     assert verify.page_serves_widget("https://example.test/", KEY) is None
     assert seen == [verify.USER_AGENT, verify.USER_AGENT]
+
+
+def test_minified_body_close_never_lands_inside_a_script():
+    """REGRESSION INVARIANT: `</script></body>` on one line (Astro minified) must get the block AFTER
+    </script>; inserting at line start put it inside the script on theones.io."""
+    page = "<html><body><p>x</p>\n\t\t<script>\n\t\t\tinit();\n\t\t</script></body></html>"
+    out = snippet.inject(page, "html", KEY)
+    before = out[: out.index("<!-- feedby:start")]
+    assert before.count("<script") == before.count("</script>")
+    assert out.index("feedby:end") < out.index("</body>")
+    assert snippet.inject(out, "html", KEY) == out
+
+
+def test_strip_restores_original_exactly():
+    """REGRESSION INVARIANT: strip(inject(x)) == x for indented and minified pages."""
+    minified = "<html><body><script>a()</script></body></html>"
+    for page in (HTML_PAGE, minified):
+        assert snippet.strip(snippet.inject(page, "html", KEY)) == page

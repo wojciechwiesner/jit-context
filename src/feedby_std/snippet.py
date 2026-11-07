@@ -19,6 +19,10 @@ MARK_END = "feedby:end"
 MANAGED_NOTE = "managed by `jit feedby`, public widget key"
 KINDS = ("html", "astro", "jsx")
 
+# A mid-line block is written as "\n<block>" right before </body>; INLINE_TAG marks it so strip can
+# remove that leading newline too and inject can keep the same shape on re-runs.
+INLINE_TAG = " inline"
+_HTML_INLINE_BLOCK = re.compile(r"\n<!-- feedby:start inline.*?feedby:end -->\n", re.S)
 _HTML_BLOCK = re.compile(r"[ \t]*<!-- feedby:start.*?feedby:end -->\n?", re.S)
 _JSX_BLOCK = re.compile(r"[ \t]*\{/\* feedby:start.*?feedby:end \*/\}\n?", re.S)
 
@@ -37,7 +41,7 @@ def _config_js(widget_key: str, locale: str) -> str:
     return f"window.FeedbyConfig=Object.assign({config},window.FeedbyConfig||{{}});"
 
 
-def render(kind: str, widget_key: str, locale: str = "pl", indent: str = "") -> str:
+def render(kind: str, widget_key: str, locale: str = "pl", indent: str = "", mid_line: bool = False) -> str:
     if kind not in KINDS:
         raise ValueError(f"unknown mount kind: {kind}")
     config_js = _config_js(widget_key, locale)
@@ -50,18 +54,19 @@ def render(kind: str, widget_key: str, locale: str = "pl", indent: str = "") -> 
             f"{{/* {MARK_END} */}}",
         ]
     else:
-        inline = " is:inline" if kind == "astro" else ""
+        astro_attr = " is:inline" if kind == "astro" else ""
+        start_tag = MARK_START + (INLINE_TAG if mid_line else "")
         lines = [
-            f"<!-- {MARK_START} ({MANAGED_NOTE}) -->",
-            f"<script{inline}>{config_js}</script>",
-            f'<script{inline} src="{SCRIPT_SRC}" async></script>',
+            f"<!-- {start_tag} ({MANAGED_NOTE}) -->",
+            f"<script{astro_attr}>{config_js}</script>",
+            f'<script{astro_attr} src="{SCRIPT_SRC}" async></script>',
             f"<!-- {MARK_END} -->",
         ]
     return "".join(f"{indent}{line}\n" for line in lines)
 
 
 def strip(text: str) -> str:
-    return _JSX_BLOCK.sub("", _HTML_BLOCK.sub("", text))
+    return _JSX_BLOCK.sub("", _HTML_BLOCK.sub("", _HTML_INLINE_BLOCK.sub("", text)))
 
 
 def has_block(text: str) -> bool:
@@ -69,24 +74,30 @@ def has_block(text: str) -> bool:
 
 
 def _anchor(text: str, kind: str) -> Optional[int]:
-    """Offset of the line where the block is inserted (start of the anchor line)."""
+    """Offset where the block goes: the start of the anchor's line when only whitespace precedes the
+    anchor on that line, else the anchor itself (minified HTML like `</script></body>` on one line;
+    inserting at line start would land inside the preceding <script>)."""
     anchors = ["<Scripts />", "</body>"] if kind == "jsx" else ["</body>"]
     for anchor in anchors:
         pos = text.rfind(anchor)
         if pos != -1:
-            return text.rfind("\n", 0, pos) + 1
+            line_start = text.rfind("\n", 0, pos) + 1
+            return line_start if not text[line_start:pos].strip() else pos
     return None
 
 
 def inject(text: str, kind: str, widget_key: str, locale: str = "pl") -> str:
     """Return text with exactly one managed block. Never touches anything outside the markers."""
     clean = strip(text)
-    line_start = _anchor(clean, kind)
-    if line_start is None:
+    offset = _anchor(clean, kind)
+    if offset is None:
         if kind == "jsx":
             raise ValueError("no <Scripts /> or </body> anchor in JSX mount file")
         suffix = "" if clean.endswith("\n") or not clean else "\n"
         return clean + suffix + render(kind, widget_key, locale)
+    line_start = clean.rfind("\n", 0, offset) + 1
+    if offset != line_start:  # mid-line anchor: own lines, no indent guessing
+        return clean[:offset] + "\n" + render(kind, widget_key, locale, mid_line=True) + clean[offset:]
     anchor_line = clean[line_start:]
     anchor_indent = anchor_line[: len(anchor_line) - len(anchor_line.lstrip(" \t"))]
     # JSX: sibling of <Scripts />, same indent. HTML: child of <body>, one level deeper than </body>.
