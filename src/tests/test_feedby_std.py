@@ -127,3 +127,20 @@ def test_dirty_mount_file_is_refused(repo, fake_remote):
     with pytest.raises(RuntimeError, match="uncommitted"):
         provision.provision(repo, "wip-proj", "Wip", ["index.html"])
     assert not fake_remote["projects"]
+
+
+def test_probes_send_named_user_agent(monkeypatch):
+    """REGRESSION INVARIANT: Cloudflare rejects Python-urllib (error 1010); probes must name themselves."""
+    import urllib.request
+    from feedby_std import verify
+    seen = []
+
+    def fake_urlopen(request, timeout):
+        seen.append(request.get_header("User-agent"))
+        raise urllib.error.URLError("offline")
+
+    import urllib.error
+    monkeypatch.setattr(urllib.request, "urlopen", fake_urlopen)
+    assert verify.probe_key(KEY) == verify.KEY_UNKNOWN
+    assert verify.page_serves_widget("https://example.test/", KEY) is None
+    assert seen == [verify.USER_AGENT, verify.USER_AGENT]

@@ -19,12 +19,14 @@ PROBE_TIMEOUT_SECONDS = 10
 KEY_ACCEPTED = "accepted"
 KEY_REJECTED = "rejected"
 KEY_UNKNOWN = "unknown"
+# Cloudflare rejects the default Python-urllib agent (error 1010), so probes identify themselves.
+USER_AGENT = "jit-feedby-verify/1.0"
 
 
 def probe_key(widget_key: str) -> str:
     request = urllib.request.Request(
         PROBE_URL, data=b"{}", method="POST",
-        headers={"content-type": "application/json", "x-feedby-widget-key": widget_key},
+        headers={"content-type": "application/json", "x-feedby-widget-key": widget_key, "user-agent": USER_AGENT},
     )
     try:
         with urllib.request.urlopen(request, timeout=PROBE_TIMEOUT_SECONDS) as response:
@@ -47,7 +49,8 @@ def mounts_with_block(repo: Path, mounts: List[str]) -> Dict[str, bool]:
 def page_serves_widget(url: str, widget_key: str) -> Optional[bool]:
     """True when the live HTML contains the script tag and this key; None when the page is unreachable."""
     try:
-        with urllib.request.urlopen(url, timeout=PROBE_TIMEOUT_SECONDS) as response:
+        page_request = urllib.request.Request(url, headers={"user-agent": USER_AGENT})
+        with urllib.request.urlopen(page_request, timeout=PROBE_TIMEOUT_SECONDS) as response:
             html = response.read(2_000_000).decode("utf-8", "replace")
     except (urllib.error.URLError, TimeoutError, ValueError):
         return None
