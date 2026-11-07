@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- `jit feedby inventory|provision|verify`: Feedby as a project default. Creates the Feedby project,
+  mints a widget key in Feedby's own format (only the sha256 hash goes to Feedby), injects an idempotent
+  marker block into the repo's mount files (html/astro/jsx) and commits only those files.
+  `verify` checks the key without writing to Feedby and checks whether the live page serves the widget.
+- Project Hub page now carries the Feedby widget (project `jit-context`).
+
 ## [0.6.1] - 2026-11-06
 
 ### Fixed
