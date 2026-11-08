@@ -96,6 +96,20 @@ def test_default_command_is_claude_from_path(env, monkeypatch):
     assert Path(call["argv"][0]).name == "claude" and call["argv"][1] == "-p"
 
 
+def test_claude_found_outside_launchd_path(env, monkeypatch):
+    """REGRESSION INVARIANT: Mission Control runs under launchd (PATH=/usr/bin:/bin:...); `claude` installed in
+    ~/.local/bin must still be found, not fail with Errno 2."""
+    local_bin = Path(os.environ["HOME"]) / ".local" / "bin"
+    local_bin.mkdir(parents=True)
+    fake_claude = local_bin / "claude"
+    fake_claude.write_text(f"#!{sys.executable}\n" + FAKE_AGENT.read_text(encoding="utf-8"), encoding="utf-8")
+    fake_claude.chmod(0o755)
+    monkeypatch.delenv(agent.AGENT_CMD_ENV)
+    monkeypatch.setenv("PATH", "/usr/bin:/bin:/usr/sbin:/sbin")
+    assert agent.agent_command()[0] == str(fake_claude)
+    assert run_one(env, action="market")["status"] == agent.SUCCEEDED
+
+
 def test_failure_records_exit_code_and_stderr_without_report(env, monkeypatch):
     monkeypatch.setenv("FAKE_AGENT_MODE", "fail")
     final = run_one(env)

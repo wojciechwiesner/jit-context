@@ -10,6 +10,7 @@ from __future__ import annotations
 import json
 import os
 import shlex
+import shutil
 import signal
 import subprocess
 from dataclasses import dataclass, field
@@ -18,6 +19,7 @@ from typing import List, Optional
 
 AGENT_CMD_ENV = "JIT_HUB_AGENT_CMD"
 DEFAULT_AGENT_CMD = "claude"
+EXTRA_BIN_DIRS = ("~/.local/bin", "~/.claude/local", "/opt/homebrew/bin", "/usr/local/bin")
 AVAILABLE_TOOLS = ("Read", "Grep", "Glob", "WebSearch", "WebFetch", "Bash")
 ALLOWED_TOOLS = ("Read", "Grep", "Glob", "WebSearch", "WebFetch",
                  "Bash(git log:*)", "Bash(git status:*)", "Bash(ls:*)")
@@ -42,11 +44,23 @@ class AgentResult:
     details: dict = field(default_factory=dict)
 
 
+def resolve_executable(name: str) -> str:
+    """Absolute path of `name` from PATH or the usual per-user install dirs, else `name` unchanged.
+
+    Mission Control runs under launchd with PATH=/usr/bin:/bin:/usr/sbin:/sbin, where the user-installed
+    `claude` (~/.local/bin) is invisible; without this the hub actions fail with Errno 2."""
+    if os.sep in name:
+        return name
+    search = os.pathsep.join([os.environ.get("PATH", ""),
+                              *(str(Path(d).expanduser()) for d in EXTRA_BIN_DIRS)])
+    return shutil.which(name, path=search) or name
+
+
 def agent_command() -> List[str]:
     """Executable from $JIT_HUB_AGENT_CMD (shell-split) or `claude`, plus the fixed read-only options."""
     raw = os.environ.get(AGENT_CMD_ENV, "").strip()
     base = shlex.split(raw) if raw else [DEFAULT_AGENT_CMD]
-    return base + [
+    return [resolve_executable(base[0]), *base[1:]] + [
         "-p", "--output-format", "json",
         "--restricted", "--strict-mcp-config", "--no-session-persistence",
         "--permission-mode", "dontAsk",

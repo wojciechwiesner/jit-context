@@ -15,6 +15,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Project Hub page now carries the Feedby widget (project `jit-context`).
 
 ### Fixed
+- Hub actions (Audyt 360, security, market, monetisation) failed under launchd with
+  `[Errno 2] No such file or directory: 'claude'`: the agent binary is now resolved from PATH plus
+  `~/.local/bin`, `~/.claude/local`, Homebrew and `/usr/local/bin`.
 - Security: OpenCode integration pinned `toml` ^5.0.1 and `zod` ^4.6.6 via `overrides` (transitive through
   `@opencode-ai/plugin` 1.18/1.19, which still pins zod 4.1.8 and effect -> toml 4.3.0). Clears
   GHSA-4qx8-w7c3-pj3p, GHSA-9j65-hcg3-gc64, GHSA-9qmh-m7c6-f92p, GHSA-h895-cgqg-jf52 (toml, CVSS 7.5-8.8)
