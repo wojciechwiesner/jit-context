@@ -75,13 +75,22 @@ def _tail(text: str) -> str:
     return text[-OUTPUT_TAIL_CHARS:]
 
 
+def _result_object(payload):
+    """The result object: newer Claude Code prints the whole event list for `--output-format json`
+    (system/assistant/.../result); older ones print only the final result object."""
+    if isinstance(payload, list):
+        results = [item for item in payload if isinstance(item, dict) and item.get("type") == "result"]
+        return results[-1] if results else None
+    return payload if isinstance(payload, dict) else None
+
+
 def parse_output(stdout: str) -> AgentResult:
-    """AgentResult from the `--output-format json` result object."""
+    """AgentResult from the `--output-format json` result object (or event list ending in one)."""
     try:
-        payload = json.loads(stdout)
+        payload = _result_object(json.loads(stdout))
     except ValueError:
         return AgentResult(FAILED, error=f"agent nie zwrócił JSON: {_tail(stdout) or '(pusty wynik)'}")
-    if not isinstance(payload, dict):
+    if payload is None:
         return AgentResult(FAILED, error="agent zwrócił JSON, ale nie obiekt wyniku")
     cost = payload.get("total_cost_usd")
     usage = payload.get("usage") if isinstance(payload.get("usage"), dict) else None

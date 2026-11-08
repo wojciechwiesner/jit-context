@@ -209,3 +209,13 @@ def test_templates_exist_for_every_action_and_have_no_emoji():
         text = actions.render_prompt(action, "demo", "/tmp/demo", "2026-11-04")
         assert "##" in text and "plik" in text and "Nie zmieniaj" in text
         assert report.strip_emoji(text)[1] == 0
+
+
+def test_event_list_output_is_parsed_from_its_result_event():
+    """REGRESSION INVARIANT: Claude Code 2.1.x prints the whole event list for --output-format json; the
+    report is the last `type: result` event, not a 'not a result object' failure."""
+    events = [{"type": "system", "subtype": "init"}, {"type": "assistant", "message": {}},
+              {"type": "result", "subtype": "success", "is_error": False, "result": "raport", "total_cost_usd": 0.01}]
+    parsed = agent.parse_output(json.dumps(events))
+    assert parsed.status == agent.SUCCEEDED and parsed.report == "raport" and parsed.cost == 0.01
+    assert agent.parse_output(json.dumps([{"type": "system"}])).status == agent.FAILED
