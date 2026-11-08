@@ -112,6 +112,8 @@ def test_worktrees_outside_git_is_an_error_not_empty(tmp_path):
 
 @pytest.mark.skipif(shutil.which("node") is None, reason="node is not installed")
 def test_render_function_string_tests_in_node():
-    res = subprocess.run(["node", "--test", str(NODE_RENDER_TEST)], capture_output=True, text=True, timeout=60)
+    # Pin the TAP reporter: newer Node defaults to the "spec" reporter even off a TTY.
+    res = subprocess.run(["node", "--test", "--test-reporter=tap", str(NODE_RENDER_TEST)],
+                         capture_output=True, text=True, timeout=60)
     assert res.returncode == 0, res.stdout[-3000:] + res.stderr[-2000:]
     assert "# fail 0" in res.stdout

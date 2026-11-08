@@ -77,6 +77,9 @@ def repo(tmp_path, monkeypatch):
     path = tmp_path / "proj"
     path.mkdir()
     git(path, "init", "-q")
+    # provision() commits with plain git; CI runners have no global identity.
+    git(path, "config", "user.email", "t@example.com")
+    git(path, "config", "user.name", "t")
     (path / "index.html").write_text(HTML_PAGE)
     (path / "other.txt").write_text("base\n")
     git(path, "add", ".")

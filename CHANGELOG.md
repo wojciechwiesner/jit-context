@@ -15,6 +15,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Project Hub page now carries the Feedby widget (project `jit-context`).
 
 ### Fixed
+- Security: OpenCode integration pinned `toml` ^5.0.1 and `zod` ^4.6.6 via `overrides` (transitive through
+  `@opencode-ai/plugin` 1.18/1.19, which still pins zod 4.1.8 and effect -> toml 4.3.0). Clears
+  GHSA-4qx8-w7c3-pj3p, GHSA-9j65-hcg3-gc64, GHSA-9qmh-m7c6-f92p, GHSA-h895-cgqg-jf52 (toml, CVSS 7.5-8.8)
+  and GHSA-mrhx-c7xc-m3w5 (zod, CVSS 8.2). `osv-scanner` on `integrations/opencode` is clean; typecheck, tests, build pass.
+- CI: Feedby provision test sets a repo-local git identity (runners have none), hub render test pins
+  `node --test --test-reporter=tap` so the `# fail 0` assertion does not depend on Node's default reporter.
 - `jit feedby` snippet: a `</body>` sharing its line with `</script>` (minified Astro output) got the
   block inserted inside the preceding script, so the widget never booted. The block now goes right
   before `</body>` in that case and `strip()` restores the original bytes exactly.
