@@ -15,6 +15,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Project Hub page now carries the Feedby widget (project `jit-context`).
 
 ### Fixed
+- OpenCode 2.x: `jit install` copied the V1 bundle (`dist/index.js`), which OpenCode 2.x rejects with
+  "Plugin must export a default definition with an id and an effect or setup function", so the plugin
+  never loaded (27 load failures in the Mac mini log). The installer now reads `opencode --version` and
+  ships `dist/v2.js` for 2.x, `dist/index.js` for 1.x.
 - Hub actions (Audyt 360, security, market, monetisation) failed under launchd with
   `[Errno 2] No such file or directory: 'claude'`: the agent binary is now resolved from PATH plus
   `~/.local/bin`, `~/.claude/local`, Homebrew and `/usr/local/bin`.

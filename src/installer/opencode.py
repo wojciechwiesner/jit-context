@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 import shutil
 import subprocess
 from pathlib import Path
@@ -15,6 +16,8 @@ LOCAL_FILE = "jit-context.js"
 SDK_PACKAGE = "@opencode-ai/plugin"
 SDK_VERSION = ">=1.14.0"
 CMD_TIMEOUT_S = 300
+V2_MIN_MAJOR = 2
+VERSION_PATTERN = re.compile(r"(\d+)\.\d+")
 
 
 def config_dir() -> Path:
@@ -60,10 +63,30 @@ def _install_npm() -> str:
     return f"added {NPM_NAME} to opencode.json"
 
 
+def opencode_major_version() -> int | None:
+    """Major version of the installed OpenCode CLI, or None when it can't be read."""
+    binary = shutil.which("opencode")
+    if not binary:
+        return None
+    try:
+        proc = subprocess.run([binary, "--version"], capture_output=True, text=True, timeout=30)
+    except (OSError, subprocess.TimeoutExpired):
+        return None
+    match = VERSION_PATTERN.search(proc.stdout or "")
+    return int(match.group(1)) if match else None
+
+
+def bundle_name(major: int | None) -> str:
+    """OpenCode 2.x rejects the V1 entry (no default id/setup), so it gets dist/v2.js."""
+    if major is not None and major >= V2_MIN_MAJOR:
+        return "v2.js"
+    return "index.js"
+
+
 def _build_bundle() -> Path:
     for args in (["bun", "install", "--frozen-lockfile"], ["bun", "run", "build"]):
         subprocess.run(args, cwd=PLUGIN_SRC, check=True, capture_output=True, timeout=CMD_TIMEOUT_S)
-    return PLUGIN_SRC / "dist" / "index.js"
+    return PLUGIN_SRC / "dist" / bundle_name(opencode_major_version())
 
 
 def _ensure_sdk_dependency() -> None:

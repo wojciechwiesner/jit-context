@@ -100,6 +100,16 @@ def test_opencode_npm_entry_is_added_once_and_removed(fake_home, monkeypatch):
     assert json.loads(cfg_path.read_text())["plugin"] == ["other@1.0"]
 
 
+def test_opencode_bundle_matches_cli_major_version():
+    # OpenCode 2.x refuses the V1 entry, so the local bundle must follow the CLI version.
+    assert opencode.bundle_name(2) == "v2.js"
+    assert opencode.bundle_name(3) == "v2.js"
+    assert opencode.bundle_name(1) == "index.js"
+    assert opencode.bundle_name(None) == "index.js"
+    match = opencode.VERSION_PATTERN.search("opencode v2.1.4")
+    assert match is not None and match.group(1) == "2"
+
+
 def test_agent_zero_reinstall_keeps_plugin_data(fake_home, monkeypatch):
     monkeypatch.setattr(agent_zero, "find_containers", lambda: [])
     root = fake_home / "Projects" / "active" / "agent-zero"
