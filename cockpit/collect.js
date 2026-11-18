@@ -241,6 +241,17 @@ function collectGit(root) {
   return { isRepo: true, branch, log, dirty, diffStat, dirtyCount: dirty.length };
 }
 
+function collectAutocheck(planning) {
+  const empty = { exists: false, updatedAt: null, overallState: null, flows: [], checks: [] };
+  const file = path.join(planning, "autocheck.json");
+  if (!fs.existsSync(file)) return empty;
+  try {
+    const d = JSON.parse(fs.readFileSync(file, "utf-8"));
+    if (!d || typeof d !== "object") return empty;
+    return { exists: true, updatedAt: d.updated_at || null, overallState: d.overall_state || "ok", flows: Array.isArray(d.flows) ? d.flows : [], checks: Array.isArray(d.checks) ? d.checks : [] };
+  } catch (e) { return empty; }
+}
+
 function collect(root) {
   const planning = path.join(root, ".planning");
   const slug = detectProjectSlug(root, planning);
@@ -254,6 +265,7 @@ function collect(root) {
   const thoughts = thoughtsRaw ? thoughtsRaw.split("\n").filter(l => l.trim().startsWith("-")).map(l => l.replace(/^-\s*/, "")) : [];
   const architectureMeta = require('./architecture').collectArchitecture(root);
   const architecture = architectureMeta.diagram;
+  const autocheck = collectAutocheck(planning);
 
   return {
     credentials: require('./credentials').collectCredentials(root),
@@ -273,6 +285,8 @@ function collect(root) {
     thoughts,
     architecture,
     architectureMeta,
+    autocheck,
+    checks: autocheck.checks,
     livestream: { url: "http://127.0.0.1:8766/live", defaultSession: "20261018_163217_6298d0", port: 8766 }
   };
 }

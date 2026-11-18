@@ -37,6 +37,27 @@ function renderWorktrees(data) {
   return `<section class="card worktrees">${heading}<style>.worktree{display:flex;flex-direction:column;gap:3px;padding:9px 0;border-top:1px solid var(--border)}.worktree:first-of-type{border-top:0}.worktree-head{display:flex;justify-content:space-between;gap:8px}.worktree .mono{overflow-wrap:anywhere}.worktrees summary{cursor:pointer;padding:8px 0}</style>${visible}${collapsed}</section>`;
 }
 
+function renderAutocheck(autocheck) {
+  if (!autocheck || !autocheck.exists || !autocheck.flows.length) return '';
+  const overall = (autocheck.overallState || 'ok').toLowerCase();
+  const overallTone = overall === 'ok' ? 'pill-green' : overall === 'degraded' ? 'pill-amber' : 'pill-red';
+  const heading = `<div class="card-heading"><div><span class="eyebrow">Weryfikacja przepływu między węzłami</span><h2>Autocheck Flow</h2></div><span class="pill ${overallTone}">${esc((autocheck.overallState || 'ok').toUpperCase())}</span></div>`;
+  const flows = autocheck.flows.map(flow => {
+    const edges = (flow.edges || []).map(e => {
+      const st = String(e.state || 'ok').toLowerCase();
+      const tone = st === 'ok' ? 'pill-green' : st === 'degraded' ? 'pill-amber' : 'pill-red';
+      const p95 = e.p95 != null ? e.p95 : (e.p95_ms != null ? `${e.p95_ms}ms` : '-');
+      const stats = `${e.completed_on_time ?? 0}/${e.total_started ?? 0} ok · ${e.missing_downstream ?? 0} dropped · ${e.sla_breaches ?? 0} slow · p95 ${p95}`;
+      return `<div class="ac-edge"><div class="ac-edge-head"><strong class="mono">${esc(e.from_node || '')} -> ${esc(e.to_node || '')}</strong><span class="pill ${tone}">${esc(st.toUpperCase())}</span></div><small class="muted mono">${esc(stats)}</small></div>`;
+    }).join('');
+    const findings = flow.findings && flow.findings.length
+      ? `<div class="ac-findings">${flow.findings.map(f => `<div class="ac-finding"><strong>${esc(f.title || '')}</strong>${f.cause ? ` <small class="muted">${esc(f.cause)}</small>` : ''}</div>`).join('')}</div>`
+      : '';
+    return `<div class="ac-flow"><span class="eyebrow">${esc(flow.flow_id || '')}</span>${edges}${findings}</div>`;
+  }).join('');
+  return `<section class="card">${heading}<style>.ac-flow{display:flex;flex-direction:column;gap:6px;padding:10px 0;border-top:1px solid var(--border)}.ac-flow:first-of-type{border-top:0}.ac-edge{display:flex;flex-direction:column;gap:2px;padding:6px 0}.ac-edge-head{display:flex;justify-content:space-between;align-items:center;gap:8px}.ac-findings{display:flex;flex-direction:column;gap:4px;margin-top:4px;padding-top:6px;border-top:1px dashed var(--border)}.ac-finding{display:flex;flex-direction:column;gap:1px}</style>${flows}</section>`;
+}
+
 function renderOverview(data) {
   const { state, git, architectureMeta } = data;
   const milestones = state.milestones || [];
@@ -53,7 +74,7 @@ function renderOverview(data) {
       ${state.reportedProgress !== null ? `<div class="notice">Postęp zadeklarowany w STATE.md: ${state.reportedProgress}%. To nie jest wynik niezależnej weryfikacji.</div>` : ''}
       <div class="document-body">${state.raw ? documentHtml(state.raw) : '<p>Nie znaleziono .planning/STATE.md. Kokpit nie będzie wymyślał stanu projektu.</p>'}</div>
     </article>
-    <aside class="overview-aside">${renderLinks(data.links)}${renderCredentials(data.credentials)}${renderWorktrees(data)}${architecturePreview}
+    <aside class="overview-aside">${renderAutocheck(data.autocheck)}${renderLinks(data.links)}${renderCredentials(data.credentials)}${renderWorktrees(data)}${architecturePreview}
       <section class="card"><div class="card-heading"><div><span class="eyebrow">Plan produktu</span><h2>Kamienie milowe</h2></div><span class="pill">${milestones.length}</span></div>
         <div class="milestone-list">${milestones.length ? milestones.map((task, i) => `<button class="milestone" onclick="switchTab('tasks'); document.getElementById('task-search').value=${esc(JSON.stringify(task.text))}; filterTasks()"><span class="milestone-dot ${task.done ? 'done' : task.partial ? 'partial' : ''}">${String(i + 1).padStart(2, '0')}</span><span>${esc(task.text.replace(/\*\*/g, ''))}<small>${task.done ? 'Ukończone według ROADMAP' : task.partial ? 'Częściowo wykonane' : 'Do zrobienia'}</small></span></button>`).join('') : '<p class="muted">Brak kamieni milowych w ROADMAP.md.</p>'}</div>
         <button class="btn full-width" onclick="switchTab('tasks')">Przejdź do planu i zadań</button>

@@ -6,6 +6,6 @@ const { collect } = require("./collect");
 
 const root = path.resolve(process.argv[2] || process.cwd());
 const data = collect(root);
-const { tracked, ...git } = data.git;
-const output = { ...data, git: { ...git, trackedCount: tracked.length } };
+const { tracked, ...git } = data.git || {};
+const output = { ...data, git: { ...git, trackedCount: Array.isArray(tracked) ? tracked.length : 0 } };
 process.stdout.write(JSON.stringify(output, (key, value) => (value instanceof Date ? value.toISOString() : value)));

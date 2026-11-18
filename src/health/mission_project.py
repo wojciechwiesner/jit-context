@@ -7,7 +7,9 @@ Calls the canonical cockpit exporter (Node) and maps it to ProjectDetail
 from __future__ import annotations
 
 import json
+import os
 import re
+import shutil
 import subprocess
 from pathlib import Path
 from typing import Any
@@ -20,8 +22,10 @@ DOSSIER_GOAL_RE = re.compile(r"\*\*Cel:\*\*\s*(.+)")
 
 
 def _export(path: Path) -> dict[str, Any]:
-    proc = subprocess.run(["node", str(md.COCKPIT_EXPORT), str(path)],
-                          capture_output=True, text=True, timeout=EXPORT_TIMEOUT_S)
+    node_bin = shutil.which("node") or "/opt/homebrew/bin/node"
+    env = {**os.environ, "PATH": f"/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:{os.environ.get('PATH', '')}"}
+    proc = subprocess.run([node_bin, str(md.COCKPIT_EXPORT), str(path)],
+                          capture_output=True, text=True, timeout=EXPORT_TIMEOUT_S, env=env)
     if proc.returncode != 0:
         raise RuntimeError((proc.stderr or "export.js failed").strip().splitlines()[-1][:300])
     return json.loads(proc.stdout)

@@ -120,7 +120,11 @@ function projectCell(row, expanded) {
   } else if (problem(wt)) {
     toggle = `<span class="sub">worktree: ${problem(wt)}</span>`;
   }
-  return `<span class="name">${esc(row.slug)}</span><span class="path">${esc(row.path)}</span>${toggle}`;
+  const ac = row.autocheck_flow;
+  const acBadge = ac && ac.overall_state
+    ? ` <span class="badge ${ac.overall_state === "ok" ? "fresh" : ac.overall_state === "degraded" ? "stale" : "missing"}" title="Autocheck Flow (${esc(ac.flow_count)} flows)">FLOW: ${esc(String(ac.overall_state).toUpperCase())}</span>`
+    : "";
+  return `<span class="name">${esc(row.slug)}${acBadge}</span><span class="path">${esc(row.path)}</span>${toggle}`;
 }
 
 function worktreeRow(wt, now) {

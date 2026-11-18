@@ -134,6 +134,22 @@ def top_suggestion(stats: dict) -> Optional[dict]:
     return found[0] if found else None
 
 
+def autocheck_flow_info(path: Path) -> Optional[dict]:
+    ac_file = path / ".planning" / "autocheck.json"
+    if not ac_file.is_file():
+        return None
+    try:
+        doc = json.loads(ac_file.read_text(encoding="utf-8"))
+        flows = doc.get("flows") if isinstance(doc.get("flows"), list) else []
+        return {
+            "overall_state": doc.get("overall_state") or "ok",
+            "flow_count": len(flows),
+            "updated_at": doc.get("updated_at"),
+        }
+    except (OSError, ValueError):
+        return None
+
+
 def project_summary(entry: dict, today: Optional[date] = None) -> dict:
     path = Path(entry["path"])
     row = {key: entry.get(key) for key in ("slug", "path", "added_at", "last_init_at")}
@@ -147,6 +163,7 @@ def project_summary(entry: dict, today: Optional[date] = None) -> dict:
         row.update(tasks_and_blockers(path))
         row["worktrees"] = project_links.worktrees(path)
         row["dossier"] = project_links.dossier(path)
+        row["autocheck_flow"] = autocheck_flow_info(path)
     stats = load_stats(entry["slug"])
     row["tokens_7d"] = tokens_last_days(stats, today or date.today())
     row["top_suggestion"] = top_suggestion(stats)

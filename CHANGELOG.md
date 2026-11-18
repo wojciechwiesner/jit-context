@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Autocheck Inter-Node Flow in Project Cockpits, JIT Hub & Mission Control (`cockpit/collect.js`, `cockpit/render_overview.js`, `src/hub/overview.py`)**:
+  - `collectAutocheck` reads `.planning/autocheck.json` and exposes `autocheck` (rendered as "Autocheck Flow" card in `.planning/state.html` Overview) and `checks` (rendered in Mission Control `MC.checksBlock`).
+  - Project Hub (`/hub`, `/api/hub/projects`) displays live `FLOW: OK/DEGRADED/BROKEN` badge per project.
 - `jit feedby inventory|provision|verify`: Feedby as a project default. Creates the Feedby project,
   mints a widget key in Feedby's own format (only the sha256 hash goes to Feedby), injects an idempotent
   marker block into the repo's mount files (html/astro/jsx) and commits only those files.
@@ -15,6 +18,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Project Hub page now carries the Feedby widget (project `jit-context`).
 
 ### Fixed
+- **Mission Control `cockpit/export.js` under launchd (`cockpit/export.js`, `src/health/mission_project.py`)**: Guard `tracked.length` when `git.tracked` is absent and include `/opt/homebrew/bin` in `node` subprocess PATH so `/api/mc/project` succeeds under launchd.
+- Turn audit now flags JIT hook latency only above 10 seconds, up from 600 ms. This is an
+  alert threshold, not a runtime timeout; capsule delivery and L2 network timeouts are unchanged.
 - OpenCode 2.x: `jit install` copied the V1 bundle (`dist/index.js`), which OpenCode 2.x rejects with
   "Plugin must export a default definition with an id and an effect or setup function", so the plugin
   never loaded (27 load failures in the Mac mini log). The installer now reads `opencode --version` and
