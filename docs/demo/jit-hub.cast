@@ -1,0 +1,11 @@
+{"version":3,"term":{"cols":82,"rows":20},"timestamp":1795036982,"command":"python3 -B hub_demo.py --story","env":{"SHELL":"/bin/zsh"}}
+[0.188, "o", "\u001b[2J\u001b[H\u001b[1;36mJIT CONTEXT  /  PROJECT HUB\u001b[0m\r\n"]
+[0.845, "o", "$ jit hub scan ~/Projects/active\r\n"]
+[1.360, "o", "  Hub: skan ~/Projects/active\r\n    Nowe w rejestrze: 3\r\n      + invoice-router  ~/Projects/active/invoice-router\r\n      + observatory-lite  ~/Projects/active/observatory-lite\r\n      + receipt-import  ~/Projects/active/receipt-import\r\n    Już znane: 0\r\n    Pominięte worktree: 0\r\n    Repozytoria bez .planning/STATE.md i .planning/jit.json: 0\r\n"]
+[2.301, "o", "$ jit hub list\r\n"]
+[0.617, "o", "  invoice-router    ~/Projects/active/invoice-router  init: brak\r\n  observatory-lite  ~/Projects/active/observatory-lite  init: brak\r\n  receipt-import    ~/Projects/active/receipt-import  init: brak\r\n  Projekty: 3  Rejestr: ~/hub/projects.json\r\n"]
+[2.370, "o", "$ jit hub refresh --once\r\n"]
+[5.204, "o", "  Hub refresh 2026-11-18T22:23:15+01:00: projekty 3, bez zmian 0\r\n    rebuilt          invoice-router  ~/Projects/active/invoice-router/.planning/state.html\r\n    rebuilt          observatory-lite  ~/Projects/active/observatory-lite/.planning/state.\r\n    rebuilt          receipt-import  ~/Projects/active/receipt-import/.planning/state.html\r\n"]
+[2.319, "o", "$ python3 -m health.livestream --port 8767  # isolated probe on :8769\r\n"]
+[0.590, "o", "  GET /hub -> HTTP 200 (5488 bytes) | Mission Control ready\r\n"]
+[4.070, "x", "0"]

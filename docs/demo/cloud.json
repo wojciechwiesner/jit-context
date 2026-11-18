@@ -1,0 +1,257 @@
+[
+  {
+    "arm": "on-tools",
+    "baseline": {
+      "total": 4,
+      "passed": 1,
+      "exit_code": 1
+    },
+    "tests": {
+      "total": 4,
+      "passed": 3,
+      "exit_code": 1
+    },
+    "wall_s": 19.52,
+    "requested_model": "gemini-2.5-flash",
+    "host_exit": 0,
+    "first_scope": "receipt-import",
+    "tools_seen": 8,
+    "patch_applied": null,
+    "calls": [
+      {
+        "capsule_scope": "receipt-import",
+        "tool_count": 8,
+        "input_bytes": 21658,
+        "requested_model": "gemini-2.5-flash",
+        "status": 200,
+        "usage": {
+          "completion_tokens": 15,
+          "prompt_tokens": 4992,
+          "total_tokens": 5116
+        },
+        "response_model": "gemini-2.5-flash"
+      },
+      {
+        "capsule_scope": "receipt-import",
+        "tool_count": 8,
+        "input_bytes": 22306,
+        "requested_model": "gemini-2.5-flash",
+        "status": 200,
+        "usage": {
+          "completion_tokens": 68,
+          "prompt_tokens": 5156,
+          "prompt_tokens_details": {
+            "cached_tokens": 4720
+          },
+          "total_tokens": 5311
+        },
+        "response_model": "gemini-2.5-flash"
+      },
+      {
+        "capsule_scope": "receipt-import",
+        "tool_count": 8,
+        "input_bytes": 23436,
+        "requested_model": "gemini-2.5-flash",
+        "status": 200,
+        "usage": {
+          "completion_tokens": 105,
+          "prompt_tokens": 5380,
+          "prompt_tokens_details": {
+            "cached_tokens": 4726
+          },
+          "total_tokens": 5833
+        },
+        "response_model": "gemini-2.5-flash"
+      },
+      {
+        "capsule_scope": "receipt-import",
+        "tool_count": 8,
+        "input_bytes": 24711,
+        "requested_model": "gemini-2.5-flash",
+        "status": 200,
+        "usage": {
+          "completion_tokens": 91,
+          "prompt_tokens": 5719,
+          "prompt_tokens_details": {
+            "cached_tokens": 4738
+          },
+          "total_tokens": 5810
+        },
+        "response_model": "gemini-2.5-flash"
+      },
+      {
+        "capsule_scope": "receipt-import",
+        "tool_count": 8,
+        "input_bytes": 26188,
+        "requested_model": "gemini-2.5-flash",
+        "status": 200,
+        "usage": {
+          "completion_tokens": 44,
+          "prompt_tokens": 6164,
+          "prompt_tokens_details": {
+            "cached_tokens": 5706
+          },
+          "total_tokens": 6208
+        },
+        "response_model": "gemini-2.5-flash"
+      },
+      {
+        "capsule_scope": "receipt-import",
+        "tool_count": 8,
+        "input_bytes": 27104,
+        "requested_model": "gemini-2.5-flash",
+        "status": 200,
+        "usage": {
+          "completion_tokens": 272,
+          "prompt_tokens": 6396,
+          "prompt_tokens_details": {
+            "cached_tokens": 5711
+          },
+          "total_tokens": 6668
+        },
+        "response_model": "gemini-2.5-flash"
+      },
+      {
+        "capsule_scope": "receipt-import",
+        "tool_count": 8,
+        "input_bytes": 29399,
+        "requested_model": "gemini-2.5-flash",
+        "status": 200,
+        "usage": {
+          "completion_tokens": 52,
+          "prompt_tokens": 7045,
+          "prompt_tokens_details": {
+            "cached_tokens": 5739
+          },
+          "total_tokens": 7097
+        },
+        "response_model": "gemini-2.5-flash"
+      }
+    ],
+    "engine": "Hermes",
+    "offline": false
+  },
+  {
+    "arm": "off-tools",
+    "baseline": {
+      "total": 4,
+      "passed": 1,
+      "exit_code": 1
+    },
+    "tests": {
+      "total": 4,
+      "passed": 3,
+      "exit_code": 1
+    },
+    "wall_s": 29.89,
+    "requested_model": "gemini-2.5-flash",
+    "host_exit": 0,
+    "first_scope": null,
+    "tools_seen": 8,
+    "patch_applied": null,
+    "calls": [
+      {
+        "capsule_scope": null,
+        "tool_count": 8,
+        "input_bytes": 19791,
+        "requested_model": "gemini-2.5-flash",
+        "status": 200,
+        "usage": {
+          "completion_tokens": 22,
+          "prompt_tokens": 4476,
+          "total_tokens": 4649
+        },
+        "response_model": "gemini-2.5-flash"
+      },
+      {
+        "capsule_scope": null,
+        "tool_count": 8,
+        "input_bytes": 21778,
+        "requested_model": "gemini-2.5-flash",
+        "status": 200,
+        "usage": {
+          "completion_tokens": 43,
+          "prompt_tokens": 5056,
+          "prompt_tokens_details": {
+            "cached_tokens": 3770
+          },
+          "total_tokens": 5394
+        },
+        "response_model": "gemini-2.5-flash"
+      },
+      {
+        "capsule_scope": null,
+        "tool_count": 8,
+        "input_bytes": 24016,
+        "requested_model": "gemini-2.5-flash",
+        "status": 200,
+        "usage": {
+          "completion_tokens": 86,
+          "prompt_tokens": 5713,
+          "prompt_tokens_details": {
+            "cached_tokens": 4747
+          },
+          "total_tokens": 5997
+        },
+        "response_model": "gemini-2.5-flash"
+      },
+      {
+        "capsule_scope": null,
+        "tool_count": 8,
+        "input_bytes": 25101,
+        "requested_model": "gemini-2.5-flash",
+        "status": 200,
+        "usage": {
+          "completion_tokens": 74,
+          "prompt_tokens": 5987,
+          "total_tokens": 6061
+        },
+        "response_model": "gemini-2.5-flash"
+      },
+      {
+        "capsule_scope": null,
+        "tool_count": 8,
+        "input_bytes": 26529,
+        "requested_model": "gemini-2.5-flash",
+        "status": 200,
+        "usage": {
+          "completion_tokens": 84,
+          "prompt_tokens": 6423,
+          "prompt_tokens_details": {
+            "cached_tokens": 5723
+          },
+          "total_tokens": 6507
+        },
+        "response_model": "gemini-2.5-flash"
+      },
+      {
+        "capsule_scope": null,
+        "tool_count": 8,
+        "input_bytes": 28003,
+        "requested_model": "gemini-2.5-flash",
+        "status": 200,
+        "usage": {
+          "completion_tokens": 55,
+          "prompt_tokens": 6861,
+          "total_tokens": 6916
+        },
+        "response_model": "gemini-2.5-flash"
+      },
+      {
+        "capsule_scope": null,
+        "tool_count": 8,
+        "input_bytes": 29121,
+        "requested_model": "gemini-2.5-flash",
+        "status": 200,
+        "usage": {
+          "completion_tokens": 164,
+          "prompt_tokens": 7137,
+          "total_tokens": 7301
+        },
+        "response_model": "gemini-2.5-flash"
+      }
+    ],
+    "engine": "Hermes",
+    "offline": false
+  }
+]

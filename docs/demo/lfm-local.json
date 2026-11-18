@@ -1,0 +1,302 @@
+[
+  {
+    "arm": "on-tools",
+    "baseline": {
+      "total": 4,
+      "passed": 1,
+      "exit_code": 1
+    },
+    "tests": {
+      "total": 4,
+      "passed": 1,
+      "exit_code": 1
+    },
+    "wall_s": 116.6,
+    "requested_model": "lfm2.5:2.6b-16k",
+    "host_exit": 0,
+    "first_scope": "receipt-import",
+    "tools_seen": 8,
+    "patch_applied": null,
+    "calls": [
+      {
+        "capsule_scope": "receipt-import",
+        "tool_count": 8,
+        "input_bytes": 19705,
+        "requested_model": "lfm2.5:2.6b-16k",
+        "status": 200,
+        "usage": {
+          "prompt_tokens": 4751,
+          "completion_tokens": 242,
+          "total_tokens": 4993
+        },
+        "response_model": "lfm2.5:2.6b-16k"
+      },
+      {
+        "capsule_scope": "receipt-import",
+        "tool_count": 8,
+        "input_bytes": 22079,
+        "requested_model": "lfm2.5:2.6b-16k",
+        "status": 200,
+        "usage": {
+          "prompt_tokens": 5035,
+          "completion_tokens": 119,
+          "total_tokens": 5154
+        },
+        "response_model": "lfm2.5:2.6b-16k"
+      },
+      {
+        "capsule_scope": "receipt-import",
+        "tool_count": 8,
+        "input_bytes": 24241,
+        "requested_model": "lfm2.5:2.6b-16k",
+        "status": 200,
+        "usage": {
+          "prompt_tokens": 5580,
+          "completion_tokens": 204,
+          "total_tokens": 5784
+        },
+        "response_model": "lfm2.5:2.6b-16k"
+      },
+      {
+        "capsule_scope": "receipt-import",
+        "tool_count": 8,
+        "input_bytes": 28681,
+        "requested_model": "lfm2.5:2.6b-16k",
+        "status": 200,
+        "usage": {
+          "prompt_tokens": 6436,
+          "completion_tokens": 453,
+          "total_tokens": 6889
+        },
+        "response_model": "lfm2.5:2.6b-16k"
+      },
+      {
+        "capsule_scope": "receipt-import",
+        "tool_count": 8,
+        "input_bytes": 33085,
+        "requested_model": "lfm2.5:2.6b-16k",
+        "status": 200,
+        "usage": {
+          "prompt_tokens": 6638,
+          "completion_tokens": 926,
+          "total_tokens": 7564
+        },
+        "response_model": "lfm2.5:2.6b-16k"
+      },
+      {
+        "capsule_scope": "receipt-import",
+        "tool_count": 8,
+        "input_bytes": 41459,
+        "requested_model": "lfm2.5:2.6b-16k",
+        "status": 200,
+        "usage": {
+          "prompt_tokens": 7020,
+          "completion_tokens": 646,
+          "total_tokens": 7666
+        },
+        "response_model": "lfm2.5:2.6b-16k"
+      },
+      {
+        "capsule_scope": "receipt-import",
+        "tool_count": 8,
+        "input_bytes": 47828,
+        "requested_model": "lfm2.5:2.6b-16k",
+        "status": 200,
+        "usage": {
+          "prompt_tokens": 7400,
+          "completion_tokens": 2048,
+          "total_tokens": 9448
+        },
+        "response_model": "lfm2.5:2.6b-16k"
+      }
+    ],
+    "engine": "Hermes",
+    "offline": false
+  },
+  {
+    "arm": "off-tools",
+    "baseline": {
+      "total": 4,
+      "passed": 1,
+      "exit_code": 1
+    },
+    "tests": {
+      "total": 4,
+      "passed": 1,
+      "exit_code": 1
+    },
+    "wall_s": 112.34,
+    "requested_model": "lfm2.5:2.6b-16k",
+    "host_exit": 0,
+    "first_scope": null,
+    "tools_seen": 8,
+    "patch_applied": null,
+    "calls": [
+      {
+        "capsule_scope": null,
+        "tool_count": 8,
+        "input_bytes": 17838,
+        "requested_model": "lfm2.5:2.6b-16k",
+        "status": 200,
+        "usage": {
+          "prompt_tokens": 4243,
+          "completion_tokens": 140,
+          "total_tokens": 4383
+        },
+        "response_model": "lfm2.5:2.6b-16k"
+      },
+      {
+        "capsule_scope": null,
+        "tool_count": 8,
+        "input_bytes": 19396,
+        "requested_model": "lfm2.5:2.6b-16k",
+        "status": 200,
+        "usage": {
+          "prompt_tokens": 4308,
+          "completion_tokens": 132,
+          "total_tokens": 4440
+        },
+        "response_model": "lfm2.5:2.6b-16k"
+      },
+      {
+        "capsule_scope": null,
+        "tool_count": 8,
+        "input_bytes": 21615,
+        "requested_model": "lfm2.5:2.6b-16k",
+        "status": 200,
+        "usage": {
+          "prompt_tokens": 4858,
+          "completion_tokens": 378,
+          "total_tokens": 5236
+        },
+        "response_model": "lfm2.5:2.6b-16k"
+      },
+      {
+        "capsule_scope": null,
+        "tool_count": 8,
+        "input_bytes": 26452,
+        "requested_model": "lfm2.5:2.6b-16k",
+        "status": 200,
+        "usage": {
+          "prompt_tokens": 5673,
+          "completion_tokens": 430,
+          "total_tokens": 6103
+        },
+        "response_model": "lfm2.5:2.6b-16k"
+      },
+      {
+        "capsule_scope": null,
+        "tool_count": 8,
+        "input_bytes": 32694,
+        "requested_model": "lfm2.5:2.6b-16k",
+        "status": 200,
+        "usage": {
+          "prompt_tokens": 6491,
+          "completion_tokens": 495,
+          "total_tokens": 6986
+        },
+        "response_model": "lfm2.5:2.6b-16k"
+      },
+      {
+        "capsule_scope": null,
+        "tool_count": 8,
+        "input_bytes": 37383,
+        "requested_model": "lfm2.5:2.6b-16k",
+        "status": 200,
+        "usage": {
+          "prompt_tokens": 6693,
+          "completion_tokens": 828,
+          "total_tokens": 7521
+        },
+        "response_model": "lfm2.5:2.6b-16k"
+      },
+      {
+        "capsule_scope": null,
+        "tool_count": 8,
+        "input_bytes": 44105,
+        "requested_model": "lfm2.5:2.6b-16k",
+        "status": 200,
+        "usage": {
+          "prompt_tokens": 6833,
+          "completion_tokens": 2048,
+          "total_tokens": 8881
+        },
+        "response_model": "lfm2.5:2.6b-16k"
+      }
+    ],
+    "engine": "Hermes",
+    "offline": false
+  },
+  {
+    "arm": "on-no-tools",
+    "baseline": {
+      "total": 4,
+      "passed": 1,
+      "exit_code": 1
+    },
+    "tests": {
+      "total": 4,
+      "passed": 1,
+      "exit_code": 1
+    },
+    "wall_s": 46.21,
+    "requested_model": "lfm2.5:2.6b-16k",
+    "host_exit": 0,
+    "first_scope": "receipt-import",
+    "tools_seen": 0,
+    "patch_applied": false,
+    "calls": [
+      {
+        "capsule_scope": "receipt-import",
+        "tool_count": 0,
+        "input_bytes": 6822,
+        "requested_model": "lfm2.5:2.6b-16k",
+        "status": 200,
+        "usage": {
+          "prompt_tokens": 1703,
+          "completion_tokens": 2048,
+          "total_tokens": 3751
+        },
+        "response_model": "lfm2.5:2.6b-16k"
+      }
+    ],
+    "engine": "Hermes",
+    "offline": false
+  },
+  {
+    "arm": "off-no-tools",
+    "baseline": {
+      "total": 4,
+      "passed": 1,
+      "exit_code": 1
+    },
+    "tests": {
+      "total": 4,
+      "passed": 1,
+      "exit_code": 1
+    },
+    "wall_s": 37.05,
+    "requested_model": "lfm2.5:2.6b-16k",
+    "host_exit": 0,
+    "first_scope": null,
+    "tools_seen": 0,
+    "patch_applied": false,
+    "calls": [
+      {
+        "capsule_scope": null,
+        "tool_count": 0,
+        "input_bytes": 4891,
+        "requested_model": "lfm2.5:2.6b-16k",
+        "status": 200,
+        "usage": {
+          "prompt_tokens": 1179,
+          "completion_tokens": 2048,
+          "total_tokens": 3227
+        },
+        "response_model": "lfm2.5:2.6b-16k"
+      }
+    ],
+    "engine": "Hermes",
+    "offline": false
+  }
+]

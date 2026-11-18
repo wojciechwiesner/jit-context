@@ -11,6 +11,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - README: short "In short" summary (problem, one measured result, supported hosts, one-line install) above the benchmark table.
 
 ### Added
+- `docs/demo/`: reproducible README demo. `measure.py` runs one multi-file repair fixture in Hermes' native
+  agent loop with JIT off and on (isolated `HOME`/`HERMES_HOME`, local recording proxy that keeps only
+  status/usage/scope metrics, scope gate on the first request, tests scored against the original test file);
+  local Ollama models also get a no-tools arm scored by `git apply` + tests. `render.py` turns a validated
+  result into `jit-demo.gif` and refuses incomplete or offline measurements; `hub_demo.py` records
+  `jit-hub.gif` against a temp registry. Measured results: `qwen27b.json`, `cloud.json`, `lfm-local.json`, `qwen9b-local.json`.
 - `jit feedby inventory|provision|verify`: Feedby as a project default. Creates the Feedby project,
   mints a widget key in Feedby's own format (only the sha256 hash goes to Feedby), injects an idempotent
   marker block into the repo's mount files (html/astro/jsx) and commits only those files.

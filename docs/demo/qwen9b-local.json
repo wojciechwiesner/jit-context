@@ -1,0 +1,303 @@
+[
+  {
+    "arm": "on-tools",
+    "baseline": {
+      "total": 4,
+      "passed": 1,
+      "exit_code": 1
+    },
+    "tests": {
+      "total": 1,
+      "passed": 0,
+      "exit_code": 1
+    },
+    "wall_s": 359.89,
+    "requested_model": "qwen3.8:9b-64k",
+    "host_exit": 0,
+    "timed_out": false,
+    "first_scope": "receipt-import",
+    "tools_seen": 8,
+    "patch_applied": null,
+    "calls": [
+      {
+        "capsule_scope": "receipt-import",
+        "tool_count": 8,
+        "input_bytes": 24824,
+        "requested_model": "qwen3.8:9b-64k",
+        "status": 200,
+        "usage": {
+          "prompt_tokens": 5955,
+          "completion_tokens": 150,
+          "total_tokens": 6105
+        },
+        "response_model": "qwen3.8:9b-64k"
+      },
+      {
+        "capsule_scope": "receipt-import",
+        "tool_count": 8,
+        "input_bytes": 28419,
+        "requested_model": "qwen3.8:9b-64k",
+        "status": 200,
+        "usage": {
+          "prompt_tokens": 6735,
+          "completion_tokens": 201,
+          "total_tokens": 6936
+        },
+        "response_model": "qwen3.8:9b-64k"
+      },
+      {
+        "capsule_scope": "receipt-import",
+        "tool_count": 8,
+        "input_bytes": 31423,
+        "requested_model": "qwen3.8:9b-64k",
+        "status": 200,
+        "usage": {
+          "prompt_tokens": 7432,
+          "completion_tokens": 180,
+          "total_tokens": 7612
+        },
+        "response_model": "qwen3.8:9b-64k"
+      },
+      {
+        "capsule_scope": "receipt-import",
+        "tool_count": 8,
+        "input_bytes": 31553,
+        "requested_model": "qwen3.8:9b-64k",
+        "status": 200,
+        "usage": {
+          "prompt_tokens": 7456,
+          "completion_tokens": 1531,
+          "total_tokens": 8987
+        },
+        "response_model": "qwen3.8:9b-64k"
+      },
+      {
+        "capsule_scope": "receipt-import",
+        "tool_count": 8,
+        "input_bytes": 45293,
+        "requested_model": "qwen3.8:9b-64k",
+        "status": 200,
+        "usage": {
+          "prompt_tokens": 10449,
+          "completion_tokens": 98,
+          "total_tokens": 10547
+        },
+        "response_model": "qwen3.8:9b-64k"
+      },
+      {
+        "capsule_scope": "receipt-import",
+        "tool_count": 8,
+        "input_bytes": 45423,
+        "requested_model": "qwen3.8:9b-64k",
+        "status": 500,
+        "usage": null,
+        "response_model": null,
+        "error": "BrokenPipeError"
+      },
+      {
+        "capsule_scope": "receipt-import",
+        "tool_count": 8,
+        "input_bytes": 45423,
+        "requested_model": "qwen3.8:9b-64k",
+        "status": 200,
+        "usage": {
+          "prompt_tokens": 10473,
+          "completion_tokens": 95,
+          "total_tokens": 10568
+        },
+        "response_model": "qwen3.8:9b-64k"
+      }
+    ],
+    "engine": "Hermes",
+    "offline": false
+  },
+  {
+    "arm": "off-tools",
+    "baseline": {
+      "total": 4,
+      "passed": 1,
+      "exit_code": 1
+    },
+    "tests": {
+      "total": 4,
+      "passed": 1,
+      "exit_code": 1
+    },
+    "wall_s": 122.52,
+    "requested_model": "qwen3.8:9b-64k",
+    "host_exit": 0,
+    "timed_out": false,
+    "first_scope": null,
+    "tools_seen": 8,
+    "patch_applied": null,
+    "calls": [
+      {
+        "capsule_scope": null,
+        "tool_count": 8,
+        "input_bytes": 22957,
+        "requested_model": "qwen3.8:9b-64k",
+        "status": 200,
+        "usage": {
+          "prompt_tokens": 5463,
+          "completion_tokens": 175,
+          "total_tokens": 5638
+        },
+        "response_model": "qwen3.8:9b-64k"
+      },
+      {
+        "capsule_scope": null,
+        "tool_count": 8,
+        "input_bytes": 24461,
+        "requested_model": "qwen3.8:9b-64k",
+        "status": 200,
+        "usage": {
+          "prompt_tokens": 5697,
+          "completion_tokens": 87,
+          "total_tokens": 5784
+        },
+        "response_model": "qwen3.8:9b-64k"
+      },
+      {
+        "capsule_scope": null,
+        "tool_count": 8,
+        "input_bytes": 24591,
+        "requested_model": "qwen3.8:9b-64k",
+        "status": 200,
+        "usage": {
+          "prompt_tokens": 5721,
+          "completion_tokens": 71,
+          "total_tokens": 5792
+        },
+        "response_model": "qwen3.8:9b-64k"
+      },
+      {
+        "capsule_scope": null,
+        "tool_count": 8,
+        "input_bytes": 24690,
+        "requested_model": "qwen3.8:9b-64k",
+        "status": 200,
+        "usage": {
+          "prompt_tokens": 5741,
+          "completion_tokens": 93,
+          "total_tokens": 5834
+        },
+        "response_model": "qwen3.8:9b-64k"
+      },
+      {
+        "capsule_scope": null,
+        "tool_count": 8,
+        "input_bytes": 24690,
+        "requested_model": "qwen3.8:9b-64k",
+        "status": 200,
+        "usage": {
+          "prompt_tokens": 5741,
+          "completion_tokens": 85,
+          "total_tokens": 5826
+        },
+        "response_model": "qwen3.8:9b-64k"
+      },
+      {
+        "capsule_scope": null,
+        "tool_count": 8,
+        "input_bytes": 24461,
+        "requested_model": "qwen3.8:9b-64k",
+        "status": 200,
+        "usage": {
+          "prompt_tokens": 5697,
+          "completion_tokens": 79,
+          "total_tokens": 5776
+        },
+        "response_model": "qwen3.8:9b-64k"
+      },
+      {
+        "capsule_scope": null,
+        "tool_count": 8,
+        "input_bytes": 24461,
+        "requested_model": "qwen3.8:9b-64k",
+        "status": 200,
+        "usage": {
+          "prompt_tokens": 5697,
+          "completion_tokens": 80,
+          "total_tokens": 5777
+        },
+        "response_model": "qwen3.8:9b-64k"
+      }
+    ],
+    "engine": "Hermes",
+    "offline": false
+  },
+  {
+    "arm": "on-no-tools",
+    "baseline": {
+      "total": 4,
+      "passed": 1,
+      "exit_code": 1
+    },
+    "tests": {
+      "total": 4,
+      "passed": 1,
+      "exit_code": 1
+    },
+    "wall_s": 56.68,
+    "requested_model": "qwen3.8:9b-64k",
+    "host_exit": 0,
+    "timed_out": false,
+    "first_scope": "receipt-import",
+    "tools_seen": 0,
+    "patch_applied": false,
+    "calls": [
+      {
+        "capsule_scope": "receipt-import",
+        "tool_count": 0,
+        "input_bytes": 6820,
+        "requested_model": "qwen3.8:9b-64k",
+        "status": 200,
+        "usage": {
+          "prompt_tokens": 1640,
+          "completion_tokens": 676,
+          "total_tokens": 2316
+        },
+        "response_model": "qwen3.8:9b-64k"
+      }
+    ],
+    "engine": "Hermes",
+    "offline": false
+  },
+  {
+    "arm": "off-no-tools",
+    "baseline": {
+      "total": 4,
+      "passed": 1,
+      "exit_code": 1
+    },
+    "tests": {
+      "total": 4,
+      "passed": 1,
+      "exit_code": 1
+    },
+    "wall_s": 62.99,
+    "requested_model": "qwen3.8:9b-64k",
+    "host_exit": 0,
+    "timed_out": false,
+    "first_scope": null,
+    "tools_seen": 0,
+    "patch_applied": false,
+    "calls": [
+      {
+        "capsule_scope": null,
+        "tool_count": 0,
+        "input_bytes": 4889,
+        "requested_model": "qwen3.8:9b-64k",
+        "status": 200,
+        "usage": {
+          "prompt_tokens": 1134,
+          "completion_tokens": 1133,
+          "total_tokens": 2267
+        },
+        "response_model": "qwen3.8:9b-64k"
+      }
+    ],
+    "engine": "Hermes",
+    "offline": false
+  }
+]

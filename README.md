@@ -22,6 +22,10 @@ Coding agents waste turns re-reading files and re-discovering what they did two 
 - **Install (all detected hosts):** `curl -fsSL https://raw.githubusercontent.com/wojciechwiesner/jit-context/master/install.sh | bash`
 - **Found it useful?** A ⭐ on this repo helps other people find it. Stars for the Agent Zero mirror belong here too, not on `jit-context-os`.
 
+![Same multi-file repair task in Hermes, JIT off vs JIT on](docs/demo/jit-demo.gif)
+
+*Hermes, `qwen/qwen3.8-27b`, one 5-module repair task, same prompt, N=1: JIT off passed 3/4 tests, JIT on passed 4/4. The JIT run took longer (67.8 s vs 50.5 s) and used about 4% more tokens (58,183 vs 55,781). On `gemini-2.5-flash` both runs passed 3/4 and JIT was faster (19.5 s vs 29.9 s). Local models did not fix the task in either mode: `lfm2.5:2.6b` stayed at 1/4, and `qwen3.8:9b` with JIT on and tools broke an import (0/4). Method and raw results: [`docs/demo/`](docs/demo/README.md).*
+
 ---
 
 ### Where it helps, where it does not (measured)
@@ -270,6 +274,8 @@ Why an allowlist and not one Hermes profile per project: a profile is a full iso
 ## Project Hub
 
 One local place for every project where `jit init` ran: always-fresh cockpits, measured usage, project chat and read-only agent actions. Plan and decisions: [`docs/plans/2026-11-03-project-hub.md`](docs/plans/2026-11-03-project-hub.md).
+
+![jit hub scan, list, refresh and the /hub page](docs/demo/jit-hub.gif)
 
 - **Registry** (`src/hub/registry.py`): `~/.hermes/state/jit-hub/projects.json` (override the dir with `JIT_HUB_DIR`). `jit init` registers the project; worktrees map to their main repo and are never separate entries.
 - **Refresher** (`src/hub/refresher.py`): rebuilds a cockpit with the vendored generator (`cockpit/`, override `JIT_COCKPIT_BUILDER`) only when its signature changes: HEAD of every worktree, `.planning/{STATE,ROADMAP,THOUGHTS}.md`, `ARCHITECTURE.mmd`, `links.json` and the Obsidian dossier mtime. An untracked `state.html` is written in place; a tracked one is never touched, the hub keeps its own copy (`jit cockpit untrack` removes it from the index on request).
