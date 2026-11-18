@@ -13,6 +13,17 @@
 
 ---
 
+### In short
+
+Coding agents waste turns re-reading files and re-discovering what they did two turns ago. JIT compiles a small, stable context capsule (800–1,800 tokens) for every turn so the agent starts from verified project state instead of exploring. Everything runs locally and fails open.
+
+- **Measured:** 171 → 66 agent turns (−61%) on a 45-module feature, N=1. Not a universal saver: short single-file tasks get a small overhead (see the table below).
+- **Works with:** Claude Code, OpenCode, Hermes Agent, Agent Zero.
+- **Install (all detected hosts):** `curl -fsSL https://raw.githubusercontent.com/wojciechwiesner/jit-context/master/install.sh | bash`
+- **Found it useful?** A ⭐ on this repo helps other people find it. Stars for the Agent Zero mirror belong here too, not on `jit-context-os`.
+
+---
+
 ### Where it helps, where it does not (measured)
 
 Every number below links to a committed artifact. Single runs are marked N=1; treat them as case studies, not population estimates.

@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- README: short "In short" summary (problem, one measured result, supported hosts, one-line install) above the benchmark table.
+
 ### Added
 - `jit feedby inventory|provision|verify`: Feedby as a project default. Creates the Feedby project,
   mints a widget key in Feedby's own format (only the sha256 hash goes to Feedby), injects an idempotent
