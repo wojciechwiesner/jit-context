@@ -12,6 +12,7 @@ import builtins
 import json
 import os
 import re
+import time
 from pathlib import Path
 
 import config
@@ -42,9 +43,20 @@ append_event(conn, session_id, "tool", foreign.read_text(), "runtime_tool_verifi
              fact_key="read:" + str(foreign), fact_value="read_ok")
 conn.close()
 
+real_compile = hooks.compile_context
+
+def slow_compile(*args, **kwargs):
+    time.sleep(0.65)
+    return real_compile(*args, **kwargs)
+
+hooks.compile_context = slow_compile
 first_goal = "Analyze auth.py, do not deploy."
 first = hooks.pre_llm_call({"session_id": session_id, "turn_id": "t1", "user_message": first_goal})
-assert first and any("<ONA_CONTEXT" in str(v) for v in first.values()), first
+hooks.compile_context = real_compile
+assert "<ONA_CONTEXT" in first["context"], first
+first_meta = json.loads(config.get_session_meta_path(session_id).read_text())
+assert first_meta["hook_total_ms"] > 600, first_meta["hook_total_ms"]
+
 notification = "[IMPORTANT: 3 background processes completed. Treat these results as one batch.]\nFix foreign.py"
 second = hooks.pre_llm_call({"session_id": session_id, "turn_id": "t2", "user_message": notification})
 meta_path = config.get_session_meta_path(session_id)

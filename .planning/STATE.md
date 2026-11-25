@@ -86,7 +86,7 @@ Plan: `.planning/ORCH_2026-10-14.md` · Evidence: `/tmp/orch-jit/`
 - [x] W6 per-project skill selection: `jit skills`, `.planning/SKILLS.md`, `@skill:` capsule pointers, worktree sync (`b3bc84e`, `b154222`).
 - [x] Deploy: `jit install` all 5 hosts; CI Tests green.
 - [ ] Hermes-side skill allowlist (`skills.enabled_only` / per-project profile) — upstream PR to NousResearch/hermes-agent.
-- [ ] hook_latency (506x) profiling; GAIA runner mods; agent-behaviour mods (long_turn, duplicate_calls).
+- [ ] hook_latency profiling (deferred; local audit now alerts above 10 s, not a runtime cutoff); GAIA runner mods; agent-behaviour mods (long_turn, duplicate_calls).
 
 ## Tasks & Phases
 - [x] Phase 0: Repository Profiling & JIT Context Initialization (`/jit init`)

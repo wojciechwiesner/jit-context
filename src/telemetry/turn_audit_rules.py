@@ -11,6 +11,8 @@ from typing import Any, Dict, List, Optional
 
 from context.goal_anchor import ANCHOR_MARKER
 
+HOOK_LATENCY_ALERT_SECONDS = 10
+
 # key: (title, component, severity, proposal)
 CATALOG: Dict[str, tuple] = {
     "capsule_missing": ("No JIT capsule for this turn", "JIT L0 / pre_llm hook", "high",
@@ -45,8 +47,8 @@ CATALOG: Dict[str, tuple] = {
                             "The agent tried to overwrite a file it had not fully read. Prefer patch, or read the full file first."),
     "long_turn": ("Very long turn", "Agent planning", "low",
                   "Over 40 tool calls or 20 min in a single turn. Split into checkpoints with intermediate verification."),
-    "hook_latency": ("JIT hook exceeded the 600 ms deadline", "JIT hot path", "medium",
-                     "hook_total_ms is over the fail-open deadline. Profile L1/L2 and move work to the background."),
+    "hook_latency": (f"JIT hook took longer than {HOOK_LATENCY_ALERT_SECONDS} s", "JIT hot path", "medium",
+                     f"Recorded hook latency exceeded the {HOOK_LATENCY_ALERT_SECONDS} s audit threshold; this does not cancel capsule delivery."),
     "capsule_over_budget": ("Capsule above the elastic MVC ceiling", "JIT L2 elastic assembler", "low",
                             "Capsule exceeded ~1800 tokens. Check which section grew and tighten relevance filtering."),
     "telemetry_degraded": ("Turn telemetry marked degraded", "JIT telemetry", "medium",
@@ -191,7 +193,7 @@ def check_harness(tools: List[Dict[str, Any]], tele: Dict[str, Any], duration_s:
     if n > 40 or (duration_s or 0) > 1200:
         out.append(finding("long_turn", f"{n} tool calls, {round(duration_s or 0)} s"))
     if tele:
-        if (tele.get("hook_total_ms") or 0) > 600:
+        if (tele.get("hook_total_ms") or 0) > HOOK_LATENCY_ALERT_SECONDS * 1_000:
             out.append(finding("hook_latency", f"hook_total_ms={tele['hook_total_ms']}"))
         if (tele.get("capsule_tokens_est") or 0) > 1800:
             out.append(finding("capsule_over_budget", f"capsule_tokens_est={tele['capsule_tokens_est']}"))

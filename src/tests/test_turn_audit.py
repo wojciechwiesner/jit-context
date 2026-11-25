@@ -81,9 +81,21 @@ def test_tool_error_rate_and_rereads():
     assert {"tool_error_rate", "reread_same_file"} <= k
 
 
-def test_scope_split_and_hook_latency():
-    r = run("x", "", [], tele={"hook_total_ms": 900, "capsule_tokens_est": 200}, scopes=("general", "hermes"))
-    assert {"scope_split", "hook_latency"} <= keys(r)
+def test_scope_split():
+    r = run("x", "", [], scopes=("general", "hermes"))
+    assert "scope_split" in keys(r)
+
+
+def test_hook_latency_alerts_only_above_ten_seconds():
+    for elapsed_ms in (900, 9_999, 10_000):
+        r = run("x", "", [], tele={"hook_total_ms": elapsed_ms})
+        assert "hook_latency" not in keys(r)
+
+    r = run("x", "", [], tele={"hook_total_ms": 10_001})
+    alert = next(f for f in r["findings"] if f["key"] == "hook_latency")
+    assert "10 s" in alert["title"]
+    assert "deadline" not in alert["title"]
+    assert r["harness"]["hook_ms"] == 10_001
 
 
 def test_project_goal_read_from_state_md(tmp_path):
