@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Operator Wall: `GET /wall` (1920x1080 second-screen page, no scroll, 60 s refresh), `GET /api/mc/wall` JSON
+  contract and `POST /api/mc/charters/approve` (charter review overlay, batch validation, atomic writes, Origin + CSRF
+  guard). Aggregates code-dispatch sessions, cron failures, autocheck flows, blocked kanban cards, worker nodes and
+  project charters; every source fails open to "brak danych". See `docs/OPERATOR_WALL.md`.
 - `jit feedby inventory|provision|verify`: Feedby as a project default. Creates the Feedby project,
   mints a widget key in Feedby's own format (only the sha256 hash goes to Feedby), injects an idempotent
   marker block into the repo's mount files (html/astro/jsx) and commits only those files.
