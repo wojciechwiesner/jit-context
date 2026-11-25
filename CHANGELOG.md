@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Behavior contracts in sota-starter + cockpit**: `jit init` writes a fully commented `.planning/contracts.yaml`
+  ("when X -> Y" on real data, engine `autocheck_flow contracts`); new cockpit card "Kontrakty zachowania"
+  (`cockpit/contracts.js`) lists violations first with record ids, "NIE ZMIERZONO" without `contracts.json`,
+  STALE after 2 h.
 - **sota-starter Autocheck step in `jit init` (`src/context/autocheck_scaffold.py`)**: creates
   `.planning/autocheck/README.md` (probe contract for `autocheck-flow`), reports the probe count, and never writes
   `.planning/autocheck.json` itself, so a status only exists after a real probe run.

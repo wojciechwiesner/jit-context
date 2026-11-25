@@ -23,6 +23,9 @@ Plan: `docs/plans/2026-11-03-project-hub.md`; loop queue `.planning/orchestratio
     `autocheck.json` written by the real cron sync; cockpit card shows 3 flows with measurement time.
   - [x] 2026-11-25: sota-starter Autocheck: `jit init` creates `.planning/autocheck/README.md`; cockpit shows
     "NIE ZMIERZONO" / STALE; template `sota-starter/autocheck/` + README section.
+  - [x] 2026-11-25: Behavior contracts (sota-starter): `contracts.yaml` template in `jit init`, cockpit card;
+    engine in autocheck `662a84c`; live on boocco (4 contracts, 1 violation found), faktury written but blocked
+    (s1:22 tarpit, needs read-only DB access).
   - [ ] Remaining: chat/action browser UAT.
 - Open gap: the signature reads planning files only from the main tree, so an uncommitted STATE.md edit inside
   a linked worktree does not change the hub version until it is committed (HEAD change).

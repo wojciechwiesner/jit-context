@@ -292,6 +292,7 @@ function collect(root) {
     architecture,
     architectureMeta,
     autocheck,
+    behaviorContracts: require('./contracts').collectContracts(root),
     checks: autocheck.checks,
     livestream: { url: "http://127.0.0.1:8766/live", defaultSession: "20261018_163217_6298d0", port: 8766 }
   };

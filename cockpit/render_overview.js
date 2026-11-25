@@ -1,6 +1,7 @@
 // Document-first overview with provenance, milestones, and a real diagram preview.
 const { esc } = require('./html');
 const { documentHtml } = require('./presentation');
+const { renderContracts } = require('./contracts');
 
 function renderLinks(links) {
   if (!links || (!links.groups.length && !links.error)) return '';
@@ -88,7 +89,7 @@ function renderOverview(data) {
       ${state.reportedProgress !== null ? `<div class="notice">Postęp zadeklarowany w STATE.md: ${state.reportedProgress}%. To nie jest wynik niezależnej weryfikacji.</div>` : ''}
       <div class="document-body">${state.raw ? documentHtml(state.raw) : '<p>Nie znaleziono .planning/STATE.md. Kokpit nie będzie wymyślał stanu projektu.</p>'}</div>
     </article>
-    <aside class="overview-aside">${renderAutocheck(data.autocheck)}${renderLinks(data.links)}${renderCredentials(data.credentials)}${renderWorktrees(data)}${architecturePreview}
+    <aside class="overview-aside">${renderContracts(data.behaviorContracts)}${renderAutocheck(data.autocheck)}${renderLinks(data.links)}${renderCredentials(data.credentials)}${renderWorktrees(data)}${architecturePreview}
       <section class="card"><div class="card-heading"><div><span class="eyebrow">Plan produktu</span><h2>Kamienie milowe</h2></div><span class="pill">${milestones.length}</span></div>
         <div class="milestone-list">${milestones.length ? milestones.map((task, i) => `<button class="milestone" onclick="switchTab('tasks'); document.getElementById('task-search').value=${esc(JSON.stringify(task.text))}; filterTasks()"><span class="milestone-dot ${task.done ? 'done' : task.partial ? 'partial' : ''}">${String(i + 1).padStart(2, '0')}</span><span>${esc(task.text.replace(/\*\*/g, ''))}<small>${task.done ? 'Ukończone według ROADMAP' : task.partial ? 'Częściowo wykonane' : 'Do zrobienia'}</small></span></button>`).join('') : '<p class="muted">Brak kamieni milowych w ROADMAP.md.</p>'}</div>
         <button class="btn full-width" onclick="switchTab('tasks')">Przejdź do planu i zadań</button>
