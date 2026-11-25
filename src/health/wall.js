@@ -1,8 +1,10 @@
 /* Operator Wall renderer. All text goes through textContent (no innerHTML), so source data cannot inject markup. */
 const REFRESH_S = 60;
-const MAX_TILES = 24;
-const KIND_LABEL = {autocheck_edge: "Przepływ", cron_failed: "Cron", blocked_card: "Karta", review: "Review", lost_session: "Sesja"};
-const SOURCE_LABEL = {sessions: "sesje", cron: "cron", autocheck: "autocheck", kanban: "kanban", nodes: "maszyny", charters: "chartery", projects: "projekty"};
+const MAX_TILES = 20;
+const KIND_LABEL = {autocheck_edge: "Przepływ", cron_failed: "Cron", blocked_card: "Zablokowane", review: "Do przeglądu", lost_session: "Sesja", feedby_decision: "Decyzja"};
+const TYPE_LABEL = {"client-delivery": "Klient", platform: "Infrastruktura", product: "Produkt", experiment: "Eksperyment", dormant: "Uśpiony"};
+const FLOW_LABEL = {ok: "OK", degraded: "spowolnione", broken: "zepsute"};
+const SOURCE_LABEL = {sessions: "sesje", cron: "cron", autocheck: "przepływy", kanban: "kanban", nodes: "maszyny", charters: "chartery", projects: "projekty"};
 const OK_MARK = "M8 12.5l2.7 2.7L16 9.5";
 const ALERT_MARK = "M12 7v6M12 16.5v.5";
 let wall = null;
@@ -29,9 +31,18 @@ function renderVerdict(d) {
   document.getElementById("verdict").className = `verdict ${d.level}`;
   document.getElementById("v-sentence").textContent = d.verdict;
   document.getElementById("v-mark").setAttribute("d", d.level === "ok" ? OK_MARK : ALERT_MARK);
+  renderNow(d);
   const failed = Object.entries(d.sources).filter(([, s]) => !s.ok).map(([n]) => SOURCE_LABEL[n] || n);
   const age = `dane sprzed ${ago(Date.parse(d.generated_at) / 1000).replace(" temu", "")}`;
   document.getElementById("v-age").textContent = failed.length ? `${age} | brak danych: ${failed.join(", ")}` : age;
+}
+
+function renderNow(d) {
+  const box = document.getElementById("v-now");
+  box.hidden = !d.next_action;
+  box.replaceChildren();
+  if (!d.next_action) return;
+  box.append("Teraz: ", h("a", {href: d.next_action.link}, d.next_action.text));
 }
 
 function renderNeeds(d) {
@@ -50,17 +61,22 @@ function renderNeeds(d) {
 function tileBody(p) {
   if (!p.charter_known) return [h("div", {class: "goal nodata"}, "brak danych: chartery")];
   if (!p.charter) return [h("div", {class: "goal none"}, "brak chartera")];
-  const type = h("span", {class: "badge type"}, p.charter.type || "?");
-  return [h("div", {}, type, p.charter.status === "draft" ? h("span", {class: "badge"}, "szkic") : null),
-          h("div", {class: "goal"}, p.charter.goal || "brak celu")];
+  return [h("div", {class: "goal"}, p.charter.goal || "brak celu")];
+}
+
+function tileHead(p) {
+  const type = p.charter ? h("span", {class: "badge type"}, TYPE_LABEL[p.charter.type] || "bez typu") : null;
+  return h("div", {class: "head"}, h("h3", {title: p.title}, p.title), type);
 }
 
 function tileMeta(p) {
-  const commit = p.last_commit ? `commit ${ago(p.last_activity)}` : "brak commitów";
-  const meta = h("div", {class: "meta"}, h("span", {}, commit));
-  if (p.review_count) meta.append(h("span", {}, `review: ${p.review_count}`));
-  if (p.blockers) meta.append(h("span", {}, `blokery: ${p.blockers}`));
-  if (p.autocheck) meta.append(h("span", {class: `badge ${p.autocheck === "ok" ? "ok" : "bad"}`}, `autocheck ${p.autocheck}`));
+  const change = p.last_commit ? `zmiana ${ago(p.last_activity)}` : "brak zmian";
+  const meta = h("div", {class: "meta"});
+  if (p.charter && p.charter.status === "draft") meta.append(h("span", {class: "badge"}, "szkic"));
+  meta.append(h("span", {}, change));
+  if (p.review_count) meta.append(h("span", {}, `do przeglądu: ${p.review_count}`));
+  if (p.blockers) meta.append(h("span", {}, `zablokowane: ${p.blockers}`));
+  if (p.autocheck) meta.append(h("span", {class: `badge ${p.autocheck === "ok" ? "ok" : "bad"}`}, `Przepływy: ${FLOW_LABEL[p.autocheck] || "do sprawdzenia"}`));
   for (const who of p.audience) meta.append(h("span", {class: "badge"}, who));
   return meta;
 }
@@ -68,12 +84,11 @@ function tileMeta(p) {
 function renderProjects(d) {
   const box = document.getElementById("projects");
   box.replaceChildren();
-  document.getElementById("proj-count").textContent = `aktywne 7 dni: ${d.projects.length}`;
+  document.getElementById("proj-count").textContent = `aktywne 7 dni: ${d.projects.length}${d.projects.length > MAX_TILES ? `, widać ${MAX_TILES}` : ""}`;
   for (const p of d.projects.slice(0, MAX_TILES)) {
     const bad = p.autocheck && p.autocheck !== "ok";
-    box.append(h("a", {class: `tile${bad ? " bad" : ""}`, href: p.link}, h("h3", {}, p.title), ...tileBody(p), tileMeta(p)));
+    box.append(h("a", {class: `tile${bad ? " bad" : ""}`, href: p.link}, tileHead(p), ...tileBody(p), tileMeta(p)));
   }
-  if (d.projects.length > MAX_TILES) box.append(h("div", {class: "more"}, `+ ${d.projects.length - MAX_TILES} więcej`));
 }
 
 function stat(label, value, cls) {
@@ -87,7 +102,7 @@ function renderMachines(d) {
   const box = document.getElementById("machines");
   box.replaceChildren(
     stat("Sesje w toku", s ? s.running : null, "good"),
-    stat("Sesje do review", s ? s.review : null, ""),
+    stat("Sesje do przeglądu", s ? s.review : null, ""),
     stat("Sesje nieudane", s ? s.failed + s.lost : null, s && s.failed + s.lost ? "bad" : "good"),
     stat("Crony z błędem 24 h", m.cron_failed_24h, m.cron_failed_24h ? "bad" : "good"),
     stat("Zablokowane karty", m.blocked_cards, m.blocked_cards ? "bad" : "good"),

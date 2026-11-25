@@ -21,7 +21,7 @@ const WallReview = (() => {
     one.addEventListener("click", () => approve([c.slug]));
     const who = picks.length ? h("div", {class: "who"}, picks) : "tylko ja";
     return h("div", {class: "draft", "data-slug": c.slug}, include,
-      h("dl", {}, field("Projekt", c.slug), field("Typ", c.type), field("Cel", c.goal), field("Sukces", c.success),
+      h("dl", {}, field("Projekt", c.slug), field("Typ", TYPE_LABEL[c.type] || c.type), field("Cel", c.goal), field("Sukces", c.success),
         field("Odbiorcy (oprócz mnie)", who), field("Dowody", c.evidence), field("Pytania", c.questions)), one);
   }
 

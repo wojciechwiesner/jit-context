@@ -12,6 +12,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   contract and `POST /api/mc/charters/approve` (charter review overlay, batch validation, atomic writes, Origin + CSRF
   guard). Aggregates code-dispatch sessions, cron failures, autocheck flows, blocked kanban cards, worker nodes and
   project charters; every source fails open to "brak danych". See `docs/OPERATOR_WALL.md`.
+- Operator Wall round 1: "Teraz:" next-action line under the verdict, Feedby decisions ranked below review, up to 7
+  "Wymaga mnie" rows, projects sharing a git remote collapse into one tile, charter lookup by normalised slug
+  (`_uni-pro-works` finds `uni-pro-works.json`), Polish labels, 15 px minimum metadata font, 17 px body, AA contrast,
+  2-line project goals.
 - `jit feedby inventory|provision|verify`: Feedby as a project default. Creates the Feedby project,
   mints a widget key in Feedby's own format (only the sha256 hash goes to Feedby), injects an idempotent
   marker block into the repo's mount files (html/astro/jsx) and commits only those files.

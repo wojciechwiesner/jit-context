@@ -80,12 +80,12 @@ def test_payload_shape_and_projects(world):
 def test_ranking_and_verdict(world):
     wall = wall_data.build_wall(NOW)
     kinds = [i["kind"] for i in wall["needs_me"]]
-    assert kinds == ["autocheck_edge", "cron_failed", "blocked_card", "review", "review"][:len(kinds)]
-    assert len(wall["needs_me"]) == wall_data.NEEDS_ME_MAX
+    assert kinds == ["autocheck_edge", "cron_failed", "blocked_card", "review", "review", "lost_session"]
+    assert len(wall["needs_me"]) == 6 <= wall_data.NEEDS_ME_MAX == 7
     assert wall["needs_me"][3]["what"].endswith("j1")  # oldest review first
     assert wall["needs_me_total"] == 6  # edge + cron + card + 2 reviews + lost
     assert wall["verdict"].startswith("4 rzeczy czekają na Ciebie.")
-    assert "2 sesje do review, najstarsza 6 dni." in wall["verdict"]
+    assert "2 sesje do przeglądu, najstarsza 6 dni." in wall["verdict"]
     assert wall["verdict"].endswith("Przepływy z błędem: 1.") and wall["level"] == "bad"
     assert wall["machines"]["sessions"] == {"running": 1, "review": 2, "failed": 1, "lost": 1}
     assert wall["machines"]["cron_failed_24h"] == 1  # deduped per job, 3-day-old one dropped

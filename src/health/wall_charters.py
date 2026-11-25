@@ -39,6 +39,19 @@ def load_all() -> dict[str, dict[str, Any]]:
     return charters
 
 
+def norm_slug(slug: str) -> str:
+    """Comparison key for project/charter slugs: lowercase, no leading `_`, `_` and `-` equivalent."""
+    return slug.lower().lstrip("_").replace("_", "-")
+
+
+def find(charters: dict[str, dict[str, Any]], slug: str) -> dict[str, Any] | None:
+    """Charter for a project slug: exact file name first, then the normalised match."""
+    if slug in charters:
+        return charters[slug]
+    key = norm_slug(slug)
+    return next((c for s, c in charters.items() if norm_slug(s) == key), None)
+
+
 def summary(charter: dict[str, Any] | None) -> dict[str, Any] | None:
     if charter is None:
         return None

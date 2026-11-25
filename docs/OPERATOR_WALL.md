@@ -13,9 +13,10 @@ and agents work. Served by the Mission Control server (default `:8767`).
 
 ```json
 {"generated_at": "ISO-8601 UTC",
- "verdict": "8 rzeczy czeka na Ciebie. 42 sesje do review, najstarsza 6 dni. Przepływy OK.",
+ "verdict": "8 rzeczy czeka na Ciebie. 42 sesje do przeglądu, najstarsza 6 dni. Przepływy OK.",
  "level": "ok | warn | bad",
- "needs_me": [{"kind": "autocheck_edge|cron_failed|blocked_card|review|lost_session",
+ "next_action": {"text": "", "link": "", "kind": "", "since": 0},  // = needs_me[0], rendered as "Teraz: ..."
+ "needs_me": [{"kind": "autocheck_edge|cron_failed|blocked_card|review|lost_session|feedby_decision",
                "what": "...", "project": "slug or board", "since": 1795575657.6, "link": "/mc?project=slug"}],
  "needs_me_total": 8,
  "projects": [{"slug": "", "title": "", "link": "", "charter": {"status": "", "type": "", "goal": "", "audience": []} ,
@@ -29,8 +30,12 @@ and agents work. Served by the Mission Control server (default `:8767`).
 
 - Verdict is deterministic (no LLM). `needs_me` is capped at 5, ranked: failing autocheck edge, failed cron (24 h),
   blocked kanban board, oldest review session, lost session. Blocked kanban cards are grouped into one row per board.
-  The "N rzeczy" count excludes review sessions (they get their own clause).
-- `projects` = Mission Control projects with a commit in the last 7 days.
+  The "N rzeczy" count excludes review sessions and Feedby decisions (each has its own clause).
+  Feedby board cards wait for the owner by design: shown as "N zgłoszeń Feedby czeka na Twoją decyzję" and ranked
+  below review. `needs_me` shows up to 7 rows.
+- `projects` = Mission Control projects with a commit in the last 7 days. Projects sharing a git remote URL are one
+  tile (shortest slug wins, others listed in `mirrors`). Charters match by normalised slug (lowercase, no leading `_`,
+  `_` == `-`).
 - Every source fails open: its `sources.<name>` becomes `{ok:false, error:"brak danych: ..."}`, its data is
   `null`/empty and the page says "brak danych" instead of a false OK.
 - Sources: `~/.hermes/state/code-dispatch/*/meta.json`, `~/.hermes/cron/executions.db` (read-only),
