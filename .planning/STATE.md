@@ -14,6 +14,12 @@ Plan: `docs/plans/2026-11-03-project-hub.md`; loop queue `.planning/orchestratio
 - [ ] Operator cutover (plan section "Not done by the loop"): runtime UAT, merge, push, `jit install`,
   sota-starter shim, load the refresher agent + `jit hub scan`, `jit cockpit untrack` here, browser checks of
   hub/stats/chat (real model reply) and one real action run, first `jit bench ab` only on request.
+  - [x] 2026-11-25: merged on master, pushed `b7e8ef8`, `jit install` exit 0 (5 hosts + hub-refresher),
+    Mission Control + hub-refresher kickstarted (cwd = b7e8ef8 release), `/hub` 200, `/api/hub/projects` = 72.
+  - [x] 2026-11-25: sota-starter shim -> repo generator (`jit-context` + `hermes-companion` rebuild exit 0).
+  - [x] 2026-11-25: `jit init` re-run, `PROJECT_MANIFEST.md` added, `.planning/links.json` extended.
+  - [x] `jit cockpit untrack` not needed: state.html is gitignored and untracked (verified 2026-11-25).
+  - [ ] Remaining: chat/action browser UAT, `.planning/autocheck.json` (needs a real flow probe).
 - Open gap: the signature reads planning files only from the main tree, so an uncommitted STATE.md edit inside
   a linked worktree does not change the hub version until it is committed (HEAD change).
 
