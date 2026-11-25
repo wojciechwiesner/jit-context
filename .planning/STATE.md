@@ -19,7 +19,11 @@ Plan: `docs/plans/2026-11-03-project-hub.md`; loop queue `.planning/orchestratio
   - [x] 2026-11-25: sota-starter shim -> repo generator (`jit-context` + `hermes-companion` rebuild exit 0).
   - [x] 2026-11-25: `jit init` re-run, `PROJECT_MANIFEST.md` added, `.planning/links.json` extended.
   - [x] `jit cockpit untrack` not needed: state.html is gitignored and untracked (verified 2026-11-25).
-  - [ ] Remaining: chat/action browser UAT, `.planning/autocheck.json` (needs a real flow probe).
+  - [x] 2026-11-25: Autocheck implemented: `jit_turn_pipeline` observer + 2 HTTP probes (`.planning/autocheck/*.hurl`),
+    `autocheck.json` written by the real cron sync; cockpit card shows 3 flows with measurement time.
+  - [x] 2026-11-25: sota-starter Autocheck: `jit init` creates `.planning/autocheck/README.md`; cockpit shows
+    "NIE ZMIERZONO" / STALE; template `sota-starter/autocheck/` + README section.
+  - [ ] Remaining: chat/action browser UAT.
 - Open gap: the signature reads planning files only from the main tree, so an uncommitted STATE.md edit inside
   a linked worktree does not change the hub version until it is committed (HEAD change).
 

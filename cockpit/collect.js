@@ -241,14 +241,20 @@ function collectGit(root) {
   return { isRepo: true, branch, log, dirty, diffStat, dirtyCount: dirty.length };
 }
 
+function listProbes(planning) {
+  const dir = path.join(planning, "autocheck");
+  try { return fs.readdirSync(dir).filter(name => name.endsWith(".hurl")).sort(); } catch (e) { return []; }
+}
+
 function collectAutocheck(planning) {
-  const empty = { exists: false, updatedAt: null, overallState: null, flows: [], checks: [] };
+  const probes = listProbes(planning);
+  const empty = { exists: false, updatedAt: null, overallState: null, flows: [], checks: [], probes };
   const file = path.join(planning, "autocheck.json");
   if (!fs.existsSync(file)) return empty;
   try {
     const d = JSON.parse(fs.readFileSync(file, "utf-8"));
     if (!d || typeof d !== "object") return empty;
-    return { exists: true, updatedAt: d.updated_at || null, overallState: d.overall_state || "ok", flows: Array.isArray(d.flows) ? d.flows : [], checks: Array.isArray(d.checks) ? d.checks : [] };
+    return { exists: true, updatedAt: d.updated_at || null, overallState: d.overall_state || "ok", flows: Array.isArray(d.flows) ? d.flows : [], checks: Array.isArray(d.checks) ? d.checks : [], probes };
   } catch (e) { return empty; }
 }
 

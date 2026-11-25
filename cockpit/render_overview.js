@@ -37,16 +37,30 @@ function renderWorktrees(data) {
   return `<section class="card worktrees">${heading}<style>.worktree{display:flex;flex-direction:column;gap:3px;padding:9px 0;border-top:1px solid var(--border)}.worktree:first-of-type{border-top:0}.worktree-head{display:flex;justify-content:space-between;gap:8px}.worktree .mono{overflow-wrap:anywhere}.worktrees summary{cursor:pointer;padding:8px 0}</style>${visible}${collapsed}</section>`;
 }
 
+const AUTOCHECK_STALE_MS = 2 * 60 * 60 * 1000; // cron runs every 30 min; older than 2 h = not current
+
+function renderAutocheckEmpty(autocheck) {
+  const probes = (autocheck && autocheck.probes) || [];
+  const detail = probes.length
+    ? `${probes.length} sond(y) w .planning/autocheck/ czeka na pierwszy przebieg (cron co 30 min albo <span class="mono">python3 -m autocheck_flow probe . --write</span>).`
+    : 'Brak sond. Dodaj sondę realnego endpointu: <span class="mono">python3 -m autocheck_flow scaffold . --url &lt;health URL&gt;</span> (opis w .planning/autocheck/README.md).';
+  return `<section class="card"><div class="card-heading"><div><span class="eyebrow">Weryfikacja przepływu między węzłami</span><h2>Autocheck Flow</h2></div><span class="pill">NIE ZMIERZONO</span></div><div class="source-meta">${detail}</div></section>`;
+}
+
 function renderAutocheck(autocheck) {
-  if (!autocheck || !autocheck.exists || !autocheck.flows.length) return '';
+  if (!autocheck || !autocheck.exists || !autocheck.flows.length) return renderAutocheckEmpty(autocheck);
   const overall = (autocheck.overallState || 'ok').toLowerCase();
   const overallTone = overall === 'ok' ? 'pill-green' : overall === 'degraded' ? 'pill-amber' : 'pill-red';
-  const heading = `<div class="card-heading"><div><span class="eyebrow">Weryfikacja przepływu między węzłami</span><h2>Autocheck Flow</h2></div><span class="pill ${overallTone}">${esc((autocheck.overallState || 'ok').toUpperCase())}</span></div>`;
+  const measuredAt = autocheck.updatedAt ? new Date(autocheck.updatedAt) : null;
+  const stale = !measuredAt || Number.isNaN(measuredAt.getTime()) || Date.now() - measuredAt.getTime() > AUTOCHECK_STALE_MS;
+  const measured = measuredAt && !Number.isNaN(measuredAt.getTime()) ? measuredAt.toLocaleString('pl-PL') : 'nieznany';
+  const meta = `<div class="source-meta">Pomiar z ${esc(measured)}${stale ? ' · <strong>nieaktualny (starszy niż 2 h)</strong>' : ''} · sondy: ${(autocheck.probes || []).length}</div>`;
+  const heading = `<div class="card-heading"><div><span class="eyebrow">Weryfikacja przepływu między węzłami</span><h2>Autocheck Flow</h2></div><span class="pill ${stale ? 'pill-amber' : overallTone}">${esc((autocheck.overallState || 'ok').toUpperCase())}${stale ? ' · STALE' : ''}</span></div>${meta}`;
   const flows = autocheck.flows.map(flow => {
     const edges = (flow.edges || []).map(e => {
       const st = String(e.state || 'ok').toLowerCase();
       const tone = st === 'ok' ? 'pill-green' : st === 'degraded' ? 'pill-amber' : 'pill-red';
-      const p95 = e.p95 != null ? e.p95 : (e.p95_ms != null ? `${e.p95_ms}ms` : '-');
+      const p95 = e.p95_seconds != null ? `${e.p95_seconds}s` : e.p95 != null ? e.p95 : (e.p95_ms != null ? `${e.p95_ms}ms` : '-');
       const stats = `${e.completed_on_time ?? 0}/${e.total_started ?? 0} ok · ${e.missing_downstream ?? 0} dropped · ${e.sla_breaches ?? 0} slow · p95 ${p95}`;
       return `<div class="ac-edge"><div class="ac-edge-head"><strong class="mono">${esc(e.from_node || '')} -> ${esc(e.to_node || '')}</strong><span class="pill ${tone}">${esc(st.toUpperCase())}</span></div><small class="muted mono">${esc(stats)}</small></div>`;
     }).join('');

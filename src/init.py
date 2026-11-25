@@ -27,6 +27,7 @@ from context.project_scan import ProjectScanner, dossier_stem, legacy_dossier_st
 from skills_cli import write_project_skills
 from l1.obsidian_sync import refresh_dossier_header
 from config import cockpit_builder
+from context.autocheck_scaffold import autocheck_init_line, ensure_autocheck_scaffold
 
 OBSIDIAN_VAULT = Path(os.path.expanduser("~/Documents/Wojciech"))
 OBSIDIAN_PROJECTS_DIR = project_scan.OBSIDIAN_PROJECTS_DIR
@@ -280,7 +281,10 @@ def run_init(target_path: Path, tier: str = "standard", goal: Optional[str] = No
             a_content = "graph TD\n    App[\"Application\"]\n"
         arch_file.write_text(a_content, encoding="utf-8")
 
-    # 5. Visual Cockpit .planning/state.html
+    # 5. Autocheck probe folder (sota-starter contract; status file only from real probe runs)
+    autocheck = ensure_autocheck_scaffold(target_path)
+
+    # 6. Visual Cockpit .planning/state.html
     builder_script = cockpit_builder()
     if builder_script.exists():
         try:
@@ -302,6 +306,7 @@ def run_init(target_path: Path, tier: str = "standard", goal: Optional[str] = No
         "obsidian_dossier": str(obsidian_file),
         "dossier_action": dossier_action,
         "state_file": str(state_file),
+        "autocheck": autocheck,
         "external_resources": external_reqs
     }
 
@@ -691,6 +696,8 @@ def main():
     print(f"• Obsidian SSOT: {res['obsidian_dossier']} ({'utworzony' if res.get('dossier_action') == 'created' else 'zachowany, nagłówek commita odświeżony' if res.get('dossier_action') == 'preserved_header_synced' else 'zachowany'})")
     print(f"• Local State: {res['state_file']}")
     print(hub_line)
+    if res.get("autocheck"):
+        print(f"• {autocheck_init_line(res['autocheck'])}")
     print(f"• Zewnętrzne Zasoby (Context7/Docs): {len(res['external_resources'])} wykrytych")
     for r in res['external_resources']:
         print(f"   └─ [{r['type']}] {r['target']}: {r['description']}")

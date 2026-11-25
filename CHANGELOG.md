@@ -8,6 +8,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **sota-starter Autocheck step in `jit init` (`src/context/autocheck_scaffold.py`)**: creates
+  `.planning/autocheck/README.md` (probe contract for `autocheck-flow`), reports the probe count, and never writes
+  `.planning/autocheck.json` itself, so a status only exists after a real probe run.
+- Cockpit "Autocheck Flow" card: "NIE ZMIERZONO" with next-step command when no measurement exists; measurement time,
+  probe count and a STALE marker for results older than 2 h (cron runs every 30 min).
+- `.planning/autocheck/observatory_health.hurl` and `mission_control_hub.hurl`: real probes of `:8765/health`,
+  `:8767/hub` and `:8767/api/hub/projects` for this repo.
+
 - **Autocheck Inter-Node Flow in Project Cockpits, JIT Hub & Mission Control (`cockpit/collect.js`, `cockpit/render_overview.js`, `src/hub/overview.py`)**:
   - `collectAutocheck` reads `.planning/autocheck.json` and exposes `autocheck` (rendered as "Autocheck Flow" card in `.planning/state.html` Overview) and `checks` (rendered in Mission Control `MC.checksBlock`).
   - Project Hub (`/hub`, `/api/hub/projects`) displays live `FLOW: OK/DEGRADED/BROKEN` badge per project.
@@ -18,6 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Project Hub page now carries the Feedby widget (project `jit-context`).
 
 ### Fixed
+- Cockpit edge p95 always showed "-": the renderer read `p95`/`p95_ms`, the engine writes `p95_seconds`.
 - **Mission Control `cockpit/export.js` under launchd (`cockpit/export.js`, `src/health/mission_project.py`)**: Guard `tracked.length` when `git.tracked` is absent and include `/opt/homebrew/bin` in `node` subprocess PATH so `/api/mc/project` succeeds under launchd.
 - Turn audit now flags JIT hook latency only above 10 seconds, up from 600 ms. This is an
   alert threshold, not a runtime timeout; capsule delivery and L2 network timeouts are unchanged.
