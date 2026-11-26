@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Operator Wall charters: `POST /api/mc/charters/update` (answers to charter questions, type/goal/success/cadence, audience
+  incl. hand-added people; Origin + CSRF guard, enum/length/regex validation, atomic write, `draft_original` kept on first
+  edit, status unchanged). Overlay gets per-question textareas, editable fields, "Dodaj osobę", Zapisz / Zatwierdź with
+  inline results, unanswered-question counts and sorting; wall refresh no longer wipes typed input.
 - Operator Wall: `GET /wall` (1920x1080 second-screen page, no scroll, 60 s refresh), `GET /api/mc/wall` JSON
   contract and `POST /api/mc/charters/approve` (charter review overlay, batch validation, atomic writes, Origin + CSRF
   guard). Aggregates code-dispatch sessions, cron failures, autocheck flows, blocked kanban cards, worker nodes and
@@ -36,6 +40,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   marker block into the repo's mount files (html/astro/jsx) and commits only those files.
   `verify` checks the key without writing to Feedby and checks whether the live page serves the widget.
 - Project Hub page now carries the Feedby widget (project `jit-context`).
+
+### Changed
+- Operator Wall restyled to the light macOS style (canvas #F5F5F7, white cards, system blue, status dots, grouped lists,
+  calmer 3-column project cards); `mission.css` is no longer loaded by the wall.
 
 ### Fixed
 - Cockpit edge p95 always showed "-": the renderer read `p95`/`p95_ms`, the engine writes `p95_seconds`.

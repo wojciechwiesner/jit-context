@@ -70,7 +70,8 @@ def drafts(charters: dict[str, dict[str, Any]]) -> list[dict[str, Any]]:
 
 def _allowed_audience(charter: dict[str, Any]) -> set[str]:
     candidates = charter.get("audience_candidates") or []
-    return {OWNER_AUDIENCE, *(str(c.get("who")) for c in candidates if isinstance(c, dict) and c.get("who"))}
+    chosen = {str(a) for a in charter.get("audience") or []}  # people the owner added by hand
+    return {OWNER_AUDIENCE, *chosen, *(str(c.get("who")) for c in candidates if isinstance(c, dict) and c.get("who"))}
 
 
 def _validate(slugs: Any, audience: Any, charters: dict[str, dict[str, Any]]) -> list[str]:
