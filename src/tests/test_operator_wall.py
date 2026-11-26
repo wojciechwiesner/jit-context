@@ -77,6 +77,16 @@ def test_payload_shape_and_projects(world):
     assert all(s["ok"] for s in wall["sources"].values())
 
 
+def test_insight_inputs_oldest_review_and_running_nodes(world):
+    wall = wall_data.build_wall(NOW)
+    alpha = next(p for p in wall["projects"] if p["slug"] == "alpha")
+    beta = next(p for p in wall["projects"] if p["slug"] == "beta")
+    assert alpha["oldest_review"] is not None and NOW - alpha["oldest_review"] >= 6 * DAY
+    assert beta["oldest_review"] is None
+    assert wall["machines"]["oldest_review"] == alpha["oldest_review"]
+    assert sum(wall["machines"]["running_by_node"].values()) == wall["machines"]["sessions"]["running"] == 1
+
+
 def test_ranking_and_verdict(world):
     wall = wall_data.build_wall(NOW)
     kinds = [i["kind"] for i in wall["needs_me"]]
@@ -196,7 +206,7 @@ def test_http_wall_api_and_page(server):
     with urllib.request.urlopen(server + "/wall") as res:
         html = res.read().decode()
     assert 'name="jit-hub-csrf"' in html and "wall.js" in html
-    for asset in ("wall.css", "wall.js", "wall_review.js"):
+    for asset in ("wall.css", "wall.js", "wall_review.js", "wall_theme.js", "wall_insights.js"):
         with urllib.request.urlopen(f"{server}/static/{asset}") as res:
             assert res.status == 200
 

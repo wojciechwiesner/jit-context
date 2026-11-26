@@ -28,7 +28,13 @@ def _machines(sessions, crons, cards, nodes) -> dict[str, Any]:
     for row in sessions or []:
         if row["status"] in counts:
             counts[row["status"]] += 1
+    waiting = [row["since"] for row in sessions or [] if row["status"] == "review"]
+    running_on: dict[str, int] = {}
+    for row in sessions or []:
+        if row["status"] == "running":
+            running_on[str(row.get("node") or "")] = running_on.get(str(row.get("node") or ""), 0) + 1
     return {
+        "oldest_review": min(waiting) if waiting else None, "running_by_node": running_on,
         "sessions": counts if sessions is not None else None,
         "cron_failed_24h": None if crons is None else len(crons),
         "blocked_cards": None if cards is None else len(cards),
