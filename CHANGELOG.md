@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- Project cockpit (`.planning/state.html`) is now light macOS-style by default, using the same tokens as the Operator Wall:
+  `#F5F5F7` canvas, white cards, hairline borders, one `#0071E3` accent, grouped task lists, segmented filters,
+  translucent sticky toolbar and sidebar. The dark graphite theme is gone. Mermaid diagrams, context and stats
+  panels no longer hard-code dark colours. Mobile: the build stamp no longer pushes the page wider than the screen.
+
 ### Added
 - Operator Wall theme toggle: segmented control "Jasny | Ciemny" in a translucent sticky top bar (backdrop blur 20 px),
   choice kept in localStorage (light default), soft graphite dark theme via CSS custom properties (`wall_theme.js`).

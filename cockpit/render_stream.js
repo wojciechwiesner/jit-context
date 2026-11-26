@@ -10,7 +10,7 @@ function renderStreamTab(data) {
     <div class="card" style="margin-bottom:14px; padding:12px 18px;">
       <div style="display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:12px;">
         <div style="display:flex; align-items:center; gap:12px;">
-          <span style="font-weight:700; font-size:14px; color:#fff;">JIT LIVESTREAM OBSERVER</span>
+          <span style="font-weight:700; font-size:14px; color:var(--txt);">JIT LIVESTREAM OBSERVER</span>
           <span class="pill pill-emerald" id="stream-status-pill">
             <span style="display:inline-block; width:6px; height:6px; border-radius:50%; background:var(--emerald);"></span>
             PORT 8766 SPRAWDZANIE...

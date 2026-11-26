@@ -47,7 +47,7 @@ function render(input) {
       document.querySelectorAll('.filter-btn').forEach(button => button.addEventListener('click', () => setTaskFilter(button.dataset.filter)));
       document.addEventListener('keydown', event => { if (event.key === 'Escape') document.querySelectorAll('.modal-backdrop.open').forEach(modal => modal.classList.remove('open')); });
       if (window.mermaid) {
-        mermaid.initialize({ startOnLoad: false, securityLevel: 'strict', theme: 'base', flowchart: { htmlLabels: false, useMaxWidth: false }, themeVariables: { background: '#131518', primaryColor: '#22272a', primaryTextColor: '#e9ebe9', primaryBorderColor: '#5b6863', lineColor: '#808e87', secondaryColor: '#202421', tertiaryColor: '#1b201e', fontFamily: 'system-ui', fontSize: '15px' } });
+        mermaid.initialize({ startOnLoad: false, securityLevel: 'strict', theme: 'base', flowchart: { htmlLabels: false, useMaxWidth: false }, themeVariables: { background: '#FFFFFF', primaryColor: '#FFFFFF', primaryTextColor: '#1D1D1F', primaryBorderColor: '#C7C7CC', lineColor: '#8E8E93', secondaryColor: '#F2F2F5', tertiaryColor: '#F5F5F7', fontFamily: 'system-ui', fontSize: '15px' } });
         mermaid.run({ querySelector: '.diagram-preview .mermaid' }).catch(() => { document.querySelector('.diagram-preview').textContent = 'Podgląd niedostępny. Otwórz zakładkę Architektura, aby zobaczyć diagram i źródło.'; });
       }
     </script></body></html>`;
