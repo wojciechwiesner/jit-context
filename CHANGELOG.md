@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Operator Wall theme toggle: segmented control "Jasny | Ciemny" in a translucent sticky top bar (backdrop blur 20 px),
+  choice kept in localStorage (light default), soft graphite dark theme via CSS custom properties (`wall_theme.js`).
+  Every project tile and machine row gets one deterministic plain-Polish insight sentence built from the numbers
+  (`wall_insights.js`); the wall data adds `oldest_review` per project and `oldest_review` / `running_by_node` for machines.
 - Operator Wall charters: `POST /api/mc/charters/update` (answers to charter questions, type/goal/success/cadence, audience
   incl. hand-added people; Origin + CSRF guard, enum/length/regex validation, atomic write, `draft_original` kept on first
   edit, status unchanged). Overlay gets per-question textareas, editable fields, "Dodaj osobę", Zapisz / Zatwierdź with

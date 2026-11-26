@@ -79,32 +79,35 @@ function projectState(p) {
   return ["ok", p.last_commit ? `Zmiana ${ago(p.last_activity)}` : "Brak zmian"];
 }
 
-function projectCard(p, [level, word]) {
+function projectCard(p, [level], insight) {
   const goal = !p.charter_known ? h("div", {class: "goal nodata"}, "brak danych: chartery")
     : h("div", {class: "goal"}, p.charter ? (p.charter.goal || "brak celu") : "brak chartera");
   const kind = p.charter ? (TYPE_LABEL[p.charter.type] || "bez typu") : "";
-  return h("a", {class: "tile", href: p.link}, h("h3", {title: p.title}, p.title),
-    h("div", {class: "state"}, dot(level), word), goal, h("div", {class: "kind"}, kind));
+  return h("a", {class: "tile", href: p.link}, h("div", {class: "state"}, dot(level), h("h3", {title: p.title}, p.title)),
+    h("div", {class: "insight"}, insight), goal, h("div", {class: "kind"}, kind));
 }
 
-function projectRow(p, [level, word]) {
-  return h("li", {}, h("a", {href: p.link}, dot(level), h("span", {class: "name", title: p.title}, p.title), h("small", {}, word)));
+function projectRow(p, [level], insight) {
+  return h("li", {}, h("a", {href: p.link, title: insight}, dot(level), h("span", {class: "txt"}, h("span", {class: "name"}, p.title), h("small", {}, insight))));
 }
 
 function renderProjects(d) {
   const box = document.getElementById("projects");
   const shown = d.projects.slice(0, MAX_TILES);
   document.getElementById("proj-count").textContent = `aktywne 7 dni: ${d.projects.length}${d.projects.length > MAX_TILES ? `, widać ${MAX_TILES}` : ""}`;
-  const withState = shown.map((p) => [p, projectState(p)]);
+  const now = Date.now() / 1000;
+  const topReview = Math.max(0, ...shown.map((p) => p.review_count));
+  const withState = shown.map((p) => [p, projectState(p), projectInsight(p, now, topReview > 0 && p.review_count === topReview)]);
   const attention = withState.filter(([, st]) => st[0] !== "ok").slice(0, MAX_CARDS);
   const calm = withState.filter((x) => !attention.includes(x));
-  box.replaceChildren(h("div", {class: "cards"}, attention.map(([p, st]) => projectCard(p, st))));
-  if (calm.length) box.append(h("div", {class: "calm-title"}, "Pozostałe"), h("ul", {class: "calm"}, calm.map(([p, st]) => projectRow(p, st))));
+  box.replaceChildren(h("div", {class: "cards"}, attention.map(([p, st, ins]) => projectCard(p, st, ins))));
+  if (calm.length) box.append(h("div", {class: "calm-title"}, "Pozostałe"), h("ul", {class: "calm"}, calm.map(([p, st, ins]) => projectRow(p, st, ins))));
 }
 
-function statRow(label, value, level) {
+function statRow(label, value, level, insight) {
   const shown = value === null ? "brak danych" : String(value);
-  return h("li", {}, h("div", {class: "row"}, dot(value === null ? "warn" : level), h("div", {class: "main"}, label),
+  return h("li", {}, h("div", {class: "row"}, dot(value === null ? "warn" : level),
+    h("div", {class: "main"}, label, insight ? h("small", {class: "ins"}, insight) : null),
     h("span", {class: `val${value === null ? " nodata" : ""}`}, shown)));
 }
 
@@ -112,20 +115,21 @@ function renderMachines(d) {
   const m = d.machines;
   const s = m.sessions;
   const failed = s ? s.failed + s.lost : null;
+  const tip = machineInsights(m, Date.now() / 1000);
   const box = document.getElementById("machines");
   box.replaceChildren(
-    statRow("Sesje w toku", s ? s.running : null, "ok"),
-    statRow("Sesje do przeglądu", s ? s.review : null, s && s.review ? "warn" : "ok"),
-    statRow("Sesje nieudane", failed, failed ? "bad" : "ok"),
-    statRow("Crony z błędem 24 h", m.cron_failed_24h, m.cron_failed_24h ? "bad" : "ok"),
-    statRow("Zablokowane karty", m.blocked_cards, m.blocked_cards ? "bad" : "ok"),
-    ...nodeRows(m.nodes));
+    statRow("Sesje w toku", s ? s.running : null, "ok", tip.running),
+    statRow("Sesje do przeglądu", s ? s.review : null, s && s.review ? "warn" : "ok", tip.review),
+    statRow("Sesje nieudane", failed, failed ? "bad" : "ok", tip.failed),
+    statRow("Crony z błędem 24 h", m.cron_failed_24h, m.cron_failed_24h ? "bad" : "ok", tip.cron),
+    statRow("Zablokowane karty", m.blocked_cards, m.blocked_cards ? "bad" : "ok", tip.cards),
+    ...nodeRows(m));
 }
 
-function nodeRows(nodes) {
-  if (!nodes) return [statRow("Maszyny", null, "warn")];
-  return nodes.map((n) => h("li", {}, h("div", {class: "row"}, dot(n.online ? "ok" : "bad"), h("div", {class: "main"}, n.name),
-    h("span", {class: "val"}, n.online ? "online" : "offline"))));
+function nodeRows(m) {
+  if (!m.nodes) return [statRow("Maszyny", null, "warn", "Brak danych o maszynach.")];
+  return m.nodes.map((n) => h("li", {}, h("div", {class: "row"}, dot(n.online ? "ok" : "bad"),
+    h("div", {class: "main"}, n.name, h("small", {class: "ins"}, nodeInsight(n, m))), h("span", {class: "val"}, n.online ? "online" : "offline"))));
 }
 
 function renderSources(d) {

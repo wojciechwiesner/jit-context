@@ -57,9 +57,11 @@ def _audience(charter: dict[str, Any] | None) -> list[str]:
 
 def tiles(projects, charters, autocheck, sessions, now: float) -> list[dict[str, Any]]:
     reviews: dict[str, int] = {}
+    oldest: dict[str, float] = {}  # project -> epoch of its oldest session waiting for review
     for row in sessions or []:
         if row["status"] == "review":
             reviews[row["project"]] = reviews.get(row["project"], 0) + 1
+            oldest[row["project"]] = min(oldest.get(row["project"], row["since"]), row["since"])
     active = [p for p in projects or [] if now - p["last_activity"] <= ACTIVE_WINDOW_S]
     out = []
     for proj in collapse_mirrors(active):
@@ -70,7 +72,7 @@ def tiles(projects, charters, autocheck, sessions, now: float) -> list[dict[str,
             "slug": slug, "title": proj["title"], "link": f"/mc?project={slug}", "charter": charter,
             "charter_known": charters is not None, "mirrors": proj.get("mirrors", []),
             "last_commit": proj.get("last_commit"), "last_activity": proj["last_activity"],
-            "review_count": reviews.get(slug, 0), "blockers": proj.get("blockers", 0),
+            "review_count": reviews.get(slug, 0), "oldest_review": oldest.get(slug), "blockers": proj.get("blockers", 0),
             "autocheck": check["state"] if check else None, "audience": _audience(charter),
         })
     out.sort(key=lambda t: (t["autocheck"] not in (None, "ok"), t["review_count"], t["last_activity"]), reverse=True)

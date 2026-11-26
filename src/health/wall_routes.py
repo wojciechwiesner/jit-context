@@ -12,6 +12,8 @@ WALL_STATIC = {
     "wall.css": "text/css; charset=utf-8",
     "wall.js": "text/javascript; charset=utf-8",
     "wall_review.js": "text/javascript; charset=utf-8",
+    "wall_theme.js": "text/javascript; charset=utf-8",
+    "wall_insights.js": "text/javascript; charset=utf-8",
 }
 WALL_PAGE = "/wall"
 WALL_API = "/api/mc/wall"
