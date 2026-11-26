@@ -11,6 +11,7 @@ Routes:
   GET /mc                                       -> Mission Control (live + cockpit + history)
   GET /api/mc/projects | project?slug= | sessions?project=&hours=&limit= | whoami
   GET /cockpit/<slug>                           -> the project's .planning/state.html
+  GET /wall | /api/mc/wall ; POST /api/mc/charters/approve   -> Operator Wall (wall_routes)
   GET /hub | /api/hub/projects | version?slug= | /hub/<slug> | chat?slug=,
   POST /api/hub/refresh?slug= | /api/hub/chat                    -> Project Hub (hub_routes)
 
@@ -29,7 +30,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, urlparse
 
-from health import hub_routes, livestream_data, livestream_session, mission_routes
+from health import hub_routes, livestream_data, livestream_session, mission_routes, wall_routes
 from health.mission_access import check_access
 
 HERE = Path(__file__).parent
@@ -40,6 +41,7 @@ STATIC = {
     "livestream_bench.js": "text/javascript; charset=utf-8",
     **mission_routes.MC_STATIC,
     **hub_routes.HUB_STATIC,
+    **wall_routes.WALL_STATIC,
 }
 DEFAULT_PORT = int(os.environ.get("JIT_LIVESTREAM_PORT", "8766"))
 BACKLOG_LINES = 400
@@ -79,11 +81,13 @@ class Handler(BaseHTTPRequestHandler):
         session_id = (query.get("session") or [None])[0]
         path = url.path.rstrip("/") or "/"
         hub_reply = hub_routes.handle_get(path, query)
-        mc_route = mission_routes.json_route(path, query, access.user, access.via)
+        mc_route = mission_routes.json_route(path, query, access.user, access.via) or wall_routes.json_route(path)
         if hub_reply is not None:
             self._send(*hub_reply)
         elif mc_route is not None:
             self._json(mc_route)
+        elif path == wall_routes.WALL_PAGE:
+            self._send(200, wall_routes.page(), "text/html; charset=utf-8")
         elif path == "/mc":
             self._send(200, mission_routes.page(), "text/html; charset=utf-8")
         elif path.startswith("/cockpit/"):
@@ -117,8 +121,9 @@ class Handler(BaseHTTPRequestHandler):
             return
         body = self.rfile.read(length)
         url = urlparse(self.path)
-        reply = hub_routes.handle_post(url.path.rstrip("/"), parse_qs(url.query), self.headers,
-                                       self.server.server_address[1], body)
+        post_path, port = url.path.rstrip("/"), self.server.server_address[1]
+        reply = (wall_routes.handle_post(post_path, self.headers, port, body)
+                 or hub_routes.handle_post(post_path, parse_qs(url.query), self.headers, port, body))
         self._send(*(reply or (404, b'{"error":"not found"}', "application/json")))
 
     def _cockpit(self, path: str) -> None:

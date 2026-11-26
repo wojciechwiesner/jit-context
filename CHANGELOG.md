@@ -8,6 +8,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Operator Wall: `GET /wall` (1920x1080 second-screen page, no scroll, 60 s refresh), `GET /api/mc/wall` JSON
+  contract and `POST /api/mc/charters/approve` (charter review overlay, batch validation, atomic writes, Origin + CSRF
+  guard). Aggregates code-dispatch sessions, cron failures, autocheck flows, blocked kanban cards, worker nodes and
+  project charters; every source fails open to "brak danych". See `docs/OPERATOR_WALL.md`.
+- Operator Wall round 1: "Teraz:" next-action line under the verdict, Feedby decisions ranked below review, up to 7
+  "Wymaga mnie" rows, projects sharing a git remote collapse into one tile, charter lookup by normalised slug
+  (`_uni-pro-works` finds `uni-pro-works.json`), Polish labels, 15 px minimum metadata font, 17 px body, AA contrast,
+  2-line project goals.
 - **Behavior contracts in sota-starter + cockpit**: `jit init` writes a fully commented `.planning/contracts.yaml`
   ("when X -> Y" on real data, engine `autocheck_flow contracts`); new cockpit card "Kontrakty zachowania"
   (`cockpit/contracts.js`) lists violations first with record ids, "NIE ZMIERZONO" without `contracts.json`,
